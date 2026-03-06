@@ -97,9 +97,16 @@
 		</div>
 	</div>
 	<div class="footer-copyright">
-		<div class="container {{ color_footer_text }}">
-			{{ powered }}
-			<a class="right {{ color_footer_text }}" href="//goo.gl/YpctDE" target="_blank" rel="noopener">Materialize Template</a>
+		<div class="container footer-bottom {{ color_footer_text }}">
+			<div class="footer-bottom__copy">
+				Бумажный Мастер © {{ "now"|date("Y") }}
+			</div>
+
+			<div class="footer-bottom__links">
+				<a class="{{ color_footer_text }}" href="/oferta">Публичная оферта</a>
+				<span class="footer-bottom__sep">•</span>
+				<a class="{{ color_footer_text }}" href="/politika">Политика конфиденциальности</a>
+			</div>
 		</div>
 	</div>
 </footer>

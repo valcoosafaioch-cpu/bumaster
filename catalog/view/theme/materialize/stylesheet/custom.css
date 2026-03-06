@@ -329,6 +329,51 @@ a, button, .btn, [role="button"], input, select, textarea {
     background-color: #ee6e73;
 }*/
 
+  .footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .footer-bottom__copy {
+    white-space: nowrap;
+  }
+
+  .footer-bottom__links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .footer-bottom__sep {
+    opacity: 0.65;
+  }
+
+  .footer-bottom__links a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 600px) {
+    .footer-bottom {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 2px;
+    }
+
+    .footer-bottom__copy {
+      white-space: normal;
+    }
+
+    .footer-bottom__links {
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
+
 /* ================================
  * 10. КОНЕЦ Компактный футер (общий)
  * ================================ */
