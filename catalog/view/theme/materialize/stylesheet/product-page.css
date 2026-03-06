@@ -1,0 +1,1358 @@
+/*
+==========================================
+  Стили карточки товара (Этап 4.2)
+  Бумажный Мастер / product-page.css
+==========================================
+*/
+
+/* ===========================
+   A. БАЗОВАЯ СЕТКА СТРАНИЦЫ
+   =========================== */
+
+  :root{
+  --pp-thumb: 80px;        /* размер миниатюры (рамки) */
+  --pp-main-min: 500px;    /* минимальная ширина большого фото на десктопе */
+  --pp-main-max: 640px;    /* максимальная ширина большого фото на десктопе */
+  }
+
+  /* Общий контейнер */
+  #product-page {
+    padding: 30px 0;
+    display: grid;
+    grid-template-columns: 65% 35%;
+    gap: 12px;
+  }
+
+  /* Глобальная сетка карточки: слева блок А (изображения), справа блок B (характеристики) */
+  .product-wrapper {
+    display: grid !important;
+    grid-template-columns: auto 480px; /* вместо minmax(...), чтобы левая колонка могла занять фикс-ширину контента */
+    column-gap: 20px !important;  /* по горизонтали оставляем 20px */
+    row-gap: 10px !important;     /* по вертикали делаем меньше (подбери по вкусу: 6–12px) */
+    align-items: stretch !important;
+  }
+/* ===========================
+   Конец A. БАЗОВАЯ СЕТКА СТРАНИЦЫ
+   =========================== */
+
+
+
+/* ===========================
+   B. БЛОК ИЗОБРАЖЕНИЙ (ГАЛЕРЕЯ)
+   =========================== */
+
+  /* === Блок изображений: мини слева, фото справа === */
+  .pp-images-wrap {
+    display: grid !important;
+    /*grid-template-columns: 104px auto;  колонка для превью + основное фото */
+    grid-template-columns: calc(var(--pp-thumb) + 24px) 1fr;
+    gap: 16px !important;
+    align-items: stretch; /* растягиваем обе колонки на высоту строки грида */
+    grid-column: 1 !important;
+  }
+
+  /* Колонка миниатюр слева */
+  .pp-thumbs {
+    flex-direction: column !important;
+    gap: 8px !important;
+    grid-template-rows: auto 1fr auto;
+    align-items: center;
+    position: relative;           /* нужно для абсолютного позиционирования кнопок */
+    max-height: 100%;
+    height: auto; /* чтобы не тянуть родителя */
+    overflow: hidden; /* предотвращает перерастяжение */
+  }
+
+  /* Чуть отступов внутри прокручиваемой области, 
+    чтобы элементы не перекрывались кнопками */
+  .pp-thumbs-scroll {
+    overflow-y: auto;
+    flex: 1 1 auto;       /* пусть заполняет доступное пространство, но не вытягивает родителя */
+    height: auto;         /* сбрасываем жёсткое 100% */
+    max-height: 100%;
+    padding-top: 0;
+    padding-bottom: 0;
+
+    /* 2) Скрыть видимость скроллбара в разных браузерах */
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE/Edge legacy */
+  }
+
+  .pp-thumbs-scroll::-webkit-scrollbar { /* Chrome/Safari/Opera */
+    width: 0;
+    height: 0;
+  }
+
+  .pp-thumbs-btn {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);  /* выставляем по центру колонки */
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(0,0,0,.35);
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Положение верхней/нижней кнопки */
+  .pp-thumbs-up   { 
+    top: 6px; 
+  }
+
+  .pp-thumbs-down { 
+    bottom: 6px; 
+  }
+
+  .pp-thumbs-btn[hidden] { 
+    display: none; 
+  }
+
+  /* Каждая миниатюра: фиксированный мини-размер */
+  /* Квадратные миниатюры: вписываем картинку и даем белый фон */
+  .pp-thumb {
+    display: block;
+    /*width: 80px !important;
+    height: 80px !important;*/
+    width: var(--pp-thumb); 
+    height: var(--pp-thumb);
+    object-fit: contain !important;
+    background: #fff !important;
+    border: 2px solid transparent !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+  }
+
+  .pp-thumb.is-active {
+    border-color: var(--brand-accent, #bf4250) !important;
+  }
+
+  .pp-aspect-4x5 {
+    position: relative !important;
+    width: 100% !important;
+    padding-bottom: 100% !important; /* квадрат 1:1 */
+    overflow: hidden;     /* ВАЖНО: обрезает диагональную ленту по рамкам фото */
+  }
+
+  /* Контейнер основного изображения: ограничим разумную ширину */
+  .pp-mainimg {
+    /* width: 640px !important;*/
+    width: clamp(var(--pp-main-min), 58vw, var(--pp-main-max)); 
+    max-width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pp-main-photo {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    z-index: 1;
+    height: 100%;
+  }
+
+  /* убрать любые изменения при hover/active/focus */
+  .pp-main-nav:hover,
+  .pp-main-nav:active,
+  .pp-main-nav:focus,
+  .pp-main-nav:focus-visible {
+    background: rgba(0,0,0,.35);
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Стрелки поверх большого фото */
+  .pp-main-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 68px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0,0,0,.35);
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    outline: none;
+    box-shadow: none;
+    -webkit-tap-highlight-color: transparent; /* убираем вспышку на тач-устройствах */
+    z-index: 2;
+  }
+
+  .pp-main-nav.pp-prev { 
+    left: 8px; 
+  }
+
+  .pp-main-nav.pp-next { 
+    right: 8px; 
+  }
+
+  .pp-flags {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* базовый флаг-бейдж */
+  .pp-flag {
+    position: absolute;
+    pointer-events: auto;
+    z-index: 3;               /* поверх фото, ниже модалок */
+    line-height: 1;
+  }
+
+  /* Диагональная лента под 45°, «от края до края» */
+  .pp-strap {
+    position: absolute;
+    top: 20px;                 /* чуть ближе к углу */
+    left: -70%;                /* возвращаем левее, чтобы лента шла из угла */
+    width: 160%;               /* длина, чтобы хватало на диагональ */
+    height: 42px;
+    transform: rotate(-45deg);
+    transform-origin: center;
+    z-index: 3;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .3px;
+    text-transform: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    pointer-events: none;
+
+    background: transparent; /* цвет дают модификаторы */ 
+  }
+
+  /* Цвета — точно как в листинге (используем те же модификаторы) */
+  .pp-strap--outofstock { 
+    background: #7a7a7a !important; 
+  }  /* серый из листинга «Нет в наличии» */
+
+  .pp-strap--new        { 
+    background: #bf4250 !important; 
+  }  /* красный из листинга «Новинка» (brand-accent) */
+
+  .pp-strap--beginner   { 
+    background: #2ecc71 !important;  
+  }  /* зелёный из листинга «Начинающим» */
+
+
+
+  /* Правая «Есть варианты» — как в листинге (чип/бейдж вверху справа) */
+  /* конкретно "Есть варианты" */
+  .pp-flag--variants {
+    top: 12px;
+    right: 12px;
+    padding: 8px 16px 8px 36px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 600;
+    background: #eef2f6;      /* светло-серый как в листинге */
+    color: #3c4854;           /* тёмный текст */
+    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+
+  /* шестерёнка слева от текста (без внешних картинок) */
+  .pp-flag--variants::before {
+    content: "⚙";             /* символ шестерёнки */
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    opacity: .85;
+  }
+
+  /* ——— Ленты-плашки, как в листинге ——— */
+  .pp-ribbon {
+    position: absolute;
+    z-index: 3;
+    background: var(--brand-accent, #bf4250);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1;
+    padding: 6px 12px;
+    border-radius: 6px;
+    pointer-events: none;
+    /* лёгкий уголок как в листинге */
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .pp-ribbon--tl {
+    top: 12px;
+    left: 12px;
+    transform: rotate(-11deg);
+    transform-origin: left top;
+  }
+  .pp-ribbon--tr {
+    top: 12px;
+    right: 12px;
+    transform: rotate(11deg);
+    transform-origin: right top;
+  }
+
+  /* Нижняя лента «С аксессуарами» (цвета из листинга) */
+  .pp-accessories {
+    position: absolute;
+    z-index: 3;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #efe8d7;      /* кремовый */
+    color: #3c4854;           /* тёмный текст */
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;        /* жирным */
+    padding: 8px 0;
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* Лайтбокс */
+  .pp-no-scroll { 
+    overflow: hidden; 
+  }
+
+  .pp-lightbox[hidden] { 
+    display: none; 
+  }
+
+  .pp-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(3px);
+  }
+
+  .pp-lightbox-dialog {
+    position: relative; 
+    inset: 0;
+    background: #f7f7f7;
+    border-radius: 0;
+    box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    z-index: 2;
+    max-width: 100vw;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Кнопка закрытия */
+  .pp-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0,0,0,.35);
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5;
+    transition: transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-lightbox-close:hover {
+    transform: scale(1.1);
+  }
+
+  /* Запрещаем прокрутку фона при открытии */
+  html.pp-no-scroll, body.pp-no-scroll {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .pp-lightbox-grid {
+    display: flex;
+    grid-template-columns: 104px 1fr;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 24px 20px 20px;
+    height: 100%;
+  }
+
+  .pp-thumbs-lightbox { 
+    max-height: none; 
+  }
+
+  .pp-lightbox-main {
+    position: relative;
+    max-width: 96vw;
+    max-height: 96vh;
+  }
+  .pp-lightbox-photo {
+    width: 100%;
+    height: 100%;
+    max-width: 96vw;
+    max-height: 96vh;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    background: #fff; 
+    border-radius: 12px;
+  }
+
+  /* Стрелки внутри лайтбокса */
+  .pp-lightbox .pp-main-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.35);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 44px;
+    width: 56px;
+    height: 56px;
+    line-height: 54px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: background 0.2s;
+  }
+
+  .pp-lightbox .pp-main-nav:hover {
+    background: rgba(0,0,0,.5);
+  }
+  .pp-lightbox .pp-prev { 
+    left: 12px; 
+  }
+
+  .pp-lightbox .pp-next { 
+    right: 12px; 
+  }
+
+  /* --- лайтбокс: переходим с [hidden] на класс is-open --- */
+  .pp-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-lightbox.is-open {
+    display: flex;
+  }
+
+  /* === Лэйаут лайтбокса: фикс-ширина колонки миниатюр и прокрутка === */
+  .pp-lightbox-body{
+    display: grid;
+    grid-template-columns: calc(var(--pp-thumb) + 24px) 1fr; /* колонка миниатюр + контент */
+    gap: 16px;
+    align-items: center;  /* центрируем по вертикали стрелки относительно изображения */
+    width: 100%;
+    max-height: 100vh;    /* чтобы не разъезжалось по высоте экрана */
+  }
+
+  /* В лайтбоксе колонка миниатюр должна иметь фиксированную высоту с прокруткой внутри */
+  .pp-lightbox .pp-thumbs{
+    height: calc(100vh - 64px);  /* запас под внутренние отступы/кнопку закрытия */
+    max-height: calc(100vh - 64px);
+  }
+
+  /* Прокручиваемая область миниатюр — только вертикально, скроллбар скрыт выше в файле */
+  .pp-lightbox .pp-thumbs-scroll{
+    height: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+/* ===========================
+   Конец B. БЛОК ИЗОБРАЖЕНИЙ (ГАЛЕРЕЯ)
+   =========================== */   
+
+
+
+/* ===========================
+   C. ХАРАКТЕРИСТИКИ
+   =========================== */
+
+   /* === Характеристики === */
+  .pp-title {
+    font-size: 26px;
+    margin: 0 0 2px 0;   /* убрали верхний margin и задали 2px снизу с единицами */
+    text-align: left !important;    /* выравнивание слева */
+    padding: 0 !important;
+    text-indent: 0 !important;
+  }
+
+  .pp-category {
+    font-style: italic;
+    margin: 0 0  8px 0;
+  }
+
+  .pp-brand-model {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .pp-brand-icon img {
+    width: 84px;
+    height: 84px;
+    margin-right: 12px;
+  }
+
+  .pp-attrs p {
+    margin: 4px 0;
+  }
+
+  .pp-attrs .pp-accent{
+    color: var(--brand-accent);
+    font-weight: 600;
+  }
+
+  .pp-brand-text .pp-brand{
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .pp-brand-text .pp-model{
+    font-size: 16px;
+    opacity: .9;
+  }
+/* ===========================
+   Конец C. ХАРАКТЕРИСТИКИ
+   =========================== */
+
+
+
+/* ===========================
+   D. ЦЕНА + КНОПКА КОРЗИНЫ
+   =========================== */
+
+   /* === Цена и корзина === */
+  .pp-buy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    grid-column: 2 !important;
+  }
+
+  .pp-price-new {
+    color: var(--brand-accent);
+    font-weight: 600;
+  }
+
+  /* === Блок цена/корзина внизу характеристик === */
+  .pp-info .pp-buy{
+    /* раньше было только margin-top:14px; заменяем на: */
+    margin-top: auto;              /* прижимаем весь блок к низу .pp-info */
+    display: flex;
+    flex-direction: column;        /* цена первой строкой, кнопка второй */
+    gap: 14px;
+  }
+
+  .pp-info .pp-price,
+  .pp-info .pp-price-line{         /* если у тебя класс .pp-price-line — он тоже ок */
+    display: block;                /* гарантируем блочную строку цены */
+  }
+
+  .pp-info .pp-cart,
+  .pp-info .pp-cart-line{          /* и для строки с кнопкой */
+    display: flex;
+    justify-content: center;   /* центрируем содержимое по горизонтали */
+    width: 100%;
+  }
+
+  .pp-info .pp-price-now,
+  .pp-info .pp-price-current,
+  .pp-info .pp-price-new{
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .pp-info .bm-inbtn,
+  .pp-info .bm-add {
+    display: flex;
+    align-self: stretch;
+    justify-content: center;   /* по горизонтали */
+    align-items: center;       /* ← ДОБАВЬ это: по вертикали */
+    height: 52px;
+
+    width: 200px;            /* ← фиксируем ширину кнопки */
+    max-width: 100%;         /* на всякий случай для узких экранов */
+    margin: 0 auto;          /* центрируем внутри колонки */
+
+    padding: 0 22px;
+    font-size: 16px;
+    border-radius: 12px;
+    background: var(--brand-accent);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .05s ease, opacity .15s ease;
+  }
+
+  /* Кнопка-счётчик на карточке товара */
+  .pp-info .bm-inbtn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .pp-info .bm-inbtn .bm-num{
+    font-weight: 700;
+    min-width: 2ch;
+    text-align: center;
+    line-height: 1;
+  }
+
+  /* Квадратики +/- */
+  .pp-info .bm-inbtn .bm-minus,
+  .pp-info .bm-inbtn .bm-plus{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.22);
+    /* border: 1px solid rgba(60,72,84,.25);*/
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .pp-info .bm-inbtn .bm-plus.is-disabled{
+    opacity: .5;
+    pointer-events: none;
+  }
+
+  /* на всякий пожарный, чтобы размеры были ровными */
+  /*.bm-cart-ctrl { display: inline-flex; }
+  .bm-cart-ctrl .bm-qty { gap: 8px; align-items: center; }
+  .bm-cart-ctrl .bm-minus,
+  .bm-cart-ctrl .bm-plus { width: 44px; height: 44px; }
+  .bm-cart-ctrl .bm-count { min-width: 52px; text-align: center; }*/
+
+  /* уважать утилиту скрытия из custom.css */
+  .pp-info .is-hidden { display: none !important; }
+
+  .pp-price-old {
+    text-decoration: line-through;
+    color: #888;
+    margin-left: 6px;
+  }
+
+  .pp-out {
+    color: #bf4250;
+    font-weight: bold;
+  }
+
+  /* — Плашка скидки слева от цены — */
+  .pp-info .pp-price{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .pp-info .pp-discount-badge{
+    background: #e6f4ff;    /* нейтрально-голубой фон, как в листинге */
+    color: #0b6aa2;         /* синий текст */
+    border: 1px solid #bfe0ff;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+    padding: 6px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+/* ===========================
+   Конец D. ЦЕНА + КНОПКА КОРЗИНЫ
+   =========================== */
+
+
+
+/* ===========================
+   E. ВАРИАНТЫ И КОМПЛЕКТАЦИИ
+   =========================== */
+
+  .pp-variants {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    padding: 16px 18px 18px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 16px;
+    align-items: center;
+
+  }
+
+  .pp-variants__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;   /* чтобы заголовок не ломался на две строки */
+  }
+
+  /* Контейнер для кнопок вариантов */
+  .pp-variants-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin-top: 0;         /* на всякий случай убираем возможный отступ сверху */
+  }
+
+  /* Базовый вид кнопки варианта */
+  .pp-variant-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+
+    /* ширина теперь по содержимому */
+    min-width: 0;
+    max-width: none;
+    min-height: 44px;
+
+    padding: 8px 12px;
+
+    border-radius: 10px;
+    border: 1px solid var(--brand-dark);
+
+    /* фон поменяем ниже, см. п.3 */
+    background: rgba(248, 242, 218, 0.5); /* кремовый с прозрачностью ~50% */
+    color: var(--brand-dark);
+
+    font-size: 14px;
+    line-height: 1.25;
+    text-decoration: none;
+
+    cursor: default;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .pp-variant-title {
+    font-weight: 600;
+  }
+
+  .pp-variant-status {
+    margin-top: 2px;
+    font-size: 13px;
+    color: #777;
+  }
+
+  /* Кликабельный вариант (другой товар в наличии) */
+  .pp-variant-btn--clickable {
+    cursor: pointer;
+  }
+
+  .pp-variant-btn--clickable:hover {
+    background: rgba(248, 242, 218, 0.9); /* тот же кремовый, но плотнее */
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .04);
+  }
+
+  /* Текущий вариант (открытый товар) */
+  .pp-variant-btn--current {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 1px rgba(191, 66, 80, .35);
+    background: rgba(248, 242, 218, 0.9);
+  }
+
+  /* Текущий вариант без остатка ("Нет в наличии") */
+  .pp-variant-btn--disabled {
+    background: #f4f4f4;
+    border-style: dashed;
+    border-color: #b8b8b8;
+    color: #555;
+  }
+
+  .pp-variant-btn--disabled .pp-variant-status {
+    color: #777;
+  }
+
+/* ===========================
+   Конец E. ВАРИАНТЫ И КОМПЛЕКТАЦИИ
+   =========================== */
+
+
+
+
+/* ===========================
+   F. ОПИСАНИЕ ТОВАРА
+   =========================== */
+
+  .pp-desc-section {
+    grid-column: 1 / -1;     /* растягиваем на обе колонки, как .pp-variants */
+    margin-top: 4px;
+    padding: 16px 200px;
+    background-color: #ffffff;
+    border-radius: 8px;
+  }
+
+  .pp-desc-title {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .pp-desc-text {
+    position: relative;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* Свёрнутое состояние: показываем ~5 строк + градиент снизу */
+  .pp-desc-text.is-collapsed {
+    max-height: 9em; /* 5 строк при line-height: 1.5 */
+    overflow: hidden;
+  }
+
+  .pp-desc-text.is-collapsed::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1em;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0) 0%,
+      #ffffff 80%
+    );
+    pointer-events: none;
+  }
+
+  /* убираем лишний нижний отступ у последнего абзаца, чтобы он не "убегал" под градиент */
+  .pp-desc-text.is-collapsed p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Развёрнутое состояние: ограничение по высоте и градиент убираем */
+  .pp-desc-text.is-expanded {
+    max-height: none;
+  }
+
+  .pp-desc-text.is-expanded::after {
+    display: none;
+  }
+
+  /* Кнопка "Показать полностью / Свернуть" */
+
+  .pp-desc-toggle {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--brand-accent, #bf4250);
+  }
+
+.pp-desc-toggle:focus,
+.pp-desc-toggle:active {
+  outline: none;
+  background: none !important;
+  box-shadow: none !important;
+  /*text-decoration: underline;*/
+}
+
+  .pp-desc-toggle-text {
+    /* на десктопе отображаем текст, на мобилке спрячем */
+  }
+
+  .pp-desc-toggle-icon {
+    display: inline-block;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  /* В развёрнутом состоянии поворачиваем стрелку вверх */
+  .pp-desc-toggle.is-expanded .pp-desc-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+/* ===========================
+   Конец F. ОПИСАНИЕ ТОВАРА
+   =========================== */
+
+
+
+
+/* ===========================
+   G. ОТЗЫВЫ / ВОПРОСЫ
+   =========================== */
+
+  .pp-feedback {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding: 16px 200px;
+    background: #ffffff;
+    border-radius: 8px;
+  }
+
+  .pp-feedback-title {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .pp-feedback-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* Сегментный переключатель: две половинки 50/50 */
+  .pp-feedback-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 320px;
+    border-radius: 999px;
+    background: #f3f3f3;
+    padding: 2px;
+    margin: 0 0 12px;
+  }
+
+
+  .pp-feedback-tab {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 0;
+    font-size: 14px;
+    background: transparent;
+    cursor: pointer;
+    color: #3c4854;
+    text-align: center;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+
+  .pp-feedback-tab.is-active {
+    background: #ffffff;
+    color: var(--brand-accent, #bf4250);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+  }
+
+  .pp-feedback-panels {
+    margin-top: 8px;
+  }
+
+  .pp-feedback-panel {
+    display: none;
+  }
+
+  .pp-feedback-panel.is-active {
+    display: block;
+  }
+
+  .pp-feedback-list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+  }
+
+  .pp-feedback-item {
+    padding: 16px 0;
+    border-top: 1px solid #e6e6e6;
+  }
+
+  .pp-feedback-item:first-child {
+    border-top: none;
+    padding-top: 4px;
+  }
+
+  /* строка отзыва: две колонки — слева инфо, справа текст */
+  .pp-feedback-row {
+    display: flex;
+  }
+
+  .pp-feedback-col-left {
+    width: 180px;
+    min-width: 160px;
+    padding-right: 16px;
+    font-size: 13px;
+  }
+
+  .pp-feedback-col-right {
+    flex: 1;
+  }
+
+  /* статичные звёзды в списке отзывов */
+  .pp-feedback-stars {
+    margin-bottom: 4px;
+    font-size: 20px;      /* было 14px → делаем крупнее */
+    line-height: 1;
+  }
+
+  .pp-star-static {
+    font-size: inherit;   /* чтобы брать 20px из .pp-feedback-stars */
+    color: #d0d0d0;       /* пустая звезда */
+    margin-right: 2px;
+  }
+
+  .pp-star-static.is-filled {
+    color: #ffb400;      /* закрашенная звезда */
+  }
+
+  .pp-feedback-meta-line {
+    margin-bottom: 2px;
+    color: #7a7a7a;
+  }
+
+  .pp-feedback-meta-date {
+    color: #888888;
+  }
+
+  .pp-feedback-meta-author {
+    font-weight: 600;
+    color: #3c4854;
+    font-size: 15px;   /* чуть крупнее обычного текста */
+    margin-bottom: 0;  /* вплотную к строке варианта */
+  }
+
+  .pp-feedback-meta-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .pp-feedback-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+
+  .pp-feedback-source__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .pp-feedback-source__ext {
+    font-size: 12px;
+    line-height: 1;
+    color: #9aa2a9;
+  }
+
+  .pp-feedback-source:hover,
+  .pp-feedback-source:focus {
+    opacity: 0.85;
+  }
+
+  .pp-feedback-meta-variant {
+    font-size: 13px;
+    font-style: italic;
+    color: #7a7a7a;
+    margin-top: 0;
+    margin-bottom: 6px;  /* небольшой отступ до текста отзыва */
+  }
+
+  .pp-feedback-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333333;
+    margin-top: 0;
+  }
+
+  .pp-feedback-images {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pp-feedback-thumb {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+  }
+
+  .pp-feedback-reply {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #f8f2da;
+    border-radius: 8px;
+  }
+
+  .pp-feedback-reply-header {
+    margin-bottom: 4px;
+  }
+
+  .pp-feedback-reply-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #3c4854;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .pp-feedback-reply-text {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .pp-feedback-empty,
+  .pp-feedback-note {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: #777777;
+  }
+
+  .pp-feedback-form--review.is-collapsed {
+    display: none;
+  }
+
+  .pp-feedback-form--admin-reply.is-collapsed {
+    display: none;
+  }
+
+  .pp-feedback-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    padding: 4px 10px;
+    font-size: 13px;
+    border-radius: 999px;
+    border: 1px solid var(--brand-accent, #bf4250);
+    background-color: transparent;
+    color: var(--brand-accent, #bf4250);
+    cursor: pointer;
+  }
+
+  /* Убираем залипающую подсветку при фокусе/клике */
+  .pp-feedback-edit-btn:focus,
+  .pp-feedback-edit-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    color: var(--brand-accent, #bf4250) !important;
+  }
+
+  /* Ховер (и ховер в фокусе) — красный фон, белый текст */
+  .pp-feedback-edit-btn:hover,
+  .pp-feedback-edit-btn:focus:hover {
+    background-color: var(--brand-accent, #bf4250) !important;
+    color: #ffffff !important;
+  }
+
+  .pp-feedback-rating-inputs {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pp-star-btn {
+    border: none;
+    background: transparent;
+    padding: 0 4px;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: #d0d0d0;            /* пустая звезда */
+    transition: color .15s ease, transform .1s ease;
+  }
+
+  .pp-star-btn.is-filled {
+    color: #ffb400;            /* заполненная звезда */
+  }
+
+  .pp-star-btn:focus,
+  .pp-star-btn:active {
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+    transform: none;
+  }
+
+/* ===========================
+   Конец G. ОТЗЫВЫ / ВОПРОСЫ
+   =========================== */
+
+
+
+/* ===========================
+   H — Прочее (общие утилиты, временные фиксы)
+   =========================== */
+
+  .pp-info { 
+    grid-column: 2 !important; 
+    background: #fff;
+    padding: 14px;
+    border-radius: 12px;
+    text-align: left !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* 3) Убрать подсветку/фокус у стрелок */
+  .pp-thumbs-btn:focus,
+  .pp-thumbs-btn:focus-visible,
+  .pp-thumbs-btn:hover,
+  .pp-thumbs-btn:active {
+    outline: none;
+    box-shadow: none;
+    background: rgba(0,0,0,.35);  /* без изменения оттенка при ховере/активе */
+  }
+/* ===========================
+   Конец H — Прочее (общие утилиты, временные фиксы)
+   =========================== */
+
+
+
+/* ===========================
+   M. МОБИЛЬНЫЙ АДАПТИВ
+   =========================== */
+
+  /* === Адаптив === */
+  @media (max-width: 992px) {
+    #product-page {
+      grid-template-columns: 1fr;
+    }
+
+    .pp-thumbs { 
+      display: none !important; 
+    }
+
+    .product-wrapper {
+      grid-template-columns: 1fr !important;;
+    }
+
+    .pp-images-wrap {
+      grid-template-columns: 1fr !important;
+    }
+
+    .pp-lightbox-dialog { 
+      inset: 0; 
+      border-radius: 0; 
+    }
+
+    .pp-lightbox-grid { 
+      grid-template-columns: 84px 1fr; 
+    }
+
+    .pp-flag--variants { 
+      top: 10px; 
+      right: 10px; 
+    }
+
+    .pp-lightbox-body{
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 12px;
+    }
+    
+    .pp-lightbox .pp-thumbs{
+      height: auto;
+      max-height: none;
+    }
+
+    .pp-info .bm-add,
+    .pp-info .bm-inbtn {
+      width: 100% !important;   /* на мобиле по всей ширине колонки */
+      max-width: 100%;
+    }
+
+    /* Варианты на мобильной версии */
+    .pp-variants {
+      margin-top: 20px;
+      margin-bottom: 24px;
+      padding: 14px 12px 16px;
+    }
+
+    .pp-variants-list {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pp-variant-btn {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .pp-desc-toggle-text {
+      display: none;
+    }
+
+    .pp-desc-toggle {
+      padding-top: 8px;
+      padding-bottom: 4px;
+    }
+
+    .pp-desc-toggle-icon {
+      font-size: 16px;
+    }
+
+    .pp-feedback {
+      padding: 14px 12px;
+      margin-top: 16px;
+    }
+
+    .pp-feedback-row {
+      flex-direction: column;
+      row-gap: 8px;
+    }
+
+    .pp-feedback-col-left {
+      width: 100%;
+      min-width: 0;
+      padding-right: 0;
+      margin-bottom: 8px;
+    }
+
+    .pp-feedback-tabs {
+      max-width: 100%;
+    }
+
+  }
+
+/* ===========================
+   Конец M. МОБИЛЬНЫЙ АДАПТИВ
+   =========================== */

@@ -1,0 +1,891 @@
+/* НАЧАЛО Общие настройки
+   ---------------------------------------------------- */
+  .hp-main {
+    padding-bottom: 40px;
+  }
+
+  .row {
+    margin-bottom: 2px;
+  }
+
+  /* Убираем стандартные отступы Materialize у top-container только на главной */
+  .top-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .hp-layout {
+    margin-bottom: 40px;
+  }
+
+  .hp-left,
+  .hp-center,
+  .hp-right {
+    margin-bottom: 24px;
+  }
+
+  /* Верхний блок (A3/A5/A6/A4.1/A4.2/A4.3): фикс-сетка 280/240, левая колонка 80/20 */
+  .hp-top .hp-left,
+  .hp-top .hp-center,
+  .hp-top .hp-right {
+    margin-bottom: 0;
+  }
+
+  .hp-top-left,
+  .hp-top-center,
+  .hp-top-right {
+    height: 520px;
+    display: flex;
+    flex-direction: column;
+  }
+  .row .col{
+    padding: 4px;
+  }
+ .hp-top-center .hp-block--text {
+  margin-bottom: 4px;
+}
+
+  .hp-block--cats {
+    height: 520px;
+    overflow-y: auto;
+    direction: rtl;
+  }
+  
+  /* Возвращаем нормальное направление для контента */
+  .hp-block--cats .hp-categories {
+    direction: ltr;
+  }
+
+  .hp-top-center .hp-block--text {
+    height: 280px;
+    display: flex;
+    align-items: center;
+  }
+
+  .hp-top-center .hp-text {
+    width: 100%;
+  }
+
+  .hp-top-center .hp-block.hp-slider {
+    height: 240px;
+  }
+
+  .hp-top-center .hp-slider__viewport {
+    height: 100%;
+  }
+
+  .hp-block--contacts {
+    height: 280px;
+    overflow-y: auto;
+  }
+
+  .hp-block--account {
+    height: 240px;
+    overflow-y: auto;
+  }
+
+  .hp-block {
+    margin-bottom: 4px;
+    padding: 8px 12px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .hp-placeholder {
+    padding: 16px;
+    border: 1px dashed #ccc;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .hp-placeholder--banner {
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+/* КОНЕЦ Общие настройки
+
+
+
+/* А1. НАЧАЛО Баннер+лого
+   ---------------------------------------------------- */
+  .hp-banner {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Контейнер баннера — теперь flex, чтобы логотип центрировался по высоте */
+  .hp-banner-inner {
+    position: relative;
+    width: 1400px;
+    margin: 0 auto;
+  }
+
+  .hp-banner-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    position: relative;
+  z-index: 1;
+  }
+
+
+  /* Логотип больше НЕ absolute — он участвует в потоке */
+  .hp-banner-logo {
+    position: absolute;
+    left: 16px; 
+    top: 50%;
+    transform: translateY(-50%); /* центрирование по высоте баннера */
+    z-index: 2;
+    height: 85%;              /* логотип ниже высоты баннера */
+    /*padding: 5% 0 5% 5%;      /* одинаковые отступы: сверху/снизу/слева */
+    box-sizing: border-box;   /* чтобы padding не «раздувал» блок */
+  }
+
+  .hp-banner-logo-img {
+    display: block;
+    height: 100%;             /* вписать картинку в контейнер логотипа */
+    width: auto;
+    width: auto;
+    display: block;
+  }
+
+  .hp-banner-text {
+    font-family: "Roboto", sans-serif;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 220px;        /* логотип + ~100px отступ; подгоним по факту */
+    max-width: 600px;
+    /* font-size: 26px;*/
+    line-height: 1;
+    font-weight: 600;
+    color: #000000;
+    z-index: 3;
+  }
+/* А1. КОНЕЦ Баннер+лого
+
+
+
+/* А3. НАЧАЛО Категории
+   ---------------------------------------------------- */
+  .hp-categories {
+    padding: 8px 0;
+  }
+
+  .hp-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1.0;
+    text-decoration: none;
+    color: #000000;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  .hp-cat-row:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+
+  .hp-cat-row--level-1 {
+    padding-left: 8px;
+  }
+
+  .hp-cat-row--level-2 {
+    padding-left: 20px;
+  }
+
+  /* Разделительные линии между блоками категорий 1 и 2 уровней */
+  .hp-cat-row--level-1,
+  .hp-cat-row--level-2 {
+    border-top: 1px solid #e0e0e0;
+  }
+
+  /* Для самой первой строки — без линии */
+  .hp-categories .hp-cat-row:first-child {
+    border-top: none;
+  }
+
+  .hp-cat-row--level-3 {
+    padding-left: 32px;
+  }
+
+  .hp-cat-name {
+    flex: 1 1 auto;
+    margin-right: 6px;
+  }
+
+  .hp-cat-count {
+    flex: 0 0 auto;
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+/* А3. КОНЕЦ Категории
+
+
+
+/* А4.1 НАЧАЛО Контакты магазина
+   ---------------------------------------------------- */
+  .hp-block--contacts {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .hp-contacts-header {
+    margin-bottom: 8px;
+  }
+
+  .hp-contacts-title-link,
+  .hp-contacts-title {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+    text-decoration: none;
+  }
+
+  .hp-contacts-title-link:hover {
+    text-decoration: underline;
+  }
+
+  .hp-contacts-banners {
+    margin-bottom: 8px;
+  }
+
+  .hp-contacts-banner {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .hp-contacts-banner:last-child {
+    margin-bottom: 0;
+  }
+
+  .hp-contacts-banner-img {
+    display: block;
+    width: 90%;
+    height: auto;
+    border-radius: 12px;
+    margin: 0 auto 4px;
+  }
+
+  .hp-contacts-list {
+    margin-top: 4px;
+  }
+
+  .hp-contacts-item {
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    text-decoration: none;
+    color: #000000;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .hp-contacts-item:hover {
+    text-decoration: underline;
+  }
+
+  .hp-contacts-item-icon {
+    flex: 0 0 auto;
+    margin-right: 6px;
+  }
+
+  .hp-contacts-item-icon-img {
+    display: block;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
+
+  .hp-contacts-item-text {
+    flex: 1 1 auto;
+  }
+/* А4.1 КОНЕЦ Контакты магазина
+
+
+
+/* А4.2 НАЧАЛО Отзывы о магазине
+   ---------------------------------------------------- */
+
+/* А4.2 КОНЕЦ Отзывы о магазине
+
+
+
+/* А4.3 НАЧАЛО Блок аккаунта / вход
+   ---------------------------------------------------- */
+  .hp-account {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .hp-account__greet {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .hp-account__hint {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .hp-account__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .hp-account__btn {
+    border-radius: 10px;
+    height: 36px;
+    line-height: 36px;
+    padding: 0 14px;
+    text-transform: none;
+  }
+
+  .hp-account__link {
+    color: #c62828; /* брендовое красное */
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .hp-account__link:hover {
+    text-decoration: underline;
+  }
+
+  .hp-account__hello {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .hp-account__name {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .hp-account__text {
+    font-size: 13px;
+    line-height: 1.35;
+    opacity: 0.85;
+  }
+
+  .hp-account__link-wrap {
+    margin-top: auto;
+    padding-top: 10px;
+  }
+
+  .hp-account__link {
+    color: #c62828;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .hp-account__link:hover {
+    text-decoration: underline;
+  }
+
+  .hp-account__btitle {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    opacity: 0.85;
+    margin-bottom: 16px;
+  }
+
+  .hp-account__title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    opacity: 0.85;
+    margin-bottom: 2px;
+  }
+
+  .hp-account__line {
+    line-height: 1.35;
+  }
+  
+  .hp-account__line::before {
+    content: "— ";
+  }
+
+/* А4.3 КОНЕЦ Блок аккаунта / вход
+
+
+
+/* А5. НАЧАЛО Текст / приветствие (home_text)
+   ---------------------------------------------------- */
+
+  .hp-block--text {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .hp-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #3c4854;
+  }
+
+  .hp-text h1,
+  .hp-text h2,
+  .hp-text h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .hp-text p {
+    margin: 0 0 8px 0;
+  }
+
+  .hp-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .hp-text ul,
+  .hp-text ol {
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding-left: 20px;
+  }
+/* А5. КОНЕЦ Текст / приветствие (home_text)
+
+
+
+/* А6. НАЧАЛО Слайдбар
+   ---------------------------------------------------- */
+  .hp-slider {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .hp-block.hp-slider {
+    padding: 0;
+  }
+
+  .hp-slider__viewport {
+    width: 100%;
+    height: 240px;
+    overflow: hidden;
+  }
+
+  .hp-slider__track {
+    display: flex;
+    height: 100%;
+    transform: translateX(0);
+    transition: transform 350ms ease;
+    will-change: transform;
+  }
+
+  .hp-slider__slide {
+    flex: 0 0 100%;
+    height: 100%;
+  }
+
+  .hp-slider__link {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hp-slider__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .hp-slider__arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 42px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .hp-slider__arrow--prev {
+    left: 10px;
+  }
+
+  .hp-slider__arrow--next {
+    right: 10px;
+  }
+
+  .hp-slider__dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .hp-slider__dot {
+    width: 10px;
+    height: 10px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .hp-slider__dot.is-active {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  /* Убираем любые подсветки/фокусы Materialize у стрелок слайдера */
+  .hp-slider__arrow:hover,
+  .hp-slider__arrow:active,
+  .hp-slider__arrow:focus,
+  .hp-slider__arrow:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ВАЖНО: фиксируем фон во всех состояниях, чтобы не вылезал "зелёный focus" */
+  .hp-slider__arrow:hover,
+  .hp-slider__arrow:active,
+  .hp-slider__arrow:focus,
+  .hp-slider__arrow:focus-visible {
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .hp-slider__dot:active,
+  .hp-slider__dot:focus,
+  .hp-slider__dot:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  @media (max-width: 600px) {
+    .hp-slider__viewport {
+      height: 180px;
+    }
+
+    .hp-slider__arrow {
+      width: 36px;
+      height: 36px;
+      font-size: 22px;
+      line-height: 36px;
+    }
+  }
+
+
+
+/* А6. КОНЕЦ Слайдбар
+
+
+
+/* А7.1/A7.2 НАЧАЛО Горизонтальные ленты (Последние / Спецпредложения)
+   ---------------------------------------------------- */
+  .hp-block--latest,
+  .hp-block--special {
+    padding: 10px 30px 14px;
+  }
+
+  .hp-strip__head {
+    margin-bottom: 10px;
+  }
+
+  .hp-strip__title {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+    text-decoration: none;
+  }
+
+  .hp-strip__title:hover {
+    text-decoration: underline;
+  }
+
+  .hp-strip__wrap {
+    position: relative;
+  }
+
+  .hp-strip__track {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-right: 140px;
+  }
+
+  .hp-strip__track::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .hp-strip__item {
+    flex: 0 0 auto;
+    width: 200px;
+  }
+
+  .hp-strip__arrow {
+    position: absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 36px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    z-index: 5;
+  }
+
+  .hp-strip__arrow--prev {
+    left: 6px;
+  }
+
+  .hp-strip__arrow--next {
+    right: 6px;
+  }
+
+  .hp-strip__arrow--next.is-end {
+    width: auto;
+    padding: 0 14px;
+    border-radius: 18px;
+    background: var(--brand-accent) !important;
+    color: #ffffff !important;
+  }
+
+  .hp-strip__arrow--next.is-end .hp-strip__cta-text {
+    display: inline-block;
+  }
+
+  .hp-strip__arrow--next.is-end .hp-strip__cta-text,
+  .hp-strip__arrow--next.is-end .hp-strip__cta-icon {
+    color: #ffffff !important;
+  }
+
+  .hp-strip__cta-text {
+    display: none;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+
+  .hp-strip__cta-icon {
+    display: inline-block;
+    font-size: 22px;
+    line-height: 36px;
+  }
+
+  .hp-block--latest .product-card__footer .btn,
+  .hp-block--special .product-card__footer .btn {
+    font-size: 11px;
+  }
+
+  @media (max-width: 600px) {
+    .hp-strip__item {
+      width: 220px;
+    }
+
+    .hp-strip__arrow {
+      width: 34px;
+      height: 34px;
+      font-size: 20px;
+      line-height: 34px;
+    }
+  }
+
+  .hp-strip__arrow:not(.is-end):hover,
+  .hp-strip__arrow:not(.is-end):active,
+  .hp-strip__arrow:not(.is-end):focus,
+  .hp-strip__arrow:not(.is-end):focus-visible {
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+    -webkit-tap-highlight-color: transparent;
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .hp-strip__arrow--next.is-end,
+  .hp-strip__arrow--next.is-end:hover,
+  .hp-strip__arrow--next.is-end:active,
+  .hp-strip__arrow--next.is-end:focus,
+  .hp-strip__arrow--next.is-end:focus-visible {
+    background: var(--brand-accent) !important;
+    color: #ffffff !important;
+  }
+
+/* А7.1/A7.2 КОНЕЦ Горизонтальные ленты
+
+
+
+/* А7.3 НАЧАЛО Производители (бренды)
+   ---------------------------------------------------- */
+    .hp-block--brands {
+    padding: 10px 30px 14px;
+  }
+
+  .hp-brands__head {
+    margin-bottom: 10px;
+  }
+
+  .hp-brands__title {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+  }
+
+  .hp-brands__wrap {
+    position: relative;
+  }
+
+  .hp-brands__track {
+    --bm-brand-tile: 160px;
+    --bm-brand-gap: 6px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(4, var(--bm-brand-tile));
+    grid-auto-columns: var(--bm-brand-tile);
+    gap: var(--bm-brand-gap);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /*padding-right: 70px;*/
+  }
+
+  .hp-brands__track::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .hp-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    text-decoration: none;
+    color: #000000;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .hp-brand:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+  }
+
+  .hp-brand__logo {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    min-height: 0;
+  }
+
+  .hp-brand__logo img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  .hp-brand__name {
+    flex: 0 0 auto;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 6px;
+    font-size: 12px;
+    line-height: 1.15;
+    color: #000000;
+    overflow: hidden;
+  }
+
+  .hp-brands__arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 36px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    z-index: 5;
+  }
+
+  .hp-brands__arrow--prev {
+    left: 6px;
+  }
+
+  .hp-brands__arrow--next {
+    right: 6px;
+  }
+
+  .hp-brands__arrow:hover,
+  .hp-brands__arrow:active,
+  .hp-brands__arrow:focus,
+  .hp-brands__arrow:focus-visible {
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+    -webkit-tap-highlight-color: transparent;
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  @media (max-width: 600px) {
+    .hp-brands__track {
+      --bm-brand-tile: 110px;
+      --bm-brand-gap: 10px;
+    }
+
+    .hp-brands__arrow {
+      width: 34px;
+      height: 34px;
+      font-size: 20px;
+      line-height: 34px;
+    }
+  }
+
+/* А7.3 КОНЕЦ Производители (бренды)

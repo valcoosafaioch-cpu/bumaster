@@ -1,0 +1,470 @@
+{{ header }}
+
+{% macro render_category_tree(nodes, level) %}
+  {% if nodes %}
+    <ul class="bm-cat-level bm-cat-level-{{ level }}">
+      {% for node in nodes %}
+        <li class="bm-cat-item bm-cat-item-level-{{ level }}">
+          <label class="bm-cat-label">
+            <input type="checkbox"
+                   name="cat[]"
+                   class="bm-cat-checkbox js-filter-cat"
+                   data-bm-filter-category
+                   data-id="{{ node.category_id }}"
+                   data-category-id="{{ node.category_id }}"
+                   value="{{ node.category_id }}"
+                   {% if node.checked %}checked="checked"{% endif %}>
+            <span class="bm-cat-name">{{ node.name }}</span>
+          </label>
+
+          {% if node.children %}
+            {{ _self.render_category_tree(node.children, level + 1) }}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}
+
+<div class="container">
+  <form data-bm-filter-form>
+    {# A1: общий лейаут каталога с сайдбаром и основной колонкой #}
+    <div class="bm-all-layout">
+
+        {# A1: левый сайдбар для блоков категорий и брендов #}
+        <aside class="bm-all-sidebar">
+          <div class="bm-all-sidebar-inner">
+            <div class="bm-filter-block bm-filter-block--categories" id="filter-categories-block">
+              <div class="bm-filter-block__header">
+                <span class="bm-filter-block__title">Категории</span>
+                <button
+                  type="button"
+                  class="bm-filter-clear js-clear-cats"
+                  aria-label="Очистить выбранные категории">
+                  Сбросить фильтр
+                </button>
+              </div>
+              <div class="bm-filter-block__body">
+                {% if category_tree %}
+                  {{ _self.render_category_tree(category_tree, 1) }}
+                {% else %}
+                  <div class="bm-filter-empty">
+                    Категории временно недоступны
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+             <div class="bm-filter-block bm-filter-block--brands" id="filter-brands-block">
+                <div class="bm-filter-block__header">
+                  <span class="bm-filter-block__title">Производители</span>
+                  <button
+                    type="button"
+                    class="bm-filter-clear js-clear-brands"
+                    aria-label="Очистить выбранных производителей">
+                    Сбросить фильтр
+                  </button>
+                </div>
+
+                <div class="bm-filter-block__body bm-filter-block__body--brands">
+
+                {% if manufacturers %}
+                  <div class="bm-filter-brands-list">
+                    {% for manufacturer in manufacturers %}
+                      <label class="bm-filter-brand-item">
+                        <input
+                          type="checkbox"
+                          class="bm-filter-brand-checkbox js-filter-manufacturer"
+                          name="manufacturer_id[]"
+                          value="{{ manufacturer.manufacturer_id }}"
+                          {% if filter_manufacturer_ids is defined and manufacturer.manufacturer_id in filter_manufacturer_ids %}
+                            checked="checked"
+                          {% endif %}
+                        >
+
+                        {% if manufacturer.thumb %}
+                          <span class="bm-filter-brand-icon">
+                            <img
+                              src="{{ manufacturer.thumb }}"
+                              alt="{{ manufacturer.name }}"
+                              loading="lazy"
+                              decoding="async">
+                          </span>
+                        {% endif %}
+
+                        <span class="bm-filter-brand-name">
+                          {{ manufacturer.name }}
+                        </span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="bm-filter-empty">
+                    Товары не найдены
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+          </div>
+        </aside>
+
+        {# A1: правая часть — основной контент каталога #}
+        <div class="bm-all-main">
+
+          {# A1: обёртка для счётчика найденных товаров #}
+          <div class="bm-results-wrapper" id="bm-results-wrapper">
+          <div class="row">
+            <div class="col s12">
+              <em>{{ text_found }}</em>
+            </div>
+          </div>
+        </div>
+
+        {# A1: верхняя панель фильтров #}
+        <div class="row bm-top-filter-row">
+          <div class="col s12">
+            <div class="bm-top-filter-bar" id="top-filter-bar">
+              <div class="bm-top-filter-bar__inner">
+                {# чекбоксы: отсутствующие / новинки / скидки #}
+                
+                <div class="bm-top-filter-row bm-top-filter-row--toggles">
+                  <div class="bm-top-filter-item bm-top-filter-item--new">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="new"
+                        value="1"
+                        class="browser-default js-filter-new"
+                        {% if show_new %}checked="checked"{% endif %}>
+                      <span>Новинки</span>
+                    </label>
+                  </div>
+
+                  <div class="bm-top-filter-item bm-top-filter-item--discount">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="discount"
+                        value="1"
+                        class="browser-default js-filter-discount"
+                        {% if only_discount %}checked="checked"{% endif %}>
+                      <span>Со скидками</span>
+                    </label>
+                  </div>
+
+                  <div class="bm-top-filter-item bm-top-filter-item--kids">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="kids"
+                        value="1"
+                        class="browser-default js-filter-kids"
+                        {% if kids %}checked="checked"{% endif %}>
+                      <span>Для начинающих</span>
+                    </label>
+                  </div>
+
+                  <div class="bm-top-filter-item bm-top-filter-item--accessories">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="accessories"
+                        value="1"
+                        class="browser-default js-filter-accessories"
+                        {% if accessories %}checked="checked"{% endif %}>
+                      <span>С аксессуарами</span>
+                    </label>
+                  </div>
+
+                  <div class="bm-top-filter-item bm-top-filter-item--oos">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="archive"
+                        value="1"
+                        class="browser-default js-filter-archive"
+                        {% if show_archive %}checked="checked"{% endif %}>
+                      <span>Показывать отсутствующие</span>
+                    </label>
+                  </div>
+
+                  <div class="bm-top-filter-item bm-top-filter-item--reset">
+                    <button
+                      type="button"
+                      class="bm-filter-clear js-top-filters-reset">
+                      Сбросить фильтры
+                    </button>
+                  </div>
+                </div> {# /bm-top-filter-row--toggles #}
+
+                <div class="bm-top-filter-row bm-top-filter-row--attrs">
+                  {# F6: Масштаб #}
+                  {% set scale_selected_count = (filter_scales is defined) ? filter_scales|length : 0 %}
+                  <div class="bm-top-filter-item bm-top-filter-item--attr bm-top-filter-item--scale"
+                      data-filter="scale">
+                    <div class="bm-top-filter-item__label">Масштаб</div>
+
+                    <button type="button"
+                            class="bm-top-filter-trigger js-attr-filter-trigger"
+                            data-filter="scale">
+                      <span class="bm-top-filter-trigger__text js-attr-filter-caption-scale">
+                        {% if scale_selected_count %}
+                          Выбрано: {{ scale_selected_count }}
+                        {% else %}
+                          --Выберите--
+                        {% endif %}
+                      </span>
+                      <span class="bm-top-filter-trigger__icon"></span>
+                    </button>
+
+                    {% if scales %}
+                      <div class="bm-top-filter-dropdown js-attr-filter-dropdown" data-filter="scale">
+                        {% for value in scales %}
+                          <label class="bm-top-filter-option">
+                            <input
+                              type="checkbox"
+                              name="scale[]"
+                              class="js-filter-scale"
+                              value="{{ value }}"
+                              {% if filter_scales is defined and value in filter_scales %}checked="checked"{% endif %}>
+                            <span class="bm-top-filter-option__label">{{ value }}</span>
+                          </label>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {# F7: Сложность #}
+                  {% set level_selected_count = (filter_levels is defined) ? filter_levels|length : 0 %}
+                  <div class="bm-top-filter-item bm-top-filter-item--attr bm-top-filter-item--level"
+                      data-filter="level">
+                    <div class="bm-top-filter-item__label">Сложность</div>
+
+                    <button type="button"
+                            class="bm-top-filter-trigger js-attr-filter-trigger"
+                            data-filter="level">
+                      <span class="bm-top-filter-trigger__text js-attr-filter-caption-level">
+                        {% if level_selected_count %}
+                          Выбрано: {{ level_selected_count }}
+                        {% else %}
+                          --Выберите--
+                        {% endif %}
+                      </span>
+                      <span class="bm-top-filter-trigger__icon"></span>
+                    </button>
+
+                    {% if levels %}
+                      <div class="bm-top-filter-dropdown js-attr-filter-dropdown" data-filter="level">
+                        {% for value in levels %}
+                          <label class="bm-top-filter-option">
+                            <input
+                              type="checkbox"
+                              name="level[]"
+                              class="js-filter-level"
+                              value="{{ value }}"
+                              {% if filter_levels is defined and value in filter_levels %}checked="checked"{% endif %}>
+                            <span class="bm-top-filter-option__label">{{ value }}</span>
+                          </label>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {# F8: Исторический период #}
+                  {% set period_selected_count = (filter_periods is defined) ? filter_periods|length : 0 %}
+                  <div class="bm-top-filter-item bm-top-filter-item--attr bm-top-filter-item--period"
+                      data-filter="period">
+                    <div class="bm-top-filter-item__label">Период</div>
+
+                    <button type="button"
+                            class="bm-top-filter-trigger js-attr-filter-trigger"
+                            data-filter="period">
+                      <span class="bm-top-filter-trigger__text js-attr-filter-caption-period">
+                        {% if period_selected_count %}
+                          Выбрано: {{ period_selected_count }}
+                        {% else %}
+                          --Выберите--
+                        {% endif %}
+                      </span>
+                      <span class="bm-top-filter-trigger__icon"></span>
+                    </button>
+
+                    {% if periods %}
+                      <div class="bm-top-filter-dropdown js-attr-filter-dropdown" data-filter="period">
+                        {% for value in periods %}
+                          <label class="bm-top-filter-option">
+                            <input
+                              type="checkbox"
+                              name="period[]"
+                              class="js-filter-period"
+                              value="{{ value }}"
+                              {% if filter_periods is defined and value in filter_periods %}checked="checked"{% endif %}>
+                            <span class="bm-top-filter-option__label">{{ value }}</span>
+                          </label>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {# F9: Нация #}
+                  {% set nation_selected_count = (filter_nations is defined) ? filter_nations|length : 0 %}
+                  <div class="bm-top-filter-item bm-top-filter-item--attr bm-top-filter-item--nation"
+                      data-filter="nation">
+                    <div class="bm-top-filter-item__label">Нация</div>
+
+                    <button type="button"
+                            class="bm-top-filter-trigger js-attr-filter-trigger"
+                            data-filter="nation">
+                      <span class="bm-top-filter-trigger__text js-attr-filter-caption-nation">
+                        {% if nation_selected_count %}
+                          Выбрано: {{ nation_selected_count }}
+                        {% else %}
+                          --Выберите--
+                        {% endif %}
+                      </span>
+                      <span class="bm-top-filter-trigger__icon"></span>
+                    </button>
+
+                    {% if nations %}
+                      <div class="bm-top-filter-dropdown js-attr-filter-dropdown" data-filter="nation">
+                        {% for value in nations %}
+                          <label class="bm-top-filter-option">
+                            <input
+                              type="checkbox"
+                              name="nation[]"
+                              class="js-filter-nation"
+                              value="{{ value }}"
+                              {% if filter_nations is defined and value in filter_nations %}checked="checked"{% endif %}>
+                            <span class="bm-top-filter-option__label">{{ value }}</span>
+                          </label>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div> {# /bm-top-filter-row--attrs #}
+              </div>  {# /bm-top-filter-bar__inner #}
+
+                <div class="bm-top-filter-service-row">
+                  <div class="bm-top-filter-service-item">
+                    <div class="bm-top-filter-item__label">Сортировка</div>
+                    <select id="sort-select"
+                            class="browser-default bm-top-filter-service-select"
+                            onchange="onSortChange(this.value)">
+                      {% for s in sorts %}
+                        <option value="{{ s.value }}" {% if sort == s.value %}selected{% endif %}>
+                          {{ s.text }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="bm-top-filter-service-item">
+                    <div class="bm-top-filter-item__label">Показывать на странице:</div>
+                    <select id="limit-select"
+                            class="browser-default bm-top-filter-service-select"
+                            onchange="onLimitChange(this.value)">
+                      {% for l in limits %}
+                        <option value="{{ l }}" {% if limit == l %}selected{% endif %}>
+                          {{ l }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                </div>
+            </div>            
+          </div>          
+        </div>
+
+              
+
+        
+
+        {# === BEGIN: BLOCK A listing (plan-compliant) === #}
+        {# A1: обёртка для списка товаров, которую будем обновлять AJAX’ом #}
+        <div class="bm-products-wrapper" id="bm-products-wrapper">
+          <div class="products-grid">
+          {% if products %}
+            {% for product in products %}
+
+
+
+            <div class="product-col">
+              {% include 'materialize/template/product/_card.twig' with { product: product } %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>Товары не найдены.</p>
+        {% endif %}
+        </div>
+      </div>
+      {# === END: BLOCK A listing (plan-compliant) === #}
+
+          {# A1: обёртка для пагинации (будем обновлять AJAX’ом) #}
+          <div class="bm-pagination-wrapper" id="bm-pagination-wrapper">
+            <div class="row">
+              <div class="col s12">
+                {% if total_pages > 1 %}
+          <ul class="pagination">
+            {% for p in pages %}
+              {% if p.is_ellipsis %}
+                <li class="disabled"><a href="#!">{{ p.label }}</a></li>
+              {% else %}
+                <li class="{% if p.disabled %}disabled{% endif %} {% if p.active %}active{% endif %}">
+                  {% if p.disabled or p.active %}
+                    <span class="page-link">{{ p.label }}</span>
+                  {% else %}
+                    <a class="page-link" href="{{ p.url }}">{{ p.label }}</a>
+                  {% endif %}
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
+              </div>
+            </div>
+          </div>
+
+      </div> {# .bm-all-main #}
+    </div> {# .bm-all-layout #}
+  </form>
+</div>
+
+<script>
+  function updateQuery(param, value) {
+    const url = new URL(window.location.href);
+    if (value === null || value === '' ) {
+      url.searchParams.delete(param);
+    } else {
+      url.searchParams.set(param, value);
+    }
+    // При смене параметров — всегда сбрасываем на первую страницу
+    url.searchParams.set('page','1');
+    window.location.href = url.toString();
+  }
+  function onSortChange(v){ updateQuery('sort', v); }
+  function onLimitChange(v){ updateQuery('limit', v); }
+</script>
+
+
+{# FAB-навигация страницами с текстом #}
+{% if total_pages > 1 %}
+  <div class="page-fab-wrap">
+    {% if prev_url %}
+      <a href="{{ prev_url }}" class="page-fab page-fab--prev waves-effect" aria-label="Предыдущая страница" title="Предыдущая страница">
+        <span class="page-fab__icon">‹</span>
+        <span class="page-fab__label">Пред. страница</span>
+      </a>
+    {% endif %}
+    {% if next_url %}
+      <a href="{{ next_url }}" class="page-fab page-fab--next waves-effect" aria-label="Следующая страница" title="Следующая страница">
+        <span class="page-fab__label">След. страница</span>
+        <span class="page-fab__icon">›</span>
+      </a>
+    {% endif %}
+  </div>
+{% endif %}
+
+{# Обработчик «В корзину» перенесён во внешний JS (script.js). Этот блок оставлен пустым намеренно. #}
+
+{{ footer }}

@@ -1,0 +1,30 @@
+.htaccess
+config-dist.php
+index.php
+php.ini
+robots.txt
+
+# Секреты OpenCart
+config.php
+admin/config.php
+
+# Локальные и временные файлы
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+image/
+system/
+
+# Архивы и дампы
+*.zip
+*.tar
+*.gz
+*.sql
+
+# IDE / editor
+.idea/
+.vscode/

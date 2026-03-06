@@ -1,0 +1,132 @@
+{# catalog/view/theme/materialize/template/product/_card.twig #}
+{# Универсальная карточка товара для каталога / поиска и т.п. #}
+
+{% set is_out = (product.quantity is defined and (product.quantity + 0) <= 0) %}
+
+<article class="product-card{% if is_out %} is-out{% endif %}">
+
+  {# 1) IMAGE #}
+  <div class="product-card__image">
+    <a href="{{ product.href }}" title="{{ product.name }}">
+      <img src="{{ product.thumb }}" alt="{{ product.name }}" loading="lazy" decoding="async">
+    </a>
+
+    {# Основной бейдж (Новинка / Начинающим и т.п.) #}
+    {% if product.badge1 %}
+      <div class="product-ribbon {{ product.badge1.class }}">
+        <span>{{ product.badge1.text }}</span>
+      </div>
+    {% endif %}
+
+    {# F1: плашка "Скидка X %" (внизу справа, над "С аксессуарами") #}
+    {% if product.discount_percent and product.discount_percent > 0 %}
+      <div class="product-flag product-flag--discount">
+        <span>Скидка {{ product.discount_percent }}%</span>
+      </div>
+    {% endif %}
+
+    {# Пояс «С аксессуарами» #}
+    {% if product.has_accessories %}
+      <div class="product-belt product-belt--accessories">
+        <span>С аксессуарами</span>
+      </div>
+    {% endif %}
+
+    {# Плашка "Есть варианты" #}
+    {% if product.has_variants %}
+      <div class="product-flag product-flag--variants" aria-label="Есть варианты">
+        <svg class="flag-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm9.2 2.9l-1.9-.3a7.4 7.4 0 0 0-.6-1.4l1.1-1.6a.8.8 0 0 0-.1-1.1l-1.3-1.3a.8.8 0 0 0-1.1-.1L16.7 6a7.4 7.4 0 0 0-1.4-.6l-.3-1.9A.8.8 0 0 0 13.3 2h-1.9a.8.8 0 0 0-.8.7l-.3 1.9c-.5.2-1 .4-1.4.6L6.4 3.7a.8.8 0 0 0-1.1.1L4 5.1a.8.8 0 0 0-.1 1.1L5 7.8c-.2.5-.5.9-.6 1.4L2.5 9.5a.8.8 0 0 0-.7.8v1.9c0 .4.3.7.7.8l1.9.3c.2.5.4 1 .6 1.4l-1.1 1.6a.8.8 0 0 0 .1 1.1l1.3 1.3c.3.3.8.3 1.1.1l1.6-1.1c.5.2.9.5 1.4.6l.3 1.9c.1.4.4.7.8.7h1.9c.4 0 .7-.3.8-.7l.3-1.9c.5-.2 1-.4 1.4-.6l1.6 1.1c.3.2.8.2 1.1-.1l1.3-1.3c.2-.3.3-.8.1-1.1l-1.1-1.6c.2-.5.5-.9.6-1.4l1.9-.3c.4-.1.7-.4.7-.8v-1.9a.8.8 0 0 0-.7-.8z"/>
+        </svg>
+        <span>Есть варианты</span>
+      </div>
+    {% endif %}
+  </div>
+
+  {# 2) CONTENT #}
+  <div class="product-card__content">
+    <a href="{{ product.href }}" class="product-card__title">{{ product.name }}</a>
+
+    <div class="product-card__meta-list">
+      {# 1) Производитель, № модели #}
+      {% if product.manufacturer or product.model %}
+        <div class="product-card__meta-item product-card__meta-brand">
+          {% if product.manufacturer_icon %}
+            <img class="brand-icon"
+                 src="{{ product.manufacturer_icon }}"
+                 alt="{{ product.manufacturer }}"
+                 loading="lazy"
+                 decoding="async">
+          {% endif %}
+          {% if product.manufacturer %}{{ product.manufacturer }}{% endif %}{% if product.manufacturer and product.model %}, {% endif %}{% if product.model %}{{ product.model }}{% endif %}
+        </div>
+      {% endif %}
+
+      {# Комплектация #}
+      {% if product.completeness_text %}
+        <div class="product-card__meta-item">
+          Комплектация:
+          <span class="meta-val meta-val--completeness">{{ product.completeness_text }}</span>
+        </div>
+      {% endif %}
+
+      {# Примечание #}
+      {% if product.note_text %}
+        <div class="product-card__meta-item product-card__meta-item--note">
+          <span class="meta-label">Примечание:</span>
+          <span class="meta-val meta-val--note">{{ product.note_text }}</span>
+        </div>
+      {% endif %}
+
+      {# Масштаб #}
+      {% if product.scale %}
+        <div class="product-card__meta-item">Масштаб: {{ product.scale }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# 3) FOOTER (F1) #}
+  <div class="product-card__footer">
+    {% if not product.is_out %}
+      <div class="footer-col footer-col--price">
+        {% if product.special_clean %}
+          <span class="price-new">{{ product.special_clean }}</span>
+          <span class="price-old">{{ product.price_old_clean }}</span>
+        {% elseif product.price_clean %}
+          <span class="price-normal">{{ product.price_clean }}</span>
+        {% endif %}
+      </div>
+
+      <div class="footer-col footer-col--btn">
+        {% if product.is_out %}
+          <button class="btn btn-primary" disabled>Недоступно</button>
+        {% elseif product.has_required_options %}
+          <a class="btn btn-primary" href="{{ product.href }}">Подробнее</a>
+        {% else %}
+          <div class="bm-cart-ctrl"
+               data-pid="{{ product.product_id }}"
+               data-key="{{ product.cart_key }}"
+               data-max="{{ product.max_qty }}"
+               data-qty="{{ product.in_cart_qty }}">
+            {% if product.in_cart_qty > 0 %}
+              <button type="button" class="btn btn-primary bm-inbtn">
+                <span class="bm-minus" aria-label="Убавить" role="button">−</span>
+                <span class="bm-num">{{ product.in_cart_qty }}</span>
+                <span class="bm-plus {% if product.in_cart_qty >= product.max_qty %}is-disabled{% endif %}"
+                      aria-label="Добавить" role="button">+</span>
+              </button>
+            {% else %}
+              <button type="button" class="btn btn-primary bm-add">В корзину</button>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <div class="footer-col footer-col--unavailable">
+        <span class="price-empty">Недоступно</span>
+      </div>
+    {% endif %}
+  </div>
+
+</article>

@@ -1,0 +1,991 @@
+{{ header }}
+
+<main id="product-page" class="container">
+  <div class="product-wrapper">
+    
+    <!-- === Блок A. Изображения === -->
+    <section class="pp-images">
+      <div class="pp-images-wrap">
+        <aside class="pp-thumbs" aria-label="Миниатюры изображений">
+          <button type="button" class="pp-thumbs-btn pp-thumbs-up" aria-label="Вверх">▲</button>
+          <div class="pp-thumbs-scroll">
+            <img class="pp-thumb is-active" src="{{ thumb_small }}" data-large="{{ thumb_large }}" alt="{{ name }}">
+            {% for img in images %}
+              <img class="pp-thumb" src="{{ img.thumb }}" data-large="{{ img.large }}" alt="{{ img.alt }}">
+            {% endfor %}
+          </div>
+          <button type="button" class="pp-thumbs-btn pp-thumbs-down" aria-label="Вниз">▼</button>
+        </aside>
+
+        <div class="pp-mainimg">
+
+          <div class="pp-aspect-4x5">
+            <img id="pp-main-photo" class="pp-main-photo" src="{{ thumb_large }}" alt="{{ name }}">
+            <button type="button" class="pp-main-nav pp-prev" aria-label="Предыдущее">‹</button>
+            <button type="button" class="pp-main-nav pp-next" aria-label="Следующее">›</button>
+
+            {# --- ВСЕ плашки строго поверх фото и строго ВНУТРИ .pp-aspect-4x5 --- #}
+            {# Плашки/ленты поверх изображения #}
+            <div class="pp-flags" data-flags-for="main-photo">
+              {# Левая диагональная лента под 45°: приоритетная (Нет в наличии → Новинка → Начинающим) #}
+              {% if badge_text and badge_type in ['outofstock','new','beginner'] %}
+                <div class="pp-strap pp-strap--{{ badge_type }}">{{ badge_text }}</div>
+              {% endif %}
+
+              {# Правая верхняя — «Есть варианты» #}
+              {% if has_variants %}
+                <div class="pp-flag pp-flag--variants" aria-label="Есть варианты" title="Есть варианты">
+                  Есть варианты
+                </div>
+              {% endif %}
+
+              {# Нижняя полоса — «С аксессуарами» (кремовая) #}
+              {% if has_accessories %}
+                <div class="pp-accessories">С аксессуарами</div>
+              {% endif %}
+            </div>
+          </div>       
+        </div>
+      </div>
+    </section>
+
+    <!-- === Блок B. Характеристики === -->
+    <section class="pp-info">
+      <h1 class="pp-title">{{ name }}</h1>
+      {% if category_display %}
+        <p class="pp-category"><em>{{ category_display|replace({', (':' ('}) }}</em></p>
+      {% endif %}
+
+      <div class="pp-brand-model">
+        <div class="pp-brand-icon">
+          {% if brand_icon %}<img src="{{ brand_icon }}" alt="{{ manufacturer }}">{% endif %}
+        </div>
+        <div class="pp-brand-text">
+          <div class="pp-brand">{{ manufacturer }}</div>
+          <div class="pp-model">{{ model }}</div>
+        </div>
+      </div>
+
+      <div class="pp-attrs">
+        {% if pp_attr.mag_format %}<p><strong>Формат журнала:</strong> {{ pp_attr.mag_format }}</p>{% endif %}
+        {% if pp_attr.scale %}<p><strong>Масштаб:</strong> {{ pp_attr.scale }}</p>{% endif %}
+        {% if pp_attr.difficulty_text %}<p><strong>Сложность:</strong> {{ pp_attr.difficulty_text }}</p>{% endif %}
+        {% if pp_attr.model_length_cm %}<p><strong>Длина модели (см):</strong> {{ pp_attr.model_length_cm }}</p>{% endif %}
+        {% if pp_attr.note %}<p><strong>Примечание:</strong> <span class="pp-accent">{{ pp_attr.note }}</span></p>{% endif %}
+        {% if pp_attr.kit %}<p><strong>Комплектация:</strong> <span class="pp-accent">{{ pp_attr.kit }}</span></p>{% endif %}
+        {% if pp_attr.material %}<p><strong>Материал:</strong> {{ pp_attr.material }}</p>{% endif %}
+        {% if pp_attr.language %}<p><strong>Язык:</strong> {{ pp_attr.language }}</p>{% endif %}
+        {% if pp_attr.manufacturer_country %}<p><strong>Страна-изготовитель:</strong> {{ pp_attr.manufacturer_country }}</p>{% endif %}
+        {% if pp_attr.period %}<p><strong>Исторический период:</strong> {{ pp_attr.period }}</p>{% endif %}
+        {% if pp_attr.nation %}<p><strong>Нация:</strong> {{ pp_attr.nation }}</p>{% endif %}
+      </div>
+
+      {# === Цена/корзина — теперь внутри .pp-info, под характеристиками === #}
+      <div class="pp-buy">
+        {% if not is_out %}
+          <div class="pp-price">
+            {% if discount_percent > 0 %}
+              <span class="pp-discount-badge">−{{ discount_percent }}%</span>
+            {% endif %}
+
+            {% if special_clean %}
+              <span class="pp-price-new">{{ special_clean }}&nbsp;₽</span>
+              <span class="pp-price-old">{{ price_clean }}&nbsp;₽</span>
+            {% else %}
+              <span class="pp-price-current">{{ price_clean }}&nbsp;₽</span>
+            {% endif %}
+          </div>
+
+          <div class="bm-cart-ctrl"
+              data-pid="{{ product_id }}"
+              data-key="{{ cart_key }}"
+              data-max="{{ max_qty }}"
+              data-qty="{{ in_cart_qty }}">
+
+            {# Счётчик — показываем, если qty > 0 #}
+            <button type="button"
+                    class="btn btn-primary bm-inbtn {% if in_cart_qty == 0 %}is-hidden{% endif %}">
+              <span class="bm-minus" aria-label="Убавить" role="button">−</span>
+              <span class="bm-num">{{ in_cart_qty ?: 0 }}</span>
+              <span class="bm-plus {% if in_cart_qty >= max_qty %}is-disabled{% endif %}"
+                    aria-label="Добавить" role="button">+</span>
+            </button>
+
+            {# «В корзину» — показываем, если qty == 0 #}
+            <button type="button"
+                    class="btn btn-primary bm-add {% if in_cart_qty > 0 %}is-hidden{% endif %}">
+              В корзину
+            </button>
+          </div>
+        {% else %}
+          <div class="pp-out">Нет в наличии</div>
+        {% endif %}
+      </div>
+    </section>
+
+        <!-- === Блок C. Варианты === -->
+        {% if variants_show and variants %}
+        <section class="pp-variants" aria-label="Варианты и комплектации">
+          <h2 class="pp-variants__title">Варианты и комплектации</h2>
+
+          <div class="pp-variants-list">
+            {% for v in variants %}
+              {# базовый набор классов #}
+              {% set classes = ['pp-variant-btn'] %}
+
+              {# текущий / не текущий, в наличии / нет #}
+              {% if v.is_current %}
+                {% set classes = classes|merge(['pp-variant-btn--current']) %}
+                {% if not v.in_stock %}
+                  {% set classes = classes|merge(['pp-variant-btn--disabled']) %}
+                {% endif %}
+              {% else %}
+                {% if v.in_stock %}
+                  {% set classes = classes|merge(['pp-variant-btn--clickable']) %}
+                {% else %}
+                  {% set classes = classes|merge(['pp-variant-btn--disabled']) %}
+                {% endif %}
+              {% endif %}
+
+              {# Кликабельный вариант (другой товар в наличии) #}
+              {% if v.href and v.in_stock and not v.is_current %}
+                <a href="{{ v.href }}" class="{{ classes|join(' ') }}">
+                  <span class="pp-variant-title">{{ v.title }}</span>
+                </a>
+
+              {# Некликабельный вариант (текущий, в т.ч. "нет в наличии") #}
+              {% else %}
+                <div class="{{ classes|join(' ') }}">
+                  <span class="pp-variant-title">{{ v.title }}</span>
+
+                  {# Текущий вариант без остатка — вторая строка "Нет в наличии" #}
+                  {% if v.is_current and not v.in_stock %}
+                    <span class="pp-variant-status">Нет в наличии</span>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        {# === Блок D. Описание товара === #}
+        {% if description %}
+        <section class="pp-desc-section" aria-labelledby="pp-desc-title">
+          <h2 class="pp-desc-title" id="pp-desc-title">Описание</h2>
+
+          <div class="pp-desc-text is-collapsed" id="pp-desc-text">
+            {{ description }}
+          </div>
+
+          <button type="button"
+                  class="pp-desc-toggle"
+                  id="pp-desc-toggle"
+                  aria-expanded="false">
+            <span class="pp-desc-toggle-text">Показать полностью</span>
+            <span class="pp-desc-toggle-icon" aria-hidden="true">▼</span>
+          </button>
+        </section>
+        {% endif %}
+
+        {# === Блок E. Отзывы и вопросы === #}
+        <section class="pp-feedback">
+          <div class="pp-feedback-tabs" role="tablist" aria-label="Отзывы и вопросы">
+            <button type="button"
+                    class="pp-feedback-tab{% if not question_error %} is-active{% endif %}"
+                    role="tab"
+                    aria-controls="pp-tab-reviews"
+                    data-tab-target="pp-tab-reviews">
+              Отзывы{% if reviews_count is defined %} ({{ reviews_count }}){% endif %}
+            </button>
+
+            <button type="button"
+                    class="pp-feedback-tab{% if question_error %} is-active{% endif %}"
+                    role="tab"
+                    aria-controls="pp-tab-questions"
+                    data-tab-target="pp-tab-questions">
+              Вопросы{% if questions_count is defined %} ({{ questions_count }}){% endif %}
+            </button>
+          </div>
+
+          <div class="pp-feedback-panels">
+            {# --- Вкладка: Отзывы --- #}
+            <div id="pp-tab-reviews"
+              class="pp-feedback-panel{% if not question_error %} is-active{% endif %}"
+              role="tabpanel"
+              aria-labelledby="pp-tab-reviews">
+
+              {% if not can_write_feedback %}
+                <p class="pp-feedback-note">
+                  Чтобы оставить отзыв,
+                  <a href="{{ login_link }}">войдите</a> в личный кабинет
+                  или <a href="{{ register_link }}">зарегистрируйтесь</a>.
+                </p>
+
+              {% elseif is_admin_feedback_user %}
+                {# Админ: формы отзывов не показываем вообще #}
+                <p class="pp-feedback-note">
+                  Вы авторизованы как администратор магазина.  
+                  Здесь вы можете отвечать на отзывы покупателей.
+                </p>
+
+              {% else %}
+
+                {% if review_error %}
+                  <p class="pp-feedback-error">{{ review_error }}</p>
+                {% elseif review_success %}
+                  <p class="pp-feedback-success">{{ review_success }}</p>
+                {% endif %}
+
+                {# Нужно ли открывать форму сразу #}
+                {% set review_has = has_user_review %}
+                {% set review_form_open = (not review_has) or (review_error) %}
+
+                {# Значение текста: при ошибке — из формы, иначе из существующего отзыва (если он есть) #}
+                {% set review_text_value = review_form.text %}
+                {% if not review_text_value and review_has and user_review.text is defined %}
+                  {% set review_text_value = user_review.text %}
+                {% endif %}
+
+                {# Текущая оценка #}
+                {% set current_rating = review_form.rating %}
+                {% if review_has and user_review.rating is not null %}
+                  {% set current_rating = user_review.rating %}
+                {% endif %}
+
+                {% if review_has and not review_error %}
+                  <p class="pp-feedback-note">
+                    Вы уже оставили отзыв об этом товаре.
+                    <button type="button"
+                            class="pp-feedback-edit-btn"
+                            id="pp-review-edit-toggle">
+                      Дополнить отзыв
+                    </button>
+                  </p>
+                {% endif %}
+
+                <form class="pp-feedback-form pp-feedback-form--review{% if review_has and not review_form_open %} is-collapsed{% endif %}"
+                      method="post"
+                      action="">
+                  <input type="hidden" name="feedback_type" value="review">
+                  <input type="hidden" name="variant_title" value="{{ current_variant_title }}">
+
+                  <div class="pp-feedback-form-row">
+                    <span class="pp-feedback-label">Ваша оценка:</span>
+
+                    <div class="pp-feedback-rating-inputs"
+                      data-current-rating="{{ current_rating }}"
+                      data-min-rating="{{ review_has ? current_rating : 0 }}">
+                      {% for star in 1..5 %}
+                        <button type="button"
+                                class="pp-star-btn{% if current_rating >= star %} is-filled{% endif %}"
+                                data-star="{{ star }}"
+                                aria-label="{{ star }} из 5">
+                          ★
+                        </button>
+                      {% endfor %}
+
+                      <input type="hidden"
+                            id="pp-review-rating"
+                            name="review_rating"
+                            value="{{ current_rating }}">
+                    </div>
+                  </div>
+
+                  <div class="pp-feedback-form-row">
+                    <label class="pp-feedback-label" for="review_text">Ваш отзыв:</label>
+                    <textarea id="review_text"
+                              name="review_text"
+                              rows="5"
+                              class="pp-feedback-textarea"
+                              maxlength="3000">{{ review_text_value }}</textarea>
+                    <p class="pp-feedback-help">Максимум 3000 символов.</p>
+                  </div>
+
+                  <div class="pp-feedback-form-actions">
+                    <button type="submit" class="btn btn-primary">
+                      {% if review_has %}Сохранить отзыв{% else %}Оставить отзыв{% endif %}
+                    </button>
+                  </div>
+                </form>
+              {% endif %}
+
+              {% if reviews is defined and reviews %}
+                <ul class="pp-feedback-list pp-feedback-list--reviews">
+                  {% for r in reviews %}
+                    <li class="pp-feedback-item pp-feedback-item--review">
+                      <div class="pp-feedback-row">
+                        <div class="pp-feedback-col-left">
+                          {% if r.rating is not null %}
+                            <div class="pp-feedback-stars">
+                              {% for i in 1..5 %}
+                                <span class="pp-star-static{% if i <= r.rating %} is-filled{% endif %}">★</span>
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+
+                          <div class="pp-feedback-meta-line pp-feedback-meta-date">
+                            {{ r.date_added }}
+                          </div>
+                        </div>
+
+                        <div class="pp-feedback-col-right">
+                          {# от кого #}
+                          <div class="pp-feedback-meta-line pp-feedback-meta-top">
+                            <div class="pp-feedback-meta-author">
+                              {{ r.name }}
+                            </div>
+
+                            {% if r.source_icon and r.source_url %}
+                              <a class="pp-feedback-source"
+                                 href="{{ r.source_url }}"
+                                 target="_blank"
+                                 rel="nofollow noopener"
+                                 title="Смотреть отзыв в источнике: {{ r.source_title }}">
+                                <img class="pp-feedback-source__icon" src="{{ r.source_icon }}" alt="{{ r.source_title }}">
+                                <span class="pp-feedback-source__ext" aria-hidden="true">↗</span>
+                              </a>
+                            {% endif %}
+                          </div>
+
+                          {# вариант / комплектация сразу под автором #}
+                          {% if r.variant_title %}
+                            <div class="pp-feedback-meta-line pp-feedback-meta-variant">
+                              {{ r.variant_title }}
+                            </div>
+                          {% endif %}
+
+                          {# текст отзыва #}
+                          <div class="pp-feedback-text">
+                            {{ r.text }}
+                          </div>
+
+                          {% if r.images %}
+                            <div class="pp-feedback-images">
+                              {% for img in r.images %}
+                                <img src="{{ img.image }}" alt="Фото отзыва" class="pp-feedback-thumb">
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+
+                           {# Уже сохранённый ответ магазина — виден всем #}
+                          {% if r.admin_reply %}
+                            <div class="pp-feedback-reply">
+                              <div class="pp-feedback-reply-header">
+                                <span class="pp-feedback-reply-badge">Бумажный Мастер</span>
+
+                                {# Кнопка для админа: открыть форму редактирования #}
+                                {% if is_admin_feedback_user and (r.source_code is empty) %}
+                                  <button type="button"
+                                          class="pp-feedback-edit-btn js-admin-reply-toggle"
+                                          data-target="admin-reply-review-{{ r.feedback_id }}">
+                                    Изменить ответ
+                                  </button>
+                                {% endif %}
+                              </div>
+                              <div class="pp-feedback-reply-text">
+                                {{ r.admin_reply.text }}
+                              </div>
+                            </div>
+                          {% elseif is_admin_feedback_user and (r.source_code is empty) %}
+                            {# Отзыва магазина нет — показываем кнопку "Ответить" #}
+                            <button type="button"
+                                    class="pp-feedback-edit-btn js-admin-reply-toggle"
+                                    data-target="admin-reply-review-{{ r.feedback_id }}">
+                              Ответить
+                            </button>
+                          {% endif %}
+
+                          {% if is_admin_feedback_user and (r.source_code is empty) %}
+                            <form id="admin-reply-review-{{ r.feedback_id }}"
+                                  class="pp-feedback-form pp-feedback-form--admin-reply is-collapsed"
+                                  method="post"
+                                  action="">
+                              <input type="hidden" name="feedback_type" value="admin_reply">
+                              <input type="hidden" name="parent_id" value="{{ r.feedback_id }}">
+                              <input type="hidden" name="reply_id"
+                                    value="{% if r.admin_reply %}{{ r.admin_reply.feedback_id }}{% else %}0{% endif %}">
+
+                              <div class="pp-feedback-form-row">
+                                <label class="pp-feedback-label"
+                                      for="admin_reply_review_{{ r.feedback_id }}">
+                                  Ответ магазина:
+                                </label>
+                                <textarea id="admin_reply_review_{{ r.feedback_id }}"
+                                          name="admin_reply_text"
+                                          rows="3"
+                                          class="pp-feedback-textarea">{% if r.admin_reply %}{{ r.admin_reply.text }}{% endif %}</textarea>
+                              </div>
+
+                              <div class="pp-feedback-form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                  {% if r.admin_reply %}Сохранить ответ{% else %}Ответить{% endif %}
+                                </button>
+                              </div>
+                            </form>
+                          {% endif %}
+
+                        </div>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="pp-feedback-empty">
+                  Пока нет отзывов. Вы можете быть первым, кто поделится впечатлением о модели.
+                </p>
+              {% endif %}
+
+              
+            </div>
+
+            {# --- Вкладка: Вопросы --- #}
+            <div id="pp-tab-questions"
+                class="pp-feedback-panel{% if question_error %} is-active{% endif %}"
+                role="tabpanel"
+                aria-labelledby="pp-tab-questions">
+
+              {% if not can_write_feedback %}
+                <p class="pp-feedback-note">
+                  Чтобы задать вопрос,
+                  <a href="{{ login_link }}">войдите</a> в личный кабинет
+                  или <a href="{{ register_link }}">зарегистрируйтесь</a>.
+                </p>
+
+              {% elseif is_admin_feedback_user %}
+                {# Админ: форму вопросов не показываем #}
+                <p class="pp-feedback-note">
+                  Вы авторизованы как администратор магазина.  
+                  Здесь вы можете отвечать на вопросы покупателей.
+                </p>
+
+              {% else %}
+
+                {% if question_error %}
+                  <p class="pp-feedback-error">{{ question_error }}</p>
+                {% elseif question_success %}
+                  <p class="pp-feedback-success">{{ question_success }}</p>
+                {% endif %}
+
+                <form class="pp-feedback-form pp-feedback-form--question" method="post" action="">
+                  <input type="hidden" name="feedback_type" value="question">
+                  <input type="hidden" name="variant_title" value="{{ current_variant_title }}">
+
+                  <div class="pp-feedback-form-row">
+                    <label class="pp-feedback-label" for="question_text">Ваш вопрос о товаре:</label>
+                    <textarea id="question_text"
+                              name="question_text"
+                              rows="4"
+                              class="pp-feedback-textarea"
+                              maxlength="1500">{{ question_form.text }}</textarea>
+                    <p class="pp-feedback-help">Максимум 1500 символов.</p>
+                  </div>
+
+                  <div class="pp-feedback-form-actions">
+                    <button type="submit" class="btn btn-primary">
+                      Задать вопрос
+                    </button>
+                  </div>
+                </form>
+              {% endif %}
+
+              {% if questions is defined and questions %}
+                <ul class="pp-feedback-list pp-feedback-list--questions">
+                  {% for q in questions %}
+                    <li class="pp-feedback-item pp-feedback-item--question">
+                      <div class="pp-feedback-row">
+                        {# левая колонка — только дата/время #}
+                        <div class="pp-feedback-col-left">
+                          <div class="pp-feedback-meta-line pp-feedback-meta-date">
+                            {{ q.date_added }}
+                          </div>
+                        </div>
+
+                        {# правая колонка — автор + текст вопроса + ответ админа #}
+                        <div class="pp-feedback-col-right">
+                          <div class="pp-feedback-meta-line pp-feedback-meta-author">
+                            {{ q.name }}
+                          </div>
+
+                          <div class="pp-feedback-text">
+                            {{ q.text }}
+                          </div>
+
+                            {# Уже сохранённый ответ магазина — виден всем #}
+                          {% if q.admin_reply %}
+                            <div class="pp-feedback-reply">
+                              <div class="pp-feedback-reply-header">
+                                <span class="pp-feedback-reply-badge">Бумажный Мастер</span>
+
+                                {% if is_admin_feedback_user %}
+                                  <button type="button"
+                                          class="pp-feedback-edit-btn js-admin-reply-toggle"
+                                          data-target="admin-reply-question-{{ q.feedback_id }}">
+                                    Изменить ответ
+                                  </button>
+                                {% endif %}
+                              </div>
+                              <div class="pp-feedback-reply-text">
+                                {{ q.admin_reply.text }}
+                              </div>
+                            </div>
+                          {% elseif is_admin_feedback_user %}
+                            <button type="button"
+                                    class="pp-feedback-edit-btn js-admin-reply-toggle"
+                                    data-target="admin-reply-question-{{ q.feedback_id }}">
+                              Ответить
+                            </button>
+                          {% endif %}
+
+                          {% if is_admin_feedback_user %}
+                            <form id="admin-reply-question-{{ q.feedback_id }}"
+                                  class="pp-feedback-form pp-feedback-form--admin-reply is-collapsed"
+                                  method="post"
+                                  action="">
+                              <input type="hidden" name="feedback_type" value="admin_reply">
+                              <input type="hidden" name="parent_id" value="{{ q.feedback_id }}">
+                              <input type="hidden" name="reply_id"
+                                    value="{% if q.admin_reply %}{{ q.admin_reply.feedback_id }}{% else %}0{% endif %}">
+
+                              <div class="pp-feedback-form-row">
+                                <label class="pp-feedback-label"
+                                      for="admin_reply_question_{{ q.feedback_id }}">
+                                  Ответ магазина:
+                                </label>
+                                <textarea id="admin_reply_question_{{ q.feedback_id }}"
+                                          name="admin_reply_text"
+                                          rows="3"
+                                          class="pp-feedback-textarea">{% if q.admin_reply %}{{ q.admin_reply.text }}{% endif %}</textarea>
+                              </div>
+
+                              <div class="pp-feedback-form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                  {% if q.admin_reply %}Сохранить ответ{% else %}Ответить{% endif %}
+                                </button>
+                              </div>
+                            </form>
+                          {% endif %}
+
+                        </div>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="pp-feedback-empty">
+                  Вопросов пока нет. Вы можете задать свой вопрос о модели.
+                </p>
+              {% endif %}
+
+                
+              </div>
+          </div>
+        </section>
+
+  </div>
+</main>
+
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  // Узлы карточки
+  const wrap = document.querySelector('.pp-images-wrap');
+  if (!wrap) return;
+
+  const thumbsAside = wrap.querySelector('.pp-thumbs');
+  const thumbsScroll = thumbsAside.querySelector('.pp-thumbs-scroll');
+  const thumbs = () => Array.from(thumbsScroll.querySelectorAll('.pp-thumb'));
+  const mainImg = wrap.querySelector('#pp-main-photo');
+  const prevBtn = wrap.querySelector('.pp-prev');
+  const nextBtn = wrap.querySelector('.pp-next');
+  const upBtn   = thumbsAside.querySelector('.pp-thumbs-up');
+  const dnBtn   = thumbsAside.querySelector('.pp-thumbs-down');
+
+  const mainBox = wrap.querySelector('.pp-aspect-4x5');
+
+  function syncThumbsHeight() {
+    if (!mainBox) return;
+    const h = mainBox.clientHeight;            // равна ширине, т.к. квадрат
+    thumbsScroll.style.maxHeight = h + 'px';
+
+    // ДОБАВЛЕНО: после изменения высоты сразу пересчитываем видимость стрелок
+    updateArrowsVisibility(thumbsScroll, upBtn, dnBtn);
+  }
+
+  window.addEventListener('load', syncThumbsHeight);
+  window.addEventListener('resize', syncThumbsHeight);
+
+  // Массив источников больших картинок в том же порядке, что миниатюры
+  function getLargeList(container){
+    return Array.from(container.querySelectorAll('.pp-thumb')).map(t => t.dataset.large || t.src);
+  }
+  function setActive(container, idx){
+    const arr = Array.from(container.querySelectorAll('.pp-thumb'));
+    arr.forEach((t,i)=>t.classList.toggle('is-active', i===idx));
+    // авто-прокрутка миниатюры в видимую область
+    if (arr[idx] && arr[idx].scrollIntoView) {
+      arr[idx].scrollIntoView({block:'nearest'});
+    }
+  }
+
+  function updateArrowsVisibility(scrollBox, up, dn){
+    const canUp = scrollBox.scrollTop > 2;
+    const canDn = scrollBox.scrollTop + scrollBox.clientHeight < scrollBox.scrollHeight - 2;
+    up.hidden = !canUp;
+    dn.hidden = !canDn;
+  }
+
+   // Инициализация карточки: определяем активную миниатюру
+  let idx = 0;
+  (function syncInitialIndex(){
+    const arr = thumbs();
+    const i = arr.findIndex(t => t.classList.contains('is-active'));
+    if (i >= 0) idx = i;
+  })();
+  thumbs().forEach((t,i)=>{
+  t.addEventListener('click', ()=> {
+    idx = i;
+    mainImg.src = t.dataset.large || t.src;
+    setActive(thumbsScroll, idx);
+    // сообщаем всем: активный кадр изменился
+    document.dispatchEvent(new CustomEvent('pp-image-changed', { detail: { index: idx } }));
+  });
+  });
+
+  // Стрелки на большом фото
+  function step(delta){
+    const arr = thumbs();
+    if (!arr.length) return;
+    idx = (idx + delta + arr.length) % arr.length;
+    const t = arr[idx];
+    mainImg.src = t.dataset.large || t.src;
+    setActive(thumbsScroll, idx);
+    // сообщаем всем: активный кадр изменился (с учётом обёртывания по кругу)
+    document.dispatchEvent(new CustomEvent('pp-image-changed', { detail: { index: idx } }));
+    if (lightbox && lightbox.classList.contains('is-open')) {
+      setActive(lbThumbsScroll, idx); // прокрутка ленты в лайтбоксе
+      lbPhoto.src = mainImg.src;      // синхронизируем большое фото
+    }
+  }
+  prevBtn.addEventListener('click', ()=>step(-1));
+  nextBtn.addEventListener('click', ()=>step(+1));
+
+  // Скролл миниатюр вверх/вниз «страницами»
+  function pageScroll(dir){
+    const page = thumbsScroll.clientHeight - 20;
+    thumbsScroll.scrollBy({ top: dir * page, behavior: 'smooth' });
+  }
+  upBtn.addEventListener('click', ()=>pageScroll(-1));
+  dnBtn.addEventListener('click', ()=>pageScroll(+1));
+  ['scroll','resize'].forEach(ev=>{
+    thumbsScroll.addEventListener('scroll', ()=>updateArrowsVisibility(thumbsScroll, upBtn, dnBtn));
+    window.addEventListener('resize', ()=>updateArrowsVisibility(thumbsScroll, upBtn, dnBtn));
+  });
+  updateArrowsVisibility(thumbsScroll, upBtn, dnBtn);
+
+  // ===== Лайтбокс =====
+  const lightbox = document.querySelector('.pp-lightbox');
+  const lbPhoto = lightbox.querySelector('.pp-lightbox-photo');
+  const lbPrev = lightbox.querySelector('.pp-prev');
+  const lbNext = lightbox.querySelector('.pp-next');
+  const lbThumbsScroll = lightbox.querySelector('.pp-thumbs-scroll');
+  const lbUp = lightbox.querySelector('.pp-thumbs-up');
+  const lbDn = lightbox.querySelector('.pp-thumbs-down');
+
+  // Строим миниатюры внутри лайтбокса и вешаем обработчики
+  function buildLightboxThumbs(){
+    if (!lbThumbsScroll) return;
+    lbThumbsScroll.innerHTML = '';
+
+    const arr = thumbs(); // миниатюры из основного блока
+    arr.forEach((t, i) => {
+      const img = document.createElement('img');
+      img.className = 'pp-thumb' + (i === idx ? ' is-active' : '');
+      img.src = t.src;
+      img.alt = t.alt || '';
+      img.dataset.large = t.dataset.large || t.src;
+
+      img.addEventListener('click', () => {
+        idx = i;
+        const large = img.dataset.large;
+        mainImg.src = large;
+        lbPhoto.src = large;
+        setActive(thumbsScroll, idx);
+        setActive(lbThumbsScroll, idx);
+        document.dispatchEvent(new CustomEvent('pp-image-changed', { detail: { index: idx } }));
+      });
+
+      lbThumbsScroll.appendChild(img);
+    });
+  }
+
+  function openLightbox(){
+    lbPhoto.src = mainImg.src;
+    buildLightboxThumbs();
+    setActive(lbThumbsScroll, idx);
+    lightbox.classList.add('is-open');
+    document.documentElement.classList.add('pp-no-scroll');
+
+    // ДОБАВЛЕНО: после построения миниатюр пересчитать видимость стрелок в лайтбоксе
+    requestAnimationFrame(() => updateArrowsVisibility(lbThumbsScroll, lbUp, lbDn));
+    setTimeout(() => updateArrowsVisibility(lbThumbsScroll, lbUp, lbDn), 150);
+  }
+
+  function closeLightbox(){
+    lightbox.classList.remove('is-open');
+    document.documentElement.classList.remove('pp-no-scroll');
+  }
+
+  // открываем по клику на контейнер И на само изображение
+  [mainBox, mainImg].forEach(el => el.addEventListener('click', (e)=>{
+    if (e.target.closest('.pp-main-nav')) return; // клики на стрелки не открывают
+    openLightbox();
+  }));
+
+  // закрытие по крестику/бэкдропу
+  lightbox.addEventListener('click', (e)=>{
+    if (e.target.hasAttribute('data-close') || e.target.classList.contains('pp-lightbox')) {
+      closeLightbox();
+    }
+  });
+  lbPrev.addEventListener('click', ()=>{
+    step(-1);
+    buildLightboxThumbs();
+    setActive(lbThumbsScroll, idx);   // авто-прокрутка до активной миниатюры
+    lbPhoto.src = mainImg.src;
+  });
+  lbNext.addEventListener('click', ()=>{
+    step(+1);
+    buildLightboxThumbs();
+    setActive(lbThumbsScroll, idx);   // авто-прокрутка до активной миниатюры
+    lbPhoto.src = mainImg.src;
+  });
+  lbUp.addEventListener('click', ()=>{ const page = lbThumbsScroll.clientHeight - 20; lbThumbsScroll.scrollBy({top:-page,behavior:'smooth'}); });
+  lbDn.addEventListener('click', ()=>{ const page = lbThumbsScroll.clientHeight - 20; lbThumbsScroll.scrollBy({top: page,behavior:'smooth'}); });
+  lbThumbsScroll.addEventListener('scroll', ()=>updateArrowsVisibility(lbThumbsScroll, lbUp, lbDn));
+
+  });
+</script>
+
+<script>
+(function(){
+  const flags = document.querySelector('.pp-aspect-4x5 .pp-flags');
+  if (!flags) return;
+
+  function updateFlags(i){
+    flags.style.display = (i === 0) ? '' : 'none';
+  }
+
+  // стартовое состояние — показываем плашки на первом кадре
+  updateFlags(0);
+
+  // реагируем на любые смены кадра (клики по миниатюрам, стрелки, переход с последнего на первый и т. п.)
+  document.addEventListener('pp-image-changed', function(e){
+    const i = e.detail && typeof e.detail.index === 'number' ? e.detail.index : 0;
+    updateFlags(i);
+  });
+})();
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  const desc = document.getElementById('pp-desc-text');
+  const toggle = document.getElementById('pp-desc-toggle');
+
+  if (!desc || !toggle) return;
+
+  const textSpan = toggle.querySelector('.pp-desc-toggle-text');
+
+  function setState(expanded) {
+    if (expanded) {
+      desc.classList.remove('is-collapsed');
+      desc.classList.add('is-expanded');
+      toggle.classList.add('is-expanded');
+      toggle.setAttribute('aria-expanded', 'true');
+      if (textSpan) {
+        textSpan.textContent = 'Свернуть';
+      }
+    } else {
+      desc.classList.add('is-collapsed');
+      desc.classList.remove('is-expanded');
+      toggle.classList.remove('is-expanded');
+      toggle.setAttribute('aria-expanded', 'false');
+      if (textSpan) {
+        textSpan.textContent = 'Показать полностью';
+      }
+    }
+  }
+
+  // Инициализация: если текста мало, сразу разворачиваем и скрываем кнопку
+  function init() {
+    // сначала ставим свёрнутое состояние
+    setState(false);
+
+    // даём браузеру посчитать высоту
+    requestAnimationFrame(function () {
+      const canScroll = desc.scrollHeight > desc.clientHeight + 4;
+
+      if (!canScroll) {
+        // текста мало — показываем полностью и убираем кнопку
+        desc.classList.remove('is-collapsed');
+        desc.classList.remove('is-expanded');
+        toggle.style.display = 'none';
+      }
+    });
+  }
+
+  toggle.addEventListener('click', function () {
+    const isCollapsed = desc.classList.contains('is-collapsed');
+    setState(isCollapsed);
+  });
+
+  init();
+});
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  const tabs = Array.from(document.querySelectorAll('.pp-feedback-tab'));
+  const panels = Array.from(document.querySelectorAll('.pp-feedback-panel'));
+
+  if (!tabs.length || !panels.length) return;
+
+  function activateTab(targetId) {
+    panels.forEach(function (panel) {
+      panel.classList.toggle('is-active', panel.id === targetId);
+      panel.hidden = panel.id !== targetId;
+    });
+
+    tabs.forEach(function (tab) {
+      const isActive = tab.getAttribute('data-tab-target') === targetId;
+      tab.classList.toggle('is-active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      const targetId = tab.getAttribute('data-tab-target');
+      if (!targetId) return;
+      activateTab(targetId);
+    });
+  });
+
+  // Инициализация: скрываем все панели кроме активной
+  const activeTab = tabs.find(function (t) { return t.classList.contains('is-active'); });
+  if (activeTab) {
+    const targetId = activeTab.getAttribute('data-tab-target');
+    if (targetId) {
+      activateTab(targetId);
+    }
+  }
+});
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  var editBtn = document.getElementById('pp-review-edit-toggle');
+  var form = document.querySelector('.pp-feedback-form--review');
+
+  if (!editBtn || !form) return;
+
+  editBtn.addEventListener('click', function () {
+    form.classList.remove('is-collapsed');
+    editBtn.style.display = 'none';
+  });
+});
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  var buttons = document.querySelectorAll('.js-admin-reply-toggle');
+
+  buttons.forEach(function (btn) {
+    var targetId = btn.getAttribute('data-target');
+    if (!targetId) return;
+
+    var form = document.getElementById(targetId);
+    if (!form) return;
+
+    btn.addEventListener('click', function () {
+      form.classList.toggle('is-collapsed');
+    });
+  });
+});
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  var container = document.querySelector('.pp-feedback-rating-inputs');
+  if (!container) return;
+
+  var stars = Array.prototype.slice.call(
+    container.querySelectorAll('.pp-star-btn')
+  );
+  var hidden = document.getElementById('pp-review-rating');
+  if (!hidden) return;
+
+  var selected = parseInt(
+    hidden.value || container.getAttribute('data-current-rating') || '0',
+    10
+  ) || 0;
+
+  var minRating = parseInt(
+    container.getAttribute('data-min-rating') || '0',
+    10
+  ) || 0;
+
+  function updateDisplay(value) {
+    var v = value || 0;
+    var base = Math.max(v, minRating);
+
+    stars.forEach(function (btn) {
+      var starValue = parseInt(btn.getAttribute('data-star'), 10);
+      btn.classList.toggle('is-filled', starValue <= base);
+    });
+  }
+
+  updateDisplay(selected);
+
+  stars.forEach(function (btn) {
+    var starValue = parseInt(btn.getAttribute('data-star'), 10);
+
+    btn.addEventListener('mouseenter', function () {
+      if (starValue < minRating) return; // ниже уже поставленной оценки не подсвечиваем
+      updateDisplay(starValue);
+    });
+
+    btn.addEventListener('mouseleave', function () {
+      updateDisplay(selected);
+    });
+
+    btn.addEventListener('click', function () {
+      if (starValue < minRating) return; // нельзя снизить оценку
+      selected = starValue;
+      hidden.value = String(selected);
+      updateDisplay(selected);
+    });
+  });
+});
+</script>
+
+<div class="pp-lightbox">
+  <div class="pp-lightbox-backdrop" data-close></div>
+  <div class="pp-lightbox-dialog">
+    <button class="pp-lightbox-close" type="button" aria-label="Закрыть" data-close>×</button>
+    <div class="pp-lightbox-grid">
+      <aside class="pp-thumbs pp-thumbs-lightbox" aria-label="Миниатюры изображений">
+        <button type="button" class="pp-thumbs-btn pp-thumbs-up" aria-label="Вверх">▲</button>
+        <div class="pp-thumbs-scroll"></div>
+        <button type="button" class="pp-thumbs-btn pp-thumbs-down" aria-label="Вниз">▼</button>
+      </aside>
+      <div class="pp-lightbox-main">
+        <img class="pp-lightbox-photo" src="{{ thumb_large }}" alt="{{ name }}">
+        <button type="button" class="pp-main-nav pp-prev" aria-label="Предыдущее">‹</button>
+        <button type="button" class="pp-main-nav pp-next" aria-label="Следующее">›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{{ footer }}

@@ -1,0 +1,177 @@
+{{ header }}
+<style>
+  .bm-fb-src {
+    margin-top: 6px;
+    line-height: 1;
+  }
+
+  .bm-fb-src__icon {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    display: inline-block;
+    vertical-align: middle;
+    object-fit: contain;
+  }
+
+  .bm-fb-src a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bm-fb-src__ext {
+    font-size: 12px;
+    line-height: 1;
+  }
+</style>
+
+<div id="account-feedback-admin" class="container">
+  <ul class="breadcrumb">
+    {% for breadcrumb in breadcrumbs %}
+      <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <div class="row">
+    {{ column_left }}
+    <div id="content" class="col s12 l9">
+      <h1>{{ heading_title }}</h1>
+
+      <ul class="nav nav-tabs">
+        <li class="{% if tab == 'need_answer' %}active{% endif %}">
+            <a href="{{ tab_need_href }}">
+            {{ text_tab_need }} ({{ count_need }})
+            </a>
+        </li>
+        <li class="{% if tab == 'answered' %}active{% endif %}">
+            <a href="{{ tab_answered_href }}">
+            {{ text_tab_answered }} ({{ count_answered }})
+            </a>
+        </li>
+      </ul>
+
+      <div class="tab-content" style="margin-top:15px;">
+        {% if feedbacks %}
+          <div class="table-responsive">
+            <table class="table table-bordered" id="bm-feedback-table">
+              <thead>
+                <tr>
+                  <th>{{ column_date_added }}</th>
+                  <th>{{ column_type }}</th>
+                  <th>{{ column_product }}</th>
+                  <th>{{ column_customer }}</th>
+                  <th>{{ column_text }}</th>
+                  <th>{{ column_rating }}</th>
+                  {% if tab == 'answered' %}
+                    <th>{{ column_date_answered }}</th>
+                    <th>{{ column_answer_text }}</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in feedbacks %}
+                  <tr>
+                    <td>
+                      <div>{{ item.date_added }}</div>
+
+                      {% if item.source_icon and item.source_url %}
+                        <div class="bm-fb-src">
+                          <a href="{{ item.source_url }}" target="_blank" rel="noopener"
+                            data-position="top"
+                            data-tooltip="{{ item.source_title }}">
+                            <img src="{{ item.source_icon }}" alt="{{ item.source_title }}" class="bm-fb-src__icon">
+                          </a>
+                        </div>
+                      {% endif %}
+                    </td>
+                    <td>{{ item.type }}</td>
+                    <td><a href="{{ item.product_href }}" target="_blank">{{ item.product_name }}</a></td>
+                    <td>{{ item.customer_name }}</td>
+                    <td>{{ item.text }}</td>
+                    <td>
+                        {% if item.rating %}
+                            {{ item.rating }}/5
+                        {% endif %}
+                    </td>
+                    {% if tab == 'answered' %}
+                        <td>{{ item.date_answered }}</td>
+                        <td>{{ item.answer_text }}</td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if show_more_href %}
+            <div class="text-center">
+                <a href="{{ show_more_href }}" id="bm-feedback-more" class="btn btn-primary">
+                {{ button_show_more }}
+                </a>
+            </div>
+          {% endif %}
+        {% else %}
+          <p>
+            {% if tab == 'need_answer' %}
+              {{ text_empty_need }}
+            {% else %}
+              {{ text_empty_answered }}
+            {% endif %}
+          </p>
+        {% endif %}
+
+        
+      </div>
+    </div>
+    {{ column_right }}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var moreBtn = document.getElementById('bm-feedback-more');
+  if (!moreBtn) return;
+
+  moreBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    var href = moreBtn.getAttribute('href');
+    if (!href) return;
+
+    var tbody = document.querySelector('#account-feedback-admin table#bm-feedback-table tbody');
+    if (!tbody) return;
+
+    moreBtn.classList.add('disabled');
+
+    fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (response) { return response.text(); })
+      .then(function (html) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'text/html');
+
+        var newRows = doc.querySelectorAll('#account-feedback-admin table#bm-feedback-table tbody tr');
+        newRows.forEach(function (tr) {
+          tbody.appendChild(tr);
+        });
+
+        // ищем кнопку "Показать ещё" на загруженной странице
+        var newMoreBtn = doc.getElementById('bm-feedback-more');
+        if (newMoreBtn && newMoreBtn.getAttribute('href')) {
+          moreBtn.setAttribute('href', newMoreBtn.getAttribute('href'));
+          moreBtn.classList.remove('disabled');
+        } else {
+          // если там уже нет кнопки — удаляем нашу
+          moreBtn.parentNode.removeChild(moreBtn);
+        }
+      })
+      .catch(function () {
+        // в случае ошибки просто возвращаем кнопку в нормальное состояние
+        moreBtn.classList.remove('disabled');
+      });
+  });
+});
+</script>
+
+{{ footer }}

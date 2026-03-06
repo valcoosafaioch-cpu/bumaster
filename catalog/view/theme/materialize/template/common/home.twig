@@ -1,0 +1,491 @@
+{{ header }}
+{% macro render_category(node, level) %}
+  <a class="hp-cat-row hp-cat-row--level-{{ level }}" href="{{ node.href }}">
+    <span class="hp-cat-name">{{ node.name }}</span>
+    <span class="hp-cat-count">({{ node.count }})</span>
+  </a>
+  {% if node.children %}
+    {% for child in node.children %}
+      {{ _self.render_category(child, level + 1) }}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+{% apply spaceless %}
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "WebSite",
+  "url": "{{ base }}",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "{{ base }}index.php?route=product/search&search={query}",
+    "query-input": "required name=query"
+  }
+}
+</script>
+
+<main class="hp-main">
+  {# A1 — верхний баннер и логотип рендерятся в header.twig.
+     Здесь начинаем с основной трёхколоночной сетки: A3 слева, A5/A6/A7.x в центре, A4.x справа. #}
+
+  <section class="hp-layout">
+    <div class="container">
+      {# Верхний блок: 3 колонки, 2 строки (280/240) #}
+      <div class="row hp-top">
+        {# Левая колонка — A3 Категории + A4.2 Отзывы (заглушка) #}
+        <div class="col s12 m3 l3 hp-left hp-top-left">
+          <div class="hp-block hp-block--left hp-block--cats">
+            {% if categories_tree %}
+              <div class="hp-categories">
+                {% for node in categories_tree %}
+                  {{ _self.render_category(node, 1) }}
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="hp-placeholder">
+                Категории временно недоступны
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+
+        {# Центральная колонка — A5 / A6 #}
+        <div class="col s12 m7 l7 hp-center hp-top-center">
+          <div class="hp-block hp-block--center hp-block--text">
+            <div class="hp-text">
+              {% if home_text %}
+                {{ home_text|raw }}
+              {% else %}
+                <div class="hp-placeholder">
+                  Текстовый блок (A5)
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          {# A6. НАЧАЛО: Слайдер #}
+          {% if slides is not empty %}
+            <div class="hp-block hp-slider" data-hp-slider>
+              <div class="hp-slider__viewport" data-hp-slider-viewport>
+                <div class="hp-slider__track" data-hp-slider-track>
+                  {% for s in slides %}
+                    <div class="hp-slider__slide" data-hp-slide>
+                      {% if s.link %}
+                        <a class="hp-slider__link" href="{{ s.link }}">
+                          <img class="hp-slider__img" src="{{ s.thumb ?: s.image }}" alt="{{ s.title ?: 'Слайд' }}">
+                        </a>
+                      {% else %}
+                        <div class="hp-slider__link">
+                          <img class="hp-slider__img" src="{{ s.thumb ?: s.image }}" alt="{{ s.title ?: 'Слайд' }}">
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              {% if slides|length > 1 %}
+                <button class="hp-slider__arrow hp-slider__arrow--prev" type="button" data-hp-slider-prev aria-label="Предыдущий слайд">‹</button>
+                <button class="hp-slider__arrow hp-slider__arrow--next" type="button" data-hp-slider-next aria-label="Следующий слайд">›</button>
+
+                <div class="hp-slider__dots" data-hp-slider-dots>
+                  {% for s in slides %}
+                    <button class="hp-slider__dot" type="button" data-hp-slider-dot="{{ loop.index0 }}" aria-label="Слайд {{ loop.index }}"></button>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            {% if slides|length > 1 %}
+              <script>
+                (function () {
+                  var root = document.querySelector('[data-hp-slider]');
+                  if (!root) return;
+
+                  var track = root.querySelector('[data-hp-slider-track]');
+                  var slides = root.querySelectorAll('[data-hp-slide]');
+                  var prevBtn = root.querySelector('[data-hp-slider-prev]');
+                  var nextBtn = root.querySelector('[data-hp-slider-next]');
+                  var dotsWrap = root.querySelector('[data-hp-slider-dots]');
+                  var dots = dotsWrap ? dotsWrap.querySelectorAll('[data-hp-slider-dot]') : [];
+                  if (!track || !slides.length) return;
+
+                  var index = 0;
+                  var timer = null;
+                  var delay = 5000;
+
+                  function setActiveDot(i) {
+                    if (!dots || !dots.length) return;
+                    dots.forEach(function (b) { b.classList.remove('is-active'); });
+                    if (dots[i]) dots[i].classList.add('is-active');
+                  }
+
+                  function go(i) {
+                    index = (i + slides.length) % slides.length;
+                    track.style.transform = 'translateX(' + (-index * 100) + '%)';
+                    setActiveDot(index);
+                  }
+
+                  function next() { go(index + 1); }
+                  function prev() { go(index - 1); }
+
+                  function start() {
+                    stop();
+                    timer = setInterval(next, delay);
+                  }
+
+                  function stop() {
+                    if (timer) clearInterval(timer);
+                    timer = null;
+                  }
+
+                  if (prevBtn) prevBtn.addEventListener('click', function () { prev(); start(); });
+                  if (nextBtn) nextBtn.addEventListener('click', function () { next(); start(); });
+
+                  if (dots && dots.length) {
+                    dots.forEach(function (b) {
+                      b.addEventListener('click', function () {
+                        var i = Number(b.getAttribute('data-hp-slider-dot') || 0);
+                        go(i);
+                        start();
+                      });
+                    });
+                  }
+
+                  root.addEventListener('mouseenter', stop);
+                  root.addEventListener('mouseleave', start);
+
+                  go(0);
+                  start();
+                })();
+              </script>
+            {% endif %}
+          {% endif %}
+          {# A6. КОНЕЦ: Слайдер #}
+        </div>
+
+        {# Правая колонка — A4.1 / A4.3 #}
+        <div class="col s12 m2 l2 hp-right hp-top-right">
+          <div class="hp-block hp-block--right hp-block--contacts">
+            <div class="hp-contacts-header">
+              {% if bm_home_contact_link %}
+                <a href="{{ bm_home_contact_link }}" class="hp-contacts-title-link">
+                  Обратная связь
+                </a>
+              {% else %}
+                <span class="hp-contacts-title">
+                  Обратная связь
+                </span>
+              {% endif %}
+            </div>
+
+            {% if bm_home_contacts_banners %}
+              <div class="hp-contacts-banners">
+                {% for banner in bm_home_contacts_banners %}
+                  <a href="{{ banner.href }}"
+                    class="hp-contacts-banner"
+                    {% if banner.target %}target="{{ banner.target }}"{% endif %}>
+                    <img src="{{ banner.image }}"
+                        alt=""
+                        class="hp-contacts-banner-img" />
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if bm_home_contacts %}
+              <div class="hp-contacts-list">
+                {% for item in bm_home_contacts %}
+                  {% if item.href %}
+                    <a href="{{ item.href }}"
+                      class="hp-contacts-item"
+                      {% if item.target %}target="{{ item.target }}"{% endif %}>
+                      {% if item.icon %}
+                        <span class="hp-contacts-item-icon">
+                          <img src="{{ item.icon }}"
+                              alt=""
+                              class="hp-contacts-item-icon-img" />
+                        </span>
+                      {% endif %}
+                      <span class="hp-contacts-item-text">
+                        {{ item.label }}
+                      </span>
+                    </a>
+                  {% else %}
+                    <div class="hp-contacts-item hp-contacts-item--static">
+                      {% if item.icon %}
+                        <span class="hp-contacts-item-icon">
+                          <img src="{{ item.icon }}"
+                              alt=""
+                              class="hp-contacts-item-icon-img" />
+                        </span>
+                      {% endif %}
+                      <span class="hp-contacts-item-text">
+                        {{ item.label }}
+                      </span>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="hp-block hp-block--right hp-block--account">
+            <div class="hp-account">
+              {% if account_block is defined and account_block.is_logged %}
+                <div class="hp-account__hello">Здравствуйте</div>
+
+                  <div class="hp-account__name">
+                    {{ account_block.fullname }}
+                  </div>
+
+                  <div class="hp-account__text">
+                    <div class="hp-account__btitle">Рады видеть вас снова! 👋</div>
+                    <div class="hp-account__title">В личном кабинете:</div>
+                    <div class="hp-account__line">история заказов</div>
+                    <div class="hp-account__line">бонусный баланс</div>
+                    <div class="hp-account__line">данные профиля</div>
+                  </div>
+
+                  <div class="hp-account__link-wrap">
+                    <a href="{{ account_block.href_account }}" class="hp-account__link">Перейти в «Мой аккаунт»</a>
+                  </div>
+              {% else %}
+                <div class="hp-account__hint">
+                  Чтобы пользоваться всеми возможностями магазина,
+                  <a href="{{ account_block.href_login }}" class="hp-account__link">войдите</a>
+                  или
+                  <a href="{{ account_block.href_register }}" class="hp-account__link">зарегистрируйтесь</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Нижний блок: A7.1 / A7.2 / A7.3 на всю ширину #}
+      <div class="row hp-bottom">
+        <div class="col s12 hp-bottom-col">
+           {# A7.1 НАЧАЛО: Последние поступления #}
+          {% if latest_products is defined and latest_products|length %}
+            <div class="hp-block hp-block--latest hp-block--strip" data-hp-strip data-hp-strip-all-href="{{ latest_all_href }}">
+              <div class="hp-strip__head">
+                <a class="hp-strip__title" href="{{ latest_all_href }}">Последние поступления</a>
+              </div>
+
+              <div class="hp-strip__wrap">
+                <button class="hp-strip__arrow hp-strip__arrow--prev" type="button" data-hp-strip-prev aria-label="Прокрутить влево">‹</button>
+                <button class="hp-strip__arrow hp-strip__arrow--next" type="button" data-hp-strip-next aria-label="Прокрутить вправо">
+                  <span class="hp-strip__cta-text">Показать все</span><span class="hp-strip__cta-icon">›</span>
+                </button>
+
+                <div class="hp-strip__track" data-hp-strip-track>
+                  {% for product in latest_products %}
+                    <div class="hp-strip__item">
+                      {% include 'materialize/template/product/_card.twig' with { product: product } %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          {# A7.1 КОНЕЦ: Последние поступления #}
+
+          {# A7.2 НАЧАЛО: Спецпредложения #}
+          {% if special_products is defined and special_products|length %}
+            <div class="hp-block hp-block--special hp-block--strip" data-hp-strip data-hp-strip-all-href="{{ special_all_href }}">
+              <div class="hp-strip__head">
+                <a class="hp-strip__title" href="{{ special_all_href }}">Спецпредложения</a>
+              </div>
+
+              <div class="hp-strip__wrap">
+                <button class="hp-strip__arrow hp-strip__arrow--prev" type="button" data-hp-strip-prev aria-label="Прокрутить влево">‹</button>
+                <button class="hp-strip__arrow hp-strip__arrow--next" type="button" data-hp-strip-next aria-label="Прокрутить вправо">
+                  <span class="hp-strip__cta-text">Показать все</span><span class="hp-strip__cta-icon">›</span>
+                </button>
+
+                <div class="hp-strip__track" data-hp-strip-track>
+                  {% for product in special_products %}
+                    <div class="hp-strip__item">
+                      {% include 'materialize/template/product/_card.twig' with { product: product } %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          {# A7.2 КОНЕЦ: Спецпредложения #}
+
+          <script>
+            (function () {
+              var roots = document.querySelectorAll('[data-hp-strip]');
+              if (!roots || !roots.length) return;
+
+              function init(root) {
+                var track = root.querySelector('[data-hp-strip-track]');
+                var prevBtn = root.querySelector('[data-hp-strip-prev]');
+                var nextBtn = root.querySelector('[data-hp-strip-next]');
+                if (!track || !prevBtn || !nextBtn) return;
+
+                var step = function () {
+                  var card = track.querySelector('.hp-strip__item');
+                  if (!card) return 320;
+                  var cs = window.getComputedStyle(card);
+                  var mr = parseFloat(cs.marginRight || '0') || 0;
+                  return Math.round(card.offsetWidth + mr);
+                };
+
+                var update = function () {
+                  var max = track.scrollWidth - track.clientWidth;
+
+                  if (max <= 2) {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'none';
+                    nextBtn.classList.remove('is-end');
+                    return;
+                  }
+
+                  var left = track.scrollLeft;
+
+                  prevBtn.style.display = (left > 2) ? '' : 'none';
+                  nextBtn.style.display = '';
+
+                  if (left >= max - 2) {
+                    nextBtn.classList.add('is-end');
+                    nextBtn.setAttribute('aria-label', 'Показать все');
+                  } else {
+                    nextBtn.classList.remove('is-end');
+                    nextBtn.setAttribute('aria-label', 'Прокрутить вправо');
+                  }
+                };
+
+                prevBtn.addEventListener('click', function () {
+                  track.scrollBy({ left: -step(), behavior: 'smooth' });
+                });
+
+                nextBtn.addEventListener('click', function () {
+                  var max = track.scrollWidth - track.clientWidth;
+                  var left = track.scrollLeft;
+
+                  if (left >= max - 2) {
+                    var href = root.getAttribute('data-hp-strip-all-href') || '';
+                    if (href) {
+                      window.location.href = href;
+                      return;
+                    }
+                  }
+
+                  track.scrollBy({ left: step(), behavior: 'smooth' });
+                });
+
+                track.addEventListener('scroll', update, { passive: true });
+                window.addEventListener('resize', update);
+
+                requestAnimationFrame(update);
+              }
+
+              roots.forEach(init);
+            })();
+          </script>
+
+          {# A7.3 НАЧАЛО: Производители (бренды) #}
+          {% if brands is defined and brands|length %}
+            <div class="hp-block hp-block--brands" data-hp-brands>
+              <div class="hp-brands__head">
+                <div class="hp-brands__title">Бренды</div>
+              </div>
+
+              <div class="hp-brands__wrap">
+                <button class="hp-brands__arrow hp-brands__arrow--prev" type="button" data-hp-brands-prev aria-label="Прокрутить влево">‹</button>
+                <button class="hp-brands__arrow hp-brands__arrow--next" type="button" data-hp-brands-next aria-label="Прокрутить вправо">›</button>
+
+                <div class="hp-brands__track" data-hp-brands-track>
+                  {% for brand in brands %}
+                    <a class="hp-brand" href="{{ brand.href }}" title="{{ brand.name }}">
+                      <span class="hp-brand__logo">
+                        <img src="{{ brand.thumb }}" alt="{{ brand.name }}" loading="lazy" />
+                      </span>
+                      <span class="hp-brand__name">{{ brand.name }}</span>
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <script>
+              (function () {
+                var root = document.querySelector('[data-hp-brands]');
+                if (!root) return;
+
+                var track = root.querySelector('[data-hp-brands-track]');
+                var prevBtn = root.querySelector('[data-hp-brands-prev]');
+                var nextBtn = root.querySelector('[data-hp-brands-next]');
+                if (!track || !prevBtn || !nextBtn) return;
+
+                function maxScroll() {
+                  return Math.max(0, track.scrollWidth - track.clientWidth);
+                }
+
+                function stepSize() {
+                  // Шаг = 2 колонки (2 плитки + 2 gap)
+                  var first = track.querySelector('.hp-brand');
+                  if (!first) {
+                    return Math.max(180, Math.round(track.clientWidth * 0.45));
+                  }
+
+                  var styles = window.getComputedStyle(track);
+                  var gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+
+                  var col = first.getBoundingClientRect().width + gap;
+                  return Math.round(col * 4);
+                }
+
+                function updateArrows() {
+                  var max = maxScroll();
+
+                  // Если скроллить нечего — скрываем обе
+                  if (max <= 2) {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'none';
+                    return;
+                  }
+
+                  // В начале — скрываем левую
+                  prevBtn.style.display = (track.scrollLeft > 2) ? '' : 'none';
+
+                  // В конце — скрываем правую
+                  nextBtn.style.display = (track.scrollLeft < max - 2) ? '' : 'none';
+                }
+
+                // Стрелки (только ручное листание)
+                prevBtn.addEventListener('click', function () {
+                  track.scrollBy({ left: -stepSize(), behavior: 'smooth' });
+                });
+
+                nextBtn.addEventListener('click', function () {
+                  track.scrollBy({ left: stepSize(), behavior: 'smooth' });
+                });
+
+                track.addEventListener('scroll', updateArrows, { passive: true });
+                window.addEventListener('resize', updateArrows);
+
+                // Инициализация
+                updateArrows();
+
+                requestAnimationFrame(function () {
+                  updateArrows();
+                  requestAnimationFrame(tick);
+                });
+              })();
+            </script>
+          {% endif %}
+          {# A7.3 КОНЕЦ: Производители (бренды) #}
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+{% endapply %}
+{{ footer }}

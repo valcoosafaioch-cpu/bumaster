@@ -1,0 +1,129 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }}</h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+          <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    {% if error_warning %}
+      <div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endif %}
+
+    {% if success %}
+      <div class="alert alert-success"><i class="fa fa-check-circle"></i> {{ success }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endif %}
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-upload"></i> {{ text_import }}</h3>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" class="form-horizontal">
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_file }}</label>
+            <div class="col-sm-10">
+              <input type="file" name="csv" accept=".csv,text/csv" class="form-control" />
+              <p class="help-block">{{ help_format }}</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_options }}</label>
+            <div class="col-sm-10">
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="create_admin_reply" value="1" {% if create_admin_reply %}checked="checked"{% endif %}>
+                  {{ entry_create_admin_reply }}
+                </label>
+              </div>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="skip_duplicates" value="1" {% if skip_duplicates %}checked="checked"{% endif %}>
+                  {{ entry_skip_duplicates }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="col-sm-10 col-sm-offset-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-play"></i> {{ button_import }}
+              </button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    {% if result %}
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title"><i class="fa fa-list"></i> {{ text_result }}</h3>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <div class="col-sm-6">
+              <ul class="list-group">
+                <li class="list-group-item">{{ text_total_rows }} <span class="badge">{{ result.total_rows }}</span></li>
+                <li class="list-group-item">{{ text_inserted_reviews }} <span class="badge">{{ result.inserted_reviews }}</span></li>
+                <li class="list-group-item">{{ text_inserted_replies }} <span class="badge">{{ result.inserted_replies }}</span></li>
+                <li class="list-group-item">{{ text_skipped_duplicates }} <span class="badge">{{ result.skipped_duplicates }}</span></li>
+                <li class="list-group-item">{{ text_errors_count }} <span class="badge">{{ result.errors|length }}</span></li>
+              </ul>
+            </div>
+          </div>
+
+          {% if result.errors and result.errors|length %}
+            <h4>{{ text_errors }}</h4>
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th style="width: 120px;">{{ column_row }}</th>
+                  <th>{{ column_message }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in result.errors %}
+                  <tr>
+                    <td>#{{ e.row }}</td>
+                    <td>{{ e.message }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+
+          {% if result.warnings and result.warnings|length %}
+            <h4>{{ text_warnings }}</h4>
+            <ul>
+              {% for w in result.warnings %}
+                <li>{{ w }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{{ footer }}

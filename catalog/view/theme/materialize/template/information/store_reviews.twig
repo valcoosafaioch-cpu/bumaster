@@ -1,0 +1,66 @@
+{{ header }}
+
+<div id="information-store-reviews" class="container sr-page">
+
+  <h1 class="sr-title">{{ heading_title }}</h1>
+
+  {% if reviews %}
+    <div class="sr-list">
+      {% for r in reviews %}
+        <div class="sr-card">
+          <div class="sr-card__head">
+            <div class="sr-author">
+              <div class="sr-author__meta">
+                    <div class="sr-author__name">{{ r.name }}</div>
+                    <div class="sr-stars" aria-label="Рейтинг: {{ r.rating }} из 5">
+                    {% for i in 1..5 %}
+                        <span class="sr-star{% if i <= r.rating %} is-filled{% endif %}">★</span>
+                    {% endfor %}
+                    </div>
+              </div>
+            </div>
+
+            <div class="sr-side">
+              {% if r.date_added %}
+                <div class="sr-date">{{ r.date_added }}</div>
+              {% endif %}
+
+              {% if r.source_icon and r.source_url %}
+                <a class="sr-source" href="{{ r.source_url }}" target="_blank" rel="nofollow noopener" title="Смотреть отзыв в источнике: {{ r.source_title }}">
+                  <img class="sr-source__icon" src="{{ r.source_icon }}" alt="{{ r.source_title }}">
+                  <span class="sr-source__ext" aria-hidden="true">↗</span>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="sr-card__body">
+            <div class="sr-text">{{ r.text }}</div>
+
+            {% if r.product %}
+              <div class="sr-product">
+                {% if r.product.thumb %}
+                  <a class="sr-product__img" href="{{ r.product.href }}">
+                    <img src="{{ r.product.thumb }}" alt="{{ r.product.name }}">
+                  </a>
+                {% endif %}
+                <a class="sr-product__name" href="{{ r.product.href }}">
+                    {{ r.product.name }}{% if r.variant_title %} <span class="sr-variant">({{ r.variant_title }})</span>{% endif %}
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="sr-pagination">
+      <div class="sr-pagination__links">{{ pagination }}</div>
+      <div class="sr-pagination__results">{{ results }}</div>
+    </div>
+  {% else %}
+    <p class="sr-empty">Отзывов пока нет.</p>
+  {% endif %}
+</div>
+
+{{ footer }}

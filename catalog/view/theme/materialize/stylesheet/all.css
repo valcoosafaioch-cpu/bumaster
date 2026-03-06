@@ -1,0 +1,877 @@
+/* ==========================================================
+   all.css — стили ЛИСТИНГА (категория/поиск/спец/производитель)
+   Подключается ПОСЛЕ custom.css через $this->document->addStyle(...)
+   Старайся префиксовать селекторы контейнером .products-grid
+   ========================================================== */
+/* =====================================================
+   Версия: 2025-11-15
+   Используется: категории, производитель, поиск
+   ===================================================== */
+
+
+   :root {
+    --bm-sidebar-width: 260px;
+  }
+
+  /* НАЧАЛО Общий ресет чекбоксов во всех фильтрах сайдбара */
+
+  /* Общий ресет чекбоксов во всех фильтрах сайдбара */
+  .bm-all-sidebar input[type="checkbox"],
+  .bm-top-filter-bar input[type="checkbox"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 6px 0 0 !important;
+    border-radius: 3px !important;
+    border: 1px solid #b0b0b0 !important;
+    background: #ffffff !important;
+    box-sizing: border-box;
+    position: relative !important;
+    flex: 0 0 14px;
+    opacity: 1 !important;
+  }
+
+  /* Общая заливка и галочка для выбранных чекбоксов */
+  .bm-all-sidebar input[type="checkbox"]:checked,
+  .bm-top-filter-bar input[type="checkbox"]:checked {
+    background: var(--brand-accent) !important;
+    border-color: var(--brand-accent) !important;
+  }
+
+  .bm-all-sidebar input[type="checkbox"]:checked::before,
+  .bm-top-filter-bar input[type="checkbox"]:checked::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 6px;
+    height: 9px;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(45deg);
+  }
+
+  /* Глушим materialize-обёртку вокруг чекбоксов в сайдбаре */
+  .bm-all-sidebar [type="checkbox"] + span:not(.lever),
+  .bm-top-filter-bar [type="checkbox"] + span:not(.lever) {
+    padding-left: 0 !important;
+    position: static !important;
+  }
+
+  .bm-all-sidebar [type="checkbox"] + span:not(.lever)::before,
+  .bm-all-sidebar [type="checkbox"] + span:not(.lever)::after,
+  .bm-top-filter-bar [type="checkbox"] + span:not(.lever)::before,
+  .bm-top-filter-bar [type="checkbox"] + span:not(.lever)::after {
+    content: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  /* КОНЕЦ Общий ресет чекбоксов во всех фильтрах сайдбара */
+
+
+/* 1. НАЧАЛО СЛУЖЕБНЫЕ КЛАССЫ / УТИЛИТЫ
+   (is-hidden, тех.обёртки и т.п.)
+   ---------------------------------------------------- */
+
+/* 1. КОНЕЦ СЛУЖЕБНЫЕ КЛАССЫ / УТИЛИТЫ
+   (is-hidden, тех.обёртки и т.п.)
+   ---------------------------------------------------- */
+
+
+/* 2. НАЧАЛО ОБЩАЯ СЕТКА ЛИСТИНГА
+   (products-grid, колонки, отступы)
+   ---------------------------------------------------- */
+
+   /* убираем отрицательные отступы materialize .row */
+  .row.products-grid {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* === Ровные карточки по ширине (фикс: максимум 4 в ряд) === */
+  .products-grid{
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* десктоп: ровно 4 */
+    max-width: 1280px;         /* чтобы не расползалось на сверхшироких */
+    margin: 0 auto;            /* центрируем сетку */
+  }
+
+  /* убираем внешние отступы у карточек, чтобы не ломали сетку */
+  .product-col,
+  .product-card,
+  .card {
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* убираем боковые паддинги у колонки .col, если остались */
+  .products-grid .col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+/* 2. КОНЕЦ ОБЩАЯ СЕТКА ЛИСТИНГА
+   (products-grid, колонки, отступы)
+   ---------------------------------------------------- */
+
+
+
+
+
+/* 7. НАЧАЛО БЛОК ФИЛЬТРОВ
+   (левая колонка, заголовки фильтров, чекбоксы, "Показать ещё",
+    "Сбросить", "Применить", мобильная шторка)
+   ---------------------------------------------------- */
+
+    /* Общий лейаут: левая колонка (фильтры) + правая (каталог) */
+  .bm-all-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* Левая колонка с фильтрами — сидит внутри .container */
+  .bm-all-sidebar {
+    flex: 0 0 260px;
+    max-width: 260px;
+    box-sizing: border-box;
+    align-self: flex-start;
+  }
+
+  .bm-filter-block--categories {
+    margin-top: 0;
+    padding-top: 0;
+    flex: 0 0 65%;
+    min-height: 0;              /* важно для корректного скролла во flex-контейнере */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Бренды — нижний блок, список скроллится внутри body */
+  .bm-filter-block--brands {
+    flex: 0 0 35%;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 8px;            /* небольшая щель между блоками */
+  }
+
+  /*.bm-filter-block__body--brands {
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 4px;
+  }*/
+
+    /* Список брендов: вертикальная колонка */
+  .bm-filter-brands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bm-filter-brand-item {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 14px;
+    line-height: 1.3;
+    cursor: pointer;
+    margin: 0 0 4px;
+  }
+
+  .bm-filter-brand-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+  }
+
+  .bm-filter-block--categories .bm-filter-title {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+
+  .bm-cat-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px !important;   /* меньше и с приоритетом */
+    line-height: 1.1 !important;  /* плотнее строки */
+    padding: 0 !important;        /* убираем любые паддинги темы */
+    margin: 0 !important;         /* и маргины заодно */
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .bm-cat-level {
+    margin: 0;
+    padding-left: 0;
+  }
+
+  .bm-cat-item {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: static;       /* больше не рисуем линии, относительное не нужно */
+  }
+
+  /* Гасим стандартный чекбокс Materialize в дереве категорий */
+  .bm-filter-block--categories .bm-cat-label input[type="checkbox"] + span {
+    padding-left: 0;              
+    position: static;
+    font-size: inherit !important;  
+    height: 19px !important;         
+    line-height: 19px !important; 
+  }
+
+  .bm-filter-brand-icon {
+    width: 35px !important;
+    height: 35px !important;
+    flex: 0 0 35px !important;
+    border-radius: 4px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bm-filter-brand-icon img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    display: block;
+  }
+
+  .bm-filter-brand-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--brand-dark);
+    white-space: normal;
+    word-break: break-word;
+    overflow: hidden;
+  }
+
+  /* уровень 1 — без отступа */
+  .bm-cat-level-1 .bm-cat-item {
+    padding-left: 0;
+  }
+
+  /* Горизонтальные линии между верхнеуровневыми категориями */
+  .bm-cat-level-1 > .bm-cat-item + .bm-cat-item {
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+    margin-top: 3px;
+    padding-top: 3px;
+  }
+
+  /* Горизонтальные линии между категориями 2-го уровня
+   (Архитектура, Авиация, Военная техника, Гражданская техника и т.п.) */
+  .bm-cat-level-2 > .bm-cat-item + .bm-cat-item {
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+    margin-top: 1px;
+    padding-top: 1px;
+  }
+
+  /* уровень 2 */
+  .bm-cat-level-2 .bm-cat-item {
+    padding-left: 10px;
+  }
+
+  /* уровень 3 */
+  .bm-cat-level-3 .bm-cat-item {
+    padding-left: 18px;
+  }
+
+  /* Внутренний блок фильтров — фиксируем при скролле */
+  .bm-all-sidebar-inner {
+    position: fixed;
+    top: 60px; /* при необходимости подкорректируй под высоту шапки */
+    width: 260px;
+    box-sizing: border-box;
+    height: calc(100vh - 150px); /* окно минус шапка/отступы */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Правая часть — основное содержимое каталога */
+  .bm-all-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Визуальное оформление блоков фильтров */
+  .bm-filter-block {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 10px;
+    padding: 12px 12px 14px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+
+  #filter-categories-block,
+  #filter-brands-block {
+    min-height: 40px;
+  }
+
+  /* Шапка блока фильтра: заголовок слева, "Очистить" справа */
+  .bm-filter-block__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .bm-filter-block__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand-dark);
+  }
+
+  /* Кнопка "Очистить" в шапке фильтра */
+  .bm-filter-clear {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brand-accent);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .bm-filter-clear:hover {
+    text-decoration: underline;
+  }
+
+  .bm-filter-clear:disabled {
+    opacity: 0.4;
+    cursor: default;
+    text-decoration: none;
+  }
+
+  .bm-filter-clear:focus,
+  .bm-filter-clear:active {
+    background: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--brand-accent) !important;
+  }
+
+
+
+  .bm-top-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .bm-top-filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bm-top-filter-item--attr {
+    position: relative;
+    min-width: 180px;
+  }
+
+  .bm-top-filter-item__label {
+    font-size: 12px;
+    line-height: 1.3;
+    color: #666666;
+  }
+
+  .bm-top-filter-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #d0d5dd;
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .bm-top-filter-trigger:focus,
+  .bm-top-filter-trigger:active {
+    background-color: #ffffff;
+    outline: none;
+    box-shadow: none;
+  }
+
+  .bm-top-filter-trigger__text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .bm-top-filter-trigger__icon {
+    margin-left: 8px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 5px 4px 0 4px;
+    border-color: #7d828a transparent transparent transparent;
+    flex: 0 0 auto;
+  }
+
+  .bm-top-filter-item--open .bm-top-filter-trigger__icon {
+    border-width: 0 4px 5px 4px;
+    border-color: transparent transparent #7d828a transparent;
+  }
+
+  .bm-top-filter-item--open .bm-top-filter-trigger {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 1px rgba(227, 30, 37, 0.15);
+  }
+
+  .bm-top-filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 50;
+    margin-top: 4px;
+    padding: 8px 10px;
+    min-width: 100%;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    max-height: 260px;
+    overflow-y: auto;
+    display: none;
+    box-sizing: border-box;
+  }
+
+  .bm-top-filter-item--open .bm-top-filter-dropdown {
+    display: block;
+  }
+
+  .bm-top-filter-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .bm-top-filter-option:last-child {
+    margin-bottom: 0;
+  }
+
+  .bm-top-filter-option__label {
+    flex: 1 1 auto;
+    line-height: 1.4;
+    display: block;
+    word-break: break-word;
+  }
+
+  .bm-top-filter-dropdown [type="checkbox"] + span:not(.lever) {
+    height: auto;
+    line-height: 1.4;
+    padding-left: 0;
+    display: block;
+  }
+
+
+
+/* 7. КОНЕЦ БЛОК ФИЛЬТРОВ
+   (левая колонка, заголовки фильтров, чекбоксы, "Показать ещё",
+    "Сбросить", "Применить", мобильная шторка)
+   ---------------------------------------------------- */
+
+   
+
+/* 8. НАЧАЛО ПАНЕЛЬ УПРАВЛЕНИЯ КАТАЛОГОМ
+   (сортировка, лимит, переключатель вида, счётчик товаров)
+   ---------------------------------------------------- */
+
+     /* Обёртка для счётчика найденных товаров над панелью */
+  .bm-results-wrapper {
+    margin-bottom: 8px;
+  }
+
+  /* Ряд, в котором живёт top-filter-bar */
+  .bm-top-filter-row {
+    margin-bottom: 4px;
+  }
+
+  /* Верхняя панель фильтров — липнет под шапкой */
+  .bm-top-filter-bar {
+    position: sticky;
+    top: 70px; /* подогнать при необходимости под реальную высоту шапки */
+    z-index: 5;
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
+  }
+
+   /* Внутренняя сетка флагов и атрибутов (строки 1–2) */
+  .bm-top-filter-bar__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  .bm-top-filter-row--toggles,
+  .bm-top-filter-row--attrs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 16px;
+    width: 100%;           /* строка занимает всю ширину панели */
+  }
+
+  /* Кнопка "Сбросить фильтры" — уезжает вправо в первой строке */
+  .bm-top-filter-row--toggles .bm-top-filter-item--reset {
+    margin-left: auto;
+  }
+
+  /* Атрибуты распределяем равномерно по ширине */
+  .bm-top-filter-row--attrs .bm-top-filter-item--attr {
+    flex: 1 1 0;   /* все делят строку поровну */
+    min-width: 0;  /* разрешаем ужиматься, чтобы влезть в одну строку */
+  }
+
+  /* Строка сортировки / лимита (третья строка) */
+  .bm-top-filter-service-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 16px;
+    align-items: flex-end;
+    width: 100%;           /* третья строка тоже на всю ширину */
+  }
+
+  .bm-top-filter-service-item {
+    flex: 0 0 30px;   /* фиксированная комфортная ширина */
+    min-width: 300px;  /* чтобы полностью влазил текст сортировки */
+  }
+
+  .bm-top-filter-service-select {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #d0d5dd;
+    background-color: #ffffff;
+    box-sizing: border-box;
+
+    height: 34px;      /* по высоте как кнопки фильтров */
+    font-size: 14px;   /* тот же размер, что и у .bm-top-filter-trigger */
+    line-height: 1.3;
+  }
+
+  .bm-top-filter-service-select:focus,
+  .bm-top-filter-service-select:active {
+    outline: none;
+    box-shadow: none;
+    border-color: var(--brand-accent);
+  }
+
+  /* F5: чекбокс "Показать отсутствующие" в верхней панели */
+  .bm-top-filter-bar .js-filter-archive {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 6px 0 0 !important;
+    border-radius: 3px !important;
+    border: 1px solid #b0b0b0 !important;
+    background: #ffffff !important;
+    box-sizing: border-box;
+    position: relative !important;
+    flex: 0 0 14px;
+    opacity: 1 !important;
+    vertical-align: middle;
+    top: -2px;
+  }
+
+  /* заливка брендовым цветом при выборе */
+  .bm-top-filter-bar .js-filter-archive:checked {
+    background: var(--brand-accent) !important;
+    border-color: var(--brand-accent) !important;
+  }
+
+  /* белая галочка внутри */
+  .bm-top-filter-bar .js-filter-archive:checked::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 6px;
+    height: 9px;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(45deg);
+  }
+
+  /* глушим стандартный чекбокс Materialize вокруг "Показать отсутствующие" */
+  .bm-top-filter-bar .js-filter-archive + span,
+  .bm-top-filter-bar .js-filter-discount + span,
+  .bm-top-filter-bar .js-filter-new + span,
+  .bm-top-filter-bar .js-filter-kids + span,
+  .bm-top-filter-bar .js-filter-accessories + span {
+    padding-left: 0 !important;
+    position: static !important;
+    font-size: 14px !important;
+    line-height: 14px !important;
+    height: 14px !important;
+  }
+
+
+/* 8. КОНЕЦ ПАНЕЛЬ УПРАВЛЕНИЯ КАТАЛОГОМ
+   (сортировка, лимит, переключатель вида, счётчик товаров)
+   ---------------------------------------------------- */
+
+
+/* 9. НАЧАЛО АДАПТИВ (TABLET / MOBILE)
+   (media-запросы для сетки, карточки, фильтров, панели)
+   ---------------------------------------------------- */
+
+  /* Мобилки */
+  @media (max-width: 600px) {
+    
+    .card-content{ 
+        padding: 8px; 
+    }
+
+    .card-title{ 
+        font-size: 14px; 
+        line-height: 1.3; 
+    }
+
+    .product-card__action .btn{ 
+        font-size: 12px; 
+        padding: 0 10px; 
+    }
+
+    .products-grid{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .product-card__title{
+        -webkit-line-clamp: 2;
+        min-height: calc(1.35em * 2);
+    }
+
+    /* Футер карточки: 3 колонки (– | BUY | +), 2 ряда (цена над кнопкой) */
+    .product-card__footer{
+        display: grid;
+        grid-template-columns: 40px 1fr 40px; /* слева – / по центру КУПИТЬ / справа + */
+        grid-template-rows: auto auto;        /* 1-й ряд: цена, 2-й ряд: кнопки */
+        gap: 8px;
+        align-items: center;
+        padding: 0 10px 10px;
+    }
+
+    /* Цена по центру, на всю ширину первого ряда */
+    .product-card__price{
+        grid-column: 1 / -1;   /* растянуть на все 3 колонки */
+        grid-row: 1;
+        justify-self: center;  /* по центру */
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    /* Кнопка «Купить» — по центру, в средней колонке, компактнее по высоте */
+    .product-card__footer .btn{
+        grid-column: 2;        /* ровно средняя колонка */
+        grid-row: 2;
+        min-height: 38px;      /* ниже, чем раньше */
+        padding: 10px 12px;
+        border-radius: 10px;
+        justify-self: stretch; /* на всю ширину средней колонки */
+    }
+
+    /* Если добавишь кнопки количества (опционально) — они встанут по краям */
+    .product-card__footer .btn-qty{
+        grid-row: 2;
+        width: 38px; height: 38px;
+        border: 1px solid var(--brand-accent);
+        background: transparent;
+        border-radius: 10px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .product-card__footer .btn-qty.btn-minus{ 
+        grid-column: 1; 
+    }
+
+    .product-card__footer .btn-qty.btn-plus { 
+        grid-column: 3; 
+    }
+
+    
+    /* На телефонах показываем только название — мета-строки прячем */
+    .product-card__meta-list{
+        display: none !important;
+    }
+
+    /* === Fix: центрируем название на телефоне принудительно === */
+    .product-card__title{
+        text-align: center !important;
+    }
+
+    .product-card__meta-item .meta-val--completeness{
+        font-weight: 600;
+    }
+
+    .product-ribbon{
+        top: 18px;
+        left: -54px;
+        width: 176px;
+        line-height: 1.8;
+    }
+
+    .product-ribbon > span{
+        padding: 0 12px;
+        font-size: 11px;
+    }
+
+    .product-belt{
+        min-height: 24px;
+        padding: 3px 8px;
+    }
+    .product-belt > span{
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .product-flag{ 
+        top:12px; 
+        right:8px; 
+        padding:5px 8px; 
+        font-size:12px; 
+    }
+
+    .product-flag .flag-ico{ 
+        width:13px; 
+        height:13px; 
+    }
+
+    .product-card__footer{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        gap: 8px;
+    }
+
+    .footer-col--price{ 
+        order: 1; 
+    }
+
+    .footer-col--btn{ 
+        order: 2; 
+    }
+
+    .btn-cart{
+        width: 100%;
+        min-height: 42px;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+
+    .product-flag--discount{
+        bottom: 42px;     /* чуть выше ленты на узких экранах */
+        top: auto;        /* гарантированно не тянем вверх */
+        font-size: 14px;
+        padding: 6px 9px;
+    }
+
+    .footer-col--btn .bm-inbtn,
+    .footer-col--btn .bm-add{
+        width: 100% !important;
+    }
+
+        /* Лейаут фильтров на мобилках: сверху — фильтры, ниже — каталог */
+     .bm-all-layout {
+      display: block;
+      width: auto;       /* сбрасываем растяжение */
+      margin-left: 0;    /* сбрасываем сдвиг */
+    }
+
+    .bm-all-sidebar {
+      max-width: 100%;
+      flex: none;
+      margin-bottom: 12px;
+    }
+
+    .bm-all-sidebar-inner {
+      position: static;    /* на мобилках sticky отключаем */
+    }
+
+    .bm-all-main {
+      width: 100%;
+    }
+
+    .bm-top-filter-bar {
+      position: static;
+      box-shadow: none;
+    }
+
+    .bm-top-filter-row--toggles,
+    .bm-top-filter-row--attrs {
+      align-items: flex-start;
+    }
+
+    .bm-top-filter-row--toggles .bm-top-filter-item--reset {
+      margin-left: 0;
+      width: 100%;
+      text-align: right;
+    }
+
+    .bm-top-filter-row--attrs .bm-top-filter-item--attr {
+      flex: 1 1 100%;
+    }
+
+  }
+
+/* планшеты */
+  @media (max-width: 1200px){
+    
+    .products-grid{ 
+        grid-template-columns: repeat(3, minmax(0, 1fr)); 
+    }
+
+    .product-card__meta-brand .brand-icon{
+        width: 20px; height: 20px; /* было 18px → +~11% */
+    }
+
+    .product-card__meta-brand{
+        font-size: 16px;           /* было ~12.5px → +~28% (ближе к 1.3×) */
+        font-weight: 600;
+        line-height: 1.3;
+        gap: 8px;
+    }
+    
+    .product-card__meta-brand .brand-icon{
+        width: 22px; 
+        height: 22px; /* было 18px → +~22% */
+    }
+  }
+
+/* 9. КОНЕЦ АДАПТИВ (TABLET / MOBILE)
+   (media-запросы для сетки, карточки, фильтров, панели)
+   ---------------------------------------------------- */   

@@ -1,0 +1,911 @@
+:root{
+  --brand-dark:#3c4854;        /* основной текст/темный фон */
+  --brand-cream:#f8f2da;       /* светлый фон */
+  --brand-sand:#cfbfa6;        /* доп. фон */
+  --brand-accent:#bf4250;      /* акцент: кнопки/ссылки */
+}
+
+/* Базовая перекраска темы */
+body{ color:var(--brand-dark); background:var(--brand-cream); }
+a, .btn-link{ color:var(--brand-accent); }
+a:hover{ opacity:.85; }
+
+/* Кнопки и акценты */
+.btn-primary, .button, .btn.btn-primary{
+  background:var(--brand-accent); border-color:var(--brand-accent);
+}
+.btn-primary:hover{ filter:brightness(0.92); }
+
+/* Хедер/меню/поиск */
+#top, .navbar, .breadcrumb{ background:var(--brand-sand) !important; }
+.header .header-middle{ background:var(--brand-cream); }
+.header .header-middle .search input{ border-color:var(--brand-sand); }
+
+/* Footer */
+footer{ background:var(--brand-dark); color:#fff; }
+footer a{ color:#fff; opacity:.9; }
+footer a:hover{ opacity:1; }
+
+/* Скролл в блоке брендов (лев. колонка) */
+.brand-list{ max-height:320px; overflow:auto; padding-right:6px; }
+.brand-list img{ max-height:26px; width:auto; display:block; margin:8px 0; }
+
+/* ===== Полоса верхнего меню — вид без рамок у ссылок, с разделителями ===== */
+:root{
+  --nav-btn-w: 200px;        /* ширина кнопок слева/справа (можешь подправить) */
+  --nav-gap: 14px;
+}
+
+.bm-topnav{ background:var(--brand-sand); border-bottom:1px solid rgba(0,0,0,.06); }
+.bm-topnav__inner{
+  max-width:1400px; margin:0 auto; padding:0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;   /* ДОБАВЛЕНО */
+  height:65px;                     /* ДОБАВЛЕНО */
+  gap:16px;
+  flex-wrap:nowrap;
+  box-sizing:border-box;           /* На всякий случай */
+}
+
+/* Общий контейнер страницы — расширяем под фильтры и будущие колонки */
+@media (min-width: 1200px) {
+  .container{
+    width: 100%;
+    max-width: 1400px;   /* та же ширина, что у .bm-topnav__inner */
+    margin: 0 auto;
+    padding: 0 12px;
+  }
+}
+
+/* группы фиксированной ширины (по 2 пункта), чтобы поиск всегда оставался по центру */
+.bm-side{ list-style:none; margin:0; padding:0; display:flex; align-items:center; gap:var(--nav-gap); }
+.bm-side--left,.bm-side--right{ flex:0 0 calc(var(--nav-btn-w)*2 + var(--nav-gap)); }
+
+/* ссылка без рамки/фона */
+.bm-link{
+  display:flex; align-items:center; justify-content:center;
+  width:var(--nav-btn-w); height:38px;
+  color:var(--brand-dark); font-weight:600; text-decoration:none;
+  background:transparent; border:none; border-radius:8px; /* рамку сняли */
+  transition:.15s;
+  font-size: 15.5px;      /* +1–2пт относительно было */
+  height: 40px;           /* чуть выше для дыхания */
+}
+.bm-link:hover{ color:var(--brand-accent); background:transparent; }
+
+/* разделители между пунктами внутри групп */
+.bm-side li + li{ position:relative; }
+.bm-side li + li::before{
+  content:""; position:absolute; left:calc(-.5 * var(--nav-gap) - 1px); top:50%;
+  transform:translateY(-50%); width:1px; height:18px; background:rgba(0,0,0,.18);
+  border-radius:1px;
+}
+
+/* иконки */
+.bm-ico{ width:18px; height:18px; margin-right:8px; display:inline-flex; }
+.bm-side li + li::before{ height:20px; }  /* чуть выше разделитель */
+.bm-ico svg{ width:18px; height:18px; fill:var(--brand-dark); }
+.bm-link:hover .bm-ico svg{ fill:var(--brand-accent); }
+
+/* Поиск по центру с рамкой */
+.bm-center{
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.bm-search{
+  position: relative;                          /* переносим сюда position */
+  width: clamp(240px, 42vw, 460px);
+}
+
+.bm-search input[type="text"]{
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  padding-right: 32px;                          /* место под крестик справа */
+  border: 1px solid var(--brand-sand);
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Адаптив */
+@media (max-width:1100px){
+  :root{ --nav-btn-w:144px; }
+  .bm-search{ width:clamp(220px, 44vw, 420px); }
+}
+@media (max-width:767px){
+  .bm-topnav__inner{ flex-wrap:wrap; gap:10px; padding:8px 10px; }
+  .bm-side--left,.bm-side--right{ flex:1 0 100%; justify-content:space-between; }
+  .bm-link{ flex:1 1 calc(50% - var(--nav-gap)); width:auto; }
+  .bm-center{ order:3; flex:1 0 100%; }
+  .bm-search{ width:100%; }
+  .bm-side li + li::before{ display:none; } /* на мобиле убираем разделители */
+}
+
+/* узкий десктоп / планшет: 768–1100px */
+@media (max-width:1100px) and (min-width:768px){
+  :root{ --nav-btn-w: 156px; }                 /* кнопки чуть шире */
+  .bm-topnav__inner{ gap:12px; }
+
+  /* поиск компактнее и с «воздухом» по краям */
+  .bm-center{ padding: 0 6px; }
+  .bm-search{ width: clamp(220px, 36vw, 420px); }  /* было 42–48vw */
+
+  /* разрешаем 2 строки у длинных пунктов, делаем их плотнее */
+  .bm-link{
+    height:auto; min-height:40px; padding:6px 10px;
+    line-height:1.12; word-spacing:-1px;       /* меньше интервал между "Мой" и "аккаунт" */
+    text-align:center;
+  }
+  .bm-ico{ margin-right:6px; }
+}
+
+/* чтобы поиск не «лип» к правым пунктам даже на широких экранах */
+.bm-center{ padding: 0 6px; }
+.bm-center{ margin-right:32px; } 
+
+/* если всё равно тесно – можно ещё на шаг ужать поиск у совсем узких ноутов */
+@media (max-width:900px) and (min-width:768px){
+  .bm-search{ width: clamp(200px, 32vw, 380px); }
+}
+
+/* Иконка-лупа внутри поля */
+.bm-search{ position: relative; }
+.bm-search input[type="text"]{
+  padding-left: 38px; /* место под иконку */
+}
+.bm-search-btn{
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border: 0; background: transparent; padding: 0;
+  cursor: pointer; opacity: .9;
+}
+.bm-search-btn svg{ width: 18px; height: 18px; fill: var(--brand-dark); }
+.bm-search-btn:hover svg{ fill: var(--brand-accent); opacity: 1; }
+
+/* FAB-навигация страницами — пилюли с текстом */
+.page-fab {
+  position: fixed;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  min-height: 46px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff !important;
+  background: #bf4250;              /* фирменный */
+  box-shadow: 0 6px 16px rgba(0,0,0,.2);
+  z-index: 1100;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  text-decoration: none !important;
+}
+.page-fab:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.24); }
+.page-fab--prev { bottom: calc(180px + env(safe-area-inset-bottom));  /* было 140px */ }
+.page-fab--next { bottom: calc(120px + env(safe-area-inset-bottom));  /* было 80px */ }
+
+/* Иконка-стрелка чуть крупнее */
+.page-fab__icon { font-size: 18px; line-height: 1; }
+
+/* На мобильных: делаем компактнее, можно скрыть подписи */
+@media (max-width: 600px) {
+  /* контейнер фиксируем снизу и центрируем */
+  .page-fab-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 1100;
+  }
+  /* внутри контейнера ссылки идут обычным потоком */
+  .page-fab {
+    position: static;     /* переопределяем fixed */
+    right: auto;
+    bottom: auto;
+    font-size: 14px;
+  }
+}
+
+/* подстраховка от горизонтального скролла */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* === BM: MOBILE ZOOM GUARD === */
+/* Убираем авто-увеличение шрифта и двойной-тап-zoom на мобильных браузерах */
+html {
+  -webkit-text-size-adjust: 100%;   /* iOS Safari не будет «подгонять» текст */
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Кликабельные элементы: просим браузер трактовать как «манипуляции», без дабл-тап-зума */
+a, button, .btn, [role="button"], input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Утилита для скрытия элементов из JS (листинг/карточка/модалки) */
+.is-hidden {
+  display: none !important;
+}
+
+/* Страница: ЛК → Отзывы / вопросы покупателей */
+#account-feedback-admin h1 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+#account-feedback-admin .nav-tabs {
+  margin-bottom: 10px;
+}
+
+/* Вместо inline-style в twig */
+#account-feedback-admin .tab-content {
+  margin-top: 15px;
+}
+
+/* Таблица — компактнее, выравнивание по верху */
+#account-feedback-admin .table > thead > tr > th,
+#account-feedback-admin .table > tbody > tr > td {
+  vertical-align: top;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+/* Колонка с текстом отзыва/вопроса — переносы строк и ограничение ширины */
+#account-feedback-admin .table > tbody > tr > td:nth-child(5) {
+  max-width: 420px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Ссылки на товар — подчёркнуты, чтобы читалось как переход */
+#account-feedback-admin .table td a {
+  text-decoration: underline;
+}
+
+/* Кнопка "Показать ещё" — вместо inline margin */
+#account-feedback-admin .text-center {
+  margin: 15px 0;
+}
+
+/* Серый текст-заглушка, когда нет записей */
+#account-feedback-admin p {
+  margin-top: 10px;
+}
+
+#account-feedback-admin p .text-muted,
+#account-feedback-admin p.grey-text {
+  color: #777;
+}
+
+
+/* ================================
+ * 10. Компактный футер (общий)
+ * ================================ */
+
+  footer {
+    padding: 0 0;      /* уменьшаем высоту футера */
+    font-size: 13px;     /* текст поменьше */
+    line-height: 1.4;
+  }
+
+  /* Прячем "толстую" часть футера с колонками
+  .footer-sn,
+  .footer-info {
+    display: none;
+  }*/
+
+  /* Убираем лишние нижние отступы внутри футера */
+  footer .row {
+    margin-bottom: 0;
+    display: none;
+  }
+
+  /*html,
+  body {
+    height: 100%;
+  }*/
+
+  /*body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }*/
+
+  /* футер — последний элемент, прижимается к низу*/
+  footer.page-footer {
+    margin-top: auto;
+    padding-top: 0px
+  }
+
+  /* .page-footer {
+    padding-top: 20px; 
+    color: #fff;
+    background-color: #ee6e73;
+}*/
+
+/* ================================
+ * 10. КОНЕЦ Компактный футер (общий)
+ * ================================ */
+
+/* Кнопка сброса поиска в шапке */
+.bm-search-reset{
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  /* под текст, а не иконку */
+  font-size: 13px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 10px;
+  color: var(--brand-accent);  /* красный текст */
+  white-space: nowrap; /* чтобы надпись не переносилась */
+}
+
+/* показываем крестик, когда в поле есть текст */
+.bm-search--has-value .bm-search-reset{
+  display: inline-block;
+}
+
+/* Убираем зелёную подсветку при клике по поиску и "Сбросить поиск" */
+.bm-search-btn:focus,
+.bm-search-btn:active,
+.bm-search-reset:focus,
+.bm-search-reset:active {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+}
+
+.bm-search-reset:hover {
+  background: transparent;
+}
+
+/* 3. НАЧАЛО КАРТОЧКА ТОВАРА — ОСНОВА
+   (.product-card, __image/__content/__footer, заголовки)
+   ---------------------------------------------------- */
+
+   /* Контейнер мета-строк: компактная вертикальная сетка */
+  .product-card__meta-list{
+    margin-top: 2px;
+    display: grid;
+    gap: 4px;
+  }
+
+  /* Одна строка мета-блока: меньше кегль, левое выравнивание */
+  .product-card__meta-item{
+    font-size: 12.5px;      /* ~в 1.4–1.5 раза меньше заголовка */
+    line-height: 1.35;
+    color: rgba(0,0,0,.70);
+    text-align: left;
+    word-break: break-word;
+  }
+
+  /* Иконка бренда в строке «Бренд, модель» */
+  .product-card__meta-brand{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .product-card__meta-brand .brand-icon{
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: cover;
+    display: inline-block;
+  }
+
+  /* Подсветка значения «Комплектация» */
+  .product-card__meta-item .meta-val--completeness{
+    font-weight: 700;
+    color: var(--brand-accent);
+  }
+
+  /* NOTE-row: «Примечание» — метка слева (без переноса), текст справа (полностью) */
+  .product-card__meta-item--note{
+    display: flex;
+    align-items: flex-start;  /* начало по верхней линии */
+    gap: 6px;
+  }
+
+  .product-card__meta-item--note .meta-label{
+    white-space: nowrap;      /* «Примечание:» никогда не переносится */
+    color: rgba(0,0,0,.70);
+  }
+
+  .product-card__meta-item--note .meta-val--note{
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--brand-dark);
+    font-weight: 600;
+    overflow: visible;        /* показываем полностью */
+    white-space: normal;      /* перенос по словам */
+    word-break: break-word;   /* если длинное слово/URL */
+  }
+
+  .product-card__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand-dark);
+    text-decoration: none;
+    /*margin-bottom: 6px;*/
+    text-align: center;           /* ← добавили центрирование названия */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.1;                 /* ← синхронизировано с основным блоком */
+    -webkit-line-clamp: 2;
+    min-height: calc(1.1em * 2);  
+  }
+
+  .product-card__title:hover {
+    color: var(--brand-accent);
+  }
+
+  /* контент */
+  .product-card__content {
+    flex: 1 1 auto;
+    padding: 4px 10px 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .product-card__subtitle {
+    font-size: 13px;
+    color: #777;
+    margin-top: 2px;
+  }
+
+  
+
+  .footer-col--price {
+    text-align: center; 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+
+    font-size: 15px; /* <-- это размер ОСНОВНОЙ цены, меняй тут */
+    font-weight: 700;
+    color: var(--brand-dark);
+    line-height: 1.1;
+  }
+
+
+  .price-old {
+    margin-left: 0;      /* <-- важно, чтобы ушло со строки */
+    font-size: 12px;     /* <-- это размер ЗАЧЕРКНУТОЙ, меняй тут */
+    font-weight: 400;
+    color: #999;
+    text-decoration: line-through;
+    line-height: 1.1;
+  }
+
+  .price--empty {
+    opacity: 0.6;
+  }
+
+  .product-card__footer .btn {
+    font-size: 13px;
+    /*padding: 6px 12px;*/
+    border-radius: 12px;
+  }
+
+  .product-col {
+    display: flex;
+  }
+
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid var(--brand-sand);
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.1);
+  }
+
+
+/* 3. КОНЕЦ КАРТОЧКА ТОВАРА — ОСНОВА
+   (.product-card, __image/__content/__footer, заголовки)
+   ---------------------------------------------------- */
+
+
+/* 4. НАЧАЛО ИЗОБРАЖЕНИЯ В КАРТОЧКЕ
+   (пропорции блока, img, object-fit)
+   ---------------------------------------------------- */
+
+   /* изображение */
+  .product-card__image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+  }
+
+  .product-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .product-card__image img{ 
+      transition: transform .25s ease; 
+  }
+
+  .product-card:hover .product-card__image img{ 
+      transform: scale(1.03); 
+  }
+
+/* 4. КОНЕЦ ИЗОБРАЖЕНИЯ В КАРТОЧКЕ
+   (пропорции блока, img, object-fit)
+   ---------------------------------------------------- */
+
+
+/* 5. НАЧАЛО БЕЙДЖИ / ПЛАШКИ / РИББОНЫ
+   (Новинка, Начинающим, С аксессуарами, Скидка X%)
+   ---------------------------------------------------- */
+
+   .product-flag--discount{
+    position: absolute;
+    right: 12px;
+    top: auto !important;         /* перебиваем базовый .product-flag */
+    left: auto !important;
+    bottom: 38px !important;      /* внизу справа, над "С аксессуарами" */
+    background: #e6f4ff !important; /* нейтрально-голубой */
+    color: #0b6aa2 !important;
+    border: 1px solid #bfe0ff !important;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  /* === E. Плашка «Есть варианты» (правый верх, спокойный стиль) === */
+  .product-flag{
+    position: absolute;
+    top: 14px;
+    right: 10px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f0f0f0;
+    color: #333;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1;
+    box-shadow: 0 1px 0 rgba(0,0,0,.05) inset;
+    pointer-events: none;
+  }
+  .product-flag .flag-ico{
+    width: 14px; height: 14px;
+    fill: currentColor;
+    opacity: .9;
+  }
+
+  .product-belt{
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 26px;
+    padding: 4px 10px;
+    z-index: 3;                      /* ниже диагональной (z=4), выше картинки */
+    pointer-events: none;            /* не мешаем клику по изображению */
+    box-shadow: 0 -1px 0 rgba(0,0,0,.04) inset;
+  }
+
+  .product-belt > span{
+    font-weight: 700;
+    font-size: 12.5px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* Цвет как «бежевый из меню» — используем переменную бренда */
+  .product-belt--accessories{
+    background: #efe8d7;
+    color: #3c4854;
+  }
+
+  /* === D.8 Ribbon: ниже + шире + центрирование текста (override) === */
+
+  .product-ribbon{
+    position: absolute;
+    top: 22px;             /* было 8px → опустили ниже, лента становится визуально шире */
+    left: -60px;           /* сместили левее, чтобы диагональ снова проходила через угол */
+    width: 196px;          /* было 172px → расширили под длинные подписи */
+    transform: rotate(-45deg);
+    z-index: 4;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 2.0;      /* немного выше, чтобы буквы «дышали» */
+    color: #fff;
+    background: var(--brand-accent);
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .product-ribbon > span{
+    display: flex;                 /* жёсткое центрирование текста */
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    letter-spacing: .2px;
+  }
+
+  /* Варианты цветов остаются те же */
+  .product-ribbon--out{      
+      background:#9aa3ab; 
+  }
+
+  .product-ribbon--new{      
+      background:var(--brand-accent); 
+  }
+
+  .product-ribbon--beginner{ 
+      background:#2ecc71; 
+  }
+
+  /* плашки поверх изображения */
+  .product-card__image .product-labels{
+    position:absolute;
+    top:8px; left:8px;
+    display:flex; gap:6px; flex-wrap:wrap;
+    z-index:2;
+  }
+
+  .product-label{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 8px;
+    font-size:12px; line-height:1;
+    border-radius:999px;
+    background:var(--brand-sand);
+    color:var(--brand-dark);
+    user-select:none;
+  }
+
+  /* модификаторы */
+  .product-label--primary{
+    background:var(--brand-accent);
+    color:#fff;
+  }
+  .product-label--secondary{
+    background:#d8d8d8;
+    color:#333;
+  }
+  .product-label--variants{
+    background:#f0f0f0;
+    color:#333;
+  }
+  /* иконка в вариантах — если используем <i> или svg */
+  .product-label--variants i,
+  .product-label--variants svg{
+    width:14px; height:14px; display:inline-block;
+  }
+
+/* 5. КОНЕЦ БЕЙДЖИ / ПЛАШКИ / РИББОНЫ
+   (Новинка, Начинающим, С аксессуарами, Скидка X%)
+   ---------------------------------------------------- */
+
+
+/* 6. НАЧАЛО ЦЕНА И КНОПКИ КОРЗИНЫ В КАРТОЧКЕ
+   (price, old/new, bm-cart-ctrl, bm-inbtn, - х +)
+   ---------------------------------------------------- */
+
+   /* BM: делаем реакции кнопок в листинге чуть быстрее */
+  .footer-col--btn > .btn-cart,
+  .footer-col--btn > .bm-inbtn{
+    transition: all .08s linear; /* было дольше из темы */
+  }
+
+  .footer-col--btn > .bm-inbtn:active,
+  .footer-col--btn > .btn-cart:active{
+    transform: scale(0.99); /* быстрый тактильный отклик без задержек */
+  }
+
+  /* у состояния «в корзине»: счётчик прижат вправо, текст по центру 
+  .bm-inbtn .bm-minus{ 
+      margin-left:auto; 
+  }*/
+
+  .bm-inbtn .bm-minus,
+  .bm-inbtn .bm-plus{
+    width: 22px; 
+    min-width: 22px;
+    height: 22px; 
+    line-height: 22px;
+    font-size: 18px; 
+    font-weight: 700;
+    background: rgba(255,255,255,.22);
+    border-radius: 6px; cursor: pointer;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+
+  }
+
+  .bm-inbtn .bm-plus.is-disabled{ 
+      opacity:.5; 
+      pointer-events:none; 
+      cursor:not-allowed; 
+  }
+
+  .bm-inbtn .bm-num{
+    min-width: 18px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  /* === F2: красная кнопка с количеством === */
+  .bm-inbtn{
+    display: inline-flex;
+    align-items: center;
+    width: 100% !important;         /* на всю правую колонку */
+    min-height: 42px;
+    border-radius: 10px;
+    /*padding: 0 12px 0 50px;          /* слева место под иконку */
+    gap: 8px;                       /* расстояние между иконкой и счетчиком */
+    position: relative;       /* ← нужно для абсолютной иконки */
+    /*padding: 0 12px 0 50px;  /* 14 (left) + 18 (icon) + 18 (зазор) */
+  }
+
+  /* === F2: и «В корзину», и «В корзине» — одинаковый размер, на всю правую половину === */
+  .footer-col--btn .bm-add,
+  .footer-col--btn .bm-inbtn{
+    display: flex;           /* можно inline-flex, но flex проще для 100% ширины */
+    align-items: center;
+    justify-content: center;
+    width: 100%;             /* ← заполняет всю ширину колонки */
+    box-sizing: border-box;
+    min-height: 42px;
+    /*padding: 0 10px;*/
+    gap: 8px;
+    white-space: nowrap;
+    margin: 0;               /* на всякий — убираем внешние отступы */
+    flex: 0 0 100%;               /* жёстко: занимаем 100% ширины своей колонки */
+    max-width: 100%;              /* и ни пикселем больше */
+    overflow: hidden;    /* ← на всякий случай, чтобы ничего не «раздувало» */
+  }
+
+  .footer-col--btn{ 
+      width:100%; 
+  } /* страховка */
+
+  .footer-col--btn{
+    justify-self: stretch !important;
+    align-self: center;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .footer-col--btn{
+    display:block;                /* grid-ячейка ведёт себя как блочный контейнер */
+    min-width:0;
+    justify-self:stretch !important;
+    align-self:center;
+  }
+
+  .footer-col--btn > *{
+    display:flex !important;      /* перебиваем inline-block у темной темы */
+    align-items:center;
+    justify-content:center;
+    width:100% !important;
+    max-width:100% !important;
+    min-height:42px;
+    padding: 0 4px;
+    box-sizing:border-box;        /* ширина с учётом padding */
+    white-space:nowrap;
+    overflow:hidden;              /* ничего не распирает колонку */
+  }
+
+  /* состояние недоступно */
+  .footer-col--unavailable{
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+
+  /* половинки футера */
+  .footer-col{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+  }
+
+  .footer-col,
+  .footer-col--price,
+  .footer-col--btn{
+    min-width: 0;          /* ← чтобы контент не распирал колонку */
+  }
+
+  .footer-col--btn{ 
+      text-align: center; 
+  }
+
+  /* цена: новая и старая */
+  .price-normal,
+  .price-new{
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brand-dark);
+  }
+  
+  .price-empty{
+    color: #777;
+    font-size: 14px;
+  }
+
+  /* сетка футера: 2 колонки (цена | кнопка) на десктопе */
+  .product-card__footer{
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0,0,0,.05);
+    display: grid !important;
+    grid-template-columns: minmax(0,44%) minmax(0,56%) !important; /* было 45/55 */
+    gap: 10px;
+    padding: 4px 4px 8px;    /* справа тоже 10px, чтобы визуально «до края» */
+    box-sizing: border-box;
+  }
+
+  /* кнопка — центр + почти на всю половину */
+  .bm-add{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0px;
+    /*padding: 0 12px 0 42px !important;*/
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    width: 100% !important;                 /* ← занимает всю правую половину */
+    min-height: 42px;
+    position: relative;      /* для ::before */
+  }
+
+  .btn-cart .btn-ico{ 
+      width:16px; 
+      height:16px; 
+      fill:#fff; 
+  }
+
+/* 6. КОНЕЦ ЦЕНА И КНОПКИ КОРЗИНЫ В КАРТОЧКЕ
+   (price, old/new, bm-cart-ctrl, bm-inbtn, - х +)
+   ---------------------------------------------------- */
+
