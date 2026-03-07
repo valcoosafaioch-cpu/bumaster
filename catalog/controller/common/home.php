@@ -61,7 +61,8 @@ class ControllerCommonHome extends Controller {
         );
 
         // Центральная колонка
-        $data['bm_home_text']     = '';       // A5 Текст / приветствие
+        $data['latest_news']      = array();  // A5 Новости
+        $data['news_page_href']   = $this->url->link('information/news');
         $data['bm_home_slides']   = array();  // A6 Слайдер
         $data['latest_products']  = array();  // A7.1 Последние поступления
         $data['special_products'] = array();  // A7.2 Спецпредложения
@@ -166,20 +167,39 @@ class ControllerCommonHome extends Controller {
         // Для совместимости, если где-то ещё использовался старый ключ
         $data['contacts']                 = $contacts;
 
-        // --- Текст A5 ---
-        $bm_home_text_raw  = isset($bm_home['bm_home_text']) ? $bm_home['bm_home_text'] : '';
-        $bm_home_text_html = html_entity_decode($bm_home_text_raw, ENT_QUOTES, 'UTF-8');
+                // --- Новости A5: последняя новость для главной ---
+        $news_query = $this->db->query("
+            SELECT
+                news_id,
+                title,
+                tag,
+                short_text,
+                full_text,
+                date_news,
+                mail_sent
+            FROM `" . DB_PREFIX . "bm_news`
+            ORDER BY date_news DESC, news_id DESC
+            LIMIT 1
+        ");
 
-        // Обрезаем «пустую» разметку summernote (например, <p><br></p>, неразрывные пробелы и т.п.)
-        $home_text_clean = trim(str_replace("\xC2\xA0", ' ', strip_tags($bm_home_text_html)));
+        if (!empty($news_query->row)) {
+            $news_row = $news_query->row;
 
-        if ($home_text_clean === '') {
-            // Считаем блок пустым — не показываем его на главной
-            $bm_home_text_html = '';
+            $short_text = html_entity_decode((string)$news_row['short_text'], ENT_QUOTES, 'UTF-8');
+            $full_text  = html_entity_decode((string)$news_row['full_text'], ENT_QUOTES, 'UTF-8');
+
+            $data['latest_news'] = array(
+                'news_id'       => (int)$news_row['news_id'],
+                'title'         => (string)$news_row['title'],
+                'tag'           => (string)$news_row['tag'],
+                'short_text'    => $short_text,
+                'full_text'     => $full_text,
+                'full_text_raw' => (string)$news_row['full_text'],
+                'date_news'     => (string)$news_row['date_news'],
+                'date_news_fmt' => date('d.m.Y', strtotime($news_row['date_news'])),
+                'has_full_text' => (trim(strip_tags($full_text)) !== ''),
+            );
         }
-
-        $data['bm_home_text'] = $bm_home_text_html;
-        $data['home_text']    = $bm_home_text_html;
 
         // --- Слайдер A6 (массив структур image/title/link/status/sort_order) ---
         $slides_raw = array();

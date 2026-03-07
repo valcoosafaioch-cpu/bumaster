@@ -11,6 +11,44 @@ class ControllerExtensionModuleBmHome extends Controller {
         $this->load->model('tool/image');
 
         if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
+            $news_action = isset($this->request->post['bm_home_news_action'])
+                ? (string)$this->request->post['bm_home_news_action']
+                : '';
+
+            if ($news_action === 'save_news') {
+                $this->saveNews($this->request->post);
+
+                $this->session->data['success'] = 'Новость успешно сохранена!';
+
+                $this->response->redirect(
+                    $this->url->link(
+                        'extension/module/bm_home',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        true
+                    )
+                );
+            }
+
+            if ($news_action === 'delete_news') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                if ($news_id > 0) {
+                    $this->deleteNews($news_id);
+                }
+
+                $this->session->data['success'] = 'Новость успешно удалена!';
+
+                $this->response->redirect(
+                    $this->url->link(
+                        'extension/module/bm_home',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        true
+                    )
+                );
+            }
+
             $this->model_setting_setting->editSetting('bm_home', $this->request->post);
 
             $this->session->data['success'] = $this->language->get('text_success');
@@ -166,13 +204,17 @@ class ControllerExtensionModuleBmHome extends Controller {
             $data['bm_home_delivery_link'] = $this->config->get('bm_home_delivery_link');
         }
 
-        // --- Поле "Текст A5" ---
+        // --- Новости A5 ---
+        $data['bm_home_news'] = $this->getNewsList();
 
-        if (isset($this->request->post['bm_home_text'])) {
-            $data['bm_home_text'] = $this->request->post['bm_home_text'];
-        } else {
-            $data['bm_home_text'] = $this->config->get('bm_home_text');
-        }
+        $data['bm_home_news_tags'] = array(
+            'Поступления',
+            'Акции',
+            'Новости магазина',
+            'Анонсы',
+            'Обновления',
+            'Важно',
+        );
 
         // --- Баннер (A1) ---
 
@@ -244,6 +286,9 @@ class ControllerExtensionModuleBmHome extends Controller {
         }
 
         $data['placeholder'] = $this->model_tool_image->resize('no_image.png', 100, 100);
+        $data['active_tab'] = isset($this->request->get['tab'])
+            ? (string)$this->request->get['tab']
+            : '';
 
         // Общие части админки
         $data['header']      = $this->load->controller('common/header');
@@ -259,5 +304,180 @@ class ControllerExtensionModuleBmHome extends Controller {
         }
 
         return !$this->error;
+    }
+
+        private function getNewsList() {
+        $query = $this->db->query("
+            SELECT
+                news_id,
+                title,
+                tag,
+                short_text,
+                full_text,
+                date_news,
+                mail_sent
+            FROM `" . DB_PREFIX . "bm_news`
+            ORDER BY date_news DESC, news_id DESC
+        ");
+
+        return $query->rows;
+    }
+
+    private function saveNews(array $post) {
+        $news_id = isset($post['bm_home_news_id']) ? (int)$post['bm_home_news_id'] : 0;
+        $title = isset($post['bm_home_news_title']) ? trim((string)$post['bm_home_news_title']) : '';
+        $tag = isset($post['bm_home_news_tag']) ? trim((string)$post['bm_home_news_tag']) : '';
+        $short_text = isset($post['bm_home_news_short_text']) ? (string)$post['bm_home_news_short_text'] : '';
+        $full_text = isset($post['bm_home_news_full_text']) ? (string)$post['bm_home_news_full_text'] : '';
+
+        if ($title === '') {
+            return;
+        }
+
+        if ($tag === '') {
+            $tag = 'Новости магазина';
+        }
+
+        if ($news_id > 0) {
+            $this->db->query("
+                UPDATE `" . DB_PREFIX . "bm_news`
+                SET
+                    `title` = '" . $this->db->escape($title) . "',
+                    `tag` = '" . $this->db->escape($tag) . "',
+                    `short_text` = '" . $this->db->escape($short_text) . "',
+                    `full_text` = '" . $this->db->escape($full_text) . "'
+                WHERE `news_id` = " . (int)$news_id . "
+            ");
+
+            return;
+        }
+
+        $this->db->query("
+            INSERT INTO `" . DB_PREFIX . "bm_news`
+            SET
+                `title` = '" . $this->db->escape($title) . "',
+                `tag` = '" . $this->db->escape($tag) . "',
+                `short_text` = '" . $this->db->escape($short_text) . "',
+                `full_text` = '" . $this->db->escape($full_text) . "',
+                `date_news` = NOW(),
+                `mail_sent` = 0
+        ");
+
+        $news_id = (int)$this->db->getLastId();
+
+        if ($news_id > 0) {
+            $mail_sent = $this->sendNewsMail($news_id);
+
+            if ($mail_sent) {
+                $this->db->query("
+                    UPDATE `" . DB_PREFIX . "bm_news`
+                    SET `mail_sent` = '1'
+                    WHERE `news_id` = " . $news_id . "
+                ");
+            }
+        }
+    }
+
+    private function deleteNews($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return;
+        }
+
+        $this->db->query("
+            DELETE FROM `" . DB_PREFIX . "bm_news`
+            WHERE `news_id` = " . $news_id . "
+        ");
+    }
+
+    private function getNewsSubscribers() {
+        $query = $this->db->query("
+            SELECT email
+            FROM `" . DB_PREFIX . "customer`
+            WHERE newsletter = '1'
+              AND status = '1'
+              AND email <> ''
+            ORDER BY customer_id ASC
+        ");
+
+        return $query->rows;
+    }
+
+    private function sendNewsMail($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return false;
+        }
+
+        $news_query = $this->db->query("
+            SELECT
+                news_id,
+                title,
+                tag,
+                short_text,
+                full_text,
+                date_news
+            FROM `" . DB_PREFIX . "bm_news`
+            WHERE news_id = " . $news_id . "
+            LIMIT 1
+        ");
+
+        if (empty($news_query->row)) {
+            return false;
+        }
+
+        $news = $news_query->row;
+
+        $short_text = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
+        $full_text = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
+
+        $mail_text = trim(strip_tags($full_text)) !== '' ? $full_text : $short_text;
+
+        $subscribers = $this->getNewsSubscribers();
+
+        if (!$subscribers) {
+            return false;
+        }
+
+        $subject = 'Бумажный Мастер — ' . (string)$news['title'];
+
+        $news_url = HTTPS_CATALOG . 'news';
+
+        $message = '';
+        $message .= '<html><body>';
+        $message .= '<h2>' . htmlspecialchars((string)$news['title'], ENT_QUOTES, 'UTF-8') . '</h2>';
+        $message .= '<p><strong>Дата:</strong> ' . date('d.m.Y', strtotime($news['date_news'])) . '</p>';
+        $message .= '<div>' . $mail_text . '</div>';
+        $message .= '<p><a href="' . $news_url . '">Перейти к новостям</a></p>';
+        $message .= '</body></html>';
+
+        $sent_count = 0;
+
+        foreach ($subscribers as $subscriber) {
+            if (empty($subscriber['email'])) {
+                continue;
+            }
+
+            $mail = new Mail($this->config->get('config_mail_engine'));
+            $mail->parameter = $this->config->get('config_mail_parameter');
+            $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+            $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+            $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+            $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+            $mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+
+            $mail->setTo($subscriber['email']);
+            $mail->setFrom($this->config->get('config_email'));
+            $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+            $mail->setSubject($subject);
+            $mail->setHtml($message);
+            $mail->send();
+
+            $sent_count++;
+        }
+
+        return ($sent_count > 0);
     }
 }

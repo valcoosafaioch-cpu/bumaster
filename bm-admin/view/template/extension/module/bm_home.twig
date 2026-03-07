@@ -35,10 +35,10 @@
       <div class="panel-body">
         <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-bm-home" class="form-horizontal">
           <ul class="nav nav-tabs">
-            <li class="active">
+            <li class="{% if active_tab != 'a5' %}active{% endif %}">
               <a href="#tab-contacts" data-toggle="tab">{{ tab_contacts }}</a>
             </li>
-            <li>
+            <li class="{% if active_tab == 'a5' %}active{% endif %}">
               <a href="#tab-text" data-toggle="tab">{{ tab_text }}</a>
             </li>
             <li>
@@ -52,7 +52,7 @@
           <div class="tab-content">
 
             {# --- Вкладка "Контакты" --- #}
-            <div class="tab-pane active" id="tab-contacts">
+            <div class="tab-pane {% if active_tab != 'a5' %}active{% endif %}" id="tab-contacts">
               <div class="form-group">
                 <label class="col-sm-2 control-label" for="input-telegram-group">{{ entry_telegram_group }}</label>
                 <div class="col-sm-10">
@@ -186,22 +186,186 @@
               </div>
             </div>
 
-            {# --- Вкладка "Текст A5" --- #}
-            <div class="tab-pane" id="tab-text">
-              <div class="form-group">
-                <label class="col-sm-2 control-label" for="input-text">{{ entry_text }}</label>
-                <div class="col-sm-10">
-                  <textarea name="bm_home_text"
-                    rows="10"
-                    id="input-text"
-                    class="form-control summernote"
-                    data-toggle="summernote">{{ bm_home_text }}
-                  </textarea>
-                  {% if help_text %}
-                    <p class="help-block">{{ help_text }}</p>
-                  {% endif %}
+            {# --- Вкладка "Новости A5" --- #}
+            <div class="tab-pane {% if active_tab == 'a5' %}active{% endif %}" id="tab-text">
+              <div class="row">
+                <div class="col-sm-12">
+                  <h4 style="margin-top: 0;">{{ tab_text }}</h4>
+                  <p class="help-block" style="margin-bottom: 20px;">
+                    {{ help_news }}
+                  </p>
                 </div>
               </div>
+
+              <div class="row">
+                <div class="col-sm-12">
+                  <div class="panel panel-default">
+                    <div class="panel-heading">
+                      <h3 class="panel-title"><i class="fa fa-plus-circle"></i> {{ button_add_news }}</h3>
+                    </div>
+                    <div class="panel-body">
+                      <form action="{{ action }}" method="post" id="form-bm-home-news-add" class="form-horizontal">
+                        <input type="hidden" name="bm_home_news_action" value="save_news" />
+                        <input type="hidden" name="bm_home_news_id" value="0" />
+
+                        <div class="form-group">
+                          <label class="col-sm-2 control-label" for="input-news-title-new">{{ entry_news_title }}</label>
+                          <div class="col-sm-10">
+                            <input type="text"
+                                   name="bm_home_news_title"
+                                   value=""
+                                   id="input-news-title-new"
+                                   class="form-control" />
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="col-sm-2 control-label" for="input-news-tag-new">{{ entry_news_tag }}</label>
+                          <div class="col-sm-4">
+                            <select name="bm_home_news_tag" id="input-news-tag-new" class="form-control">
+                              {% for news_tag in bm_home_news_tags %}
+                                <option value="{{ news_tag }}">{{ news_tag }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="col-sm-2 control-label" for="input-news-short-new">{{ entry_news_short_text }}</label>
+                          <div class="col-sm-10">
+                            <textarea name="bm_home_news_short_text"
+                                      rows="10"
+                                      id="input-news-short-new"
+                                      class="form-control summernote"
+                                      data-toggle="summernote"></textarea>
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="col-sm-2 control-label" for="input-news-full-new">{{ entry_news_full_text }}</label>
+                          <div class="col-sm-10">
+                            <textarea name="bm_home_news_full_text"
+                                      rows="14"
+                                      id="input-news-full-new"
+                                      class="form-control summernote"
+                                      data-toggle="summernote"></textarea>
+                          </div>
+                        </div>
+
+                        <div class="text-right">
+                          <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> {{ button_save_news }}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {% if bm_home_news %}
+                {% for news in bm_home_news %}
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="panel panel-default">
+                        <div class="panel-heading clearfix">
+                          <h3 class="panel-title pull-left" style="padding-top: 8px;">
+                            <i class="fa fa-newspaper-o"></i>
+                            {{ news.date_news }} — {{ news.title }}
+                          </h3>
+                        </div>
+                        <div class="panel-body">
+                          <form action="{{ action }}" method="post" class="form-horizontal">
+                            <input type="hidden" name="bm_home_news_action" value="save_news" />
+                            <input type="hidden" name="bm_home_news_id" value="{{ news.news_id }}" />
+
+                            <div class="form-group">
+                              <label class="col-sm-2 control-label" for="input-news-title-{{ news.news_id }}">{{ entry_news_title }}</label>
+                              <div class="col-sm-10">
+                                <input type="text"
+                                       name="bm_home_news_title"
+                                       value="{{ news.title }}"
+                                       id="input-news-title-{{ news.news_id }}"
+                                       class="form-control" />
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="col-sm-2 control-label" for="input-news-tag-{{ news.news_id }}">{{ entry_news_tag }}</label>
+                              <div class="col-sm-4">
+                                <select name="bm_home_news_tag" id="input-news-tag-{{ news.news_id }}" class="form-control">
+                                  {% for news_tag in bm_home_news_tags %}
+                                    <option value="{{ news_tag }}" {% if news.tag == news_tag %}selected="selected"{% endif %}>{{ news_tag }}</option>
+                                  {% endfor %}
+                                </select>
+                              </div>
+
+                              <label class="col-sm-2 control-label">{{ entry_news_mail_sent }}</label>
+                              <div class="col-sm-4" style="padding-top: 8px;">
+                                {% if news.mail_sent %}
+                                  <span class="label label-success">{{ text_mail_sent_yes }}</span>
+                                {% else %}
+                                  <span class="label label-default">{{ text_mail_sent_no }}</span>
+                                {% endif %}
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="col-sm-2 control-label">{{ entry_news_date }}</label>
+                              <div class="col-sm-4" style="padding-top: 8px;">
+                                {{ news.date_news }}
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="col-sm-2 control-label" for="input-news-short-{{ news.news_id }}">{{ entry_news_short_text }}</label>
+                              <div class="col-sm-10">
+                                <textarea name="bm_home_news_short_text"
+                                          rows="10"
+                                          id="input-news-short-{{ news.news_id }}"
+                                          class="form-control summernote"
+                                          data-toggle="summernote">{{ news.short_text }}</textarea>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="col-sm-2 control-label" for="input-news-full-{{ news.news_id }}">{{ entry_news_full_text }}</label>
+                              <div class="col-sm-10">
+                                <textarea name="bm_home_news_full_text"
+                                          rows="14"
+                                          id="input-news-full-{{ news.news_id }}"
+                                          class="form-control summernote"
+                                          data-toggle="summernote">{{ news.full_text }}</textarea>
+                              </div>
+                            </div>
+
+                            <div class="text-right" style="display: flex; gap: 10px; justify-content: flex-end;">
+                              <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Сохранить
+                              </button>
+                            </div>
+                          </form>
+
+                          <form action="{{ action }}" method="post" onsubmit="return confirm('Удалить эту новость?');" style="margin-top: 10px;">
+                            <input type="hidden" name="bm_home_news_action" value="delete_news" />
+                            <input type="hidden" name="bm_home_news_id" value="{{ news.news_id }}" />
+
+                            <div class="text-right">
+                              <button type="submit" class="btn btn-danger">
+                                <i class="fa fa-trash"></i> {{ button_delete_news }}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="alert alert-info">
+                  Новости пока не добавлены.
+                </div>
+              {% endif %}
             </div>
 
             {# --- Вкладка "Баннер A1" --- #}

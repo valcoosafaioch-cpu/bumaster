@@ -1,0 +1,109 @@
+{{ header }}
+
+<div class="container">
+  <ul class="breadcrumb">
+    {% for breadcrumb in breadcrumbs %}
+      <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <div class="row">
+    {{ column_left }}
+
+    {% if column_left and column_right %}
+      {% set class = 's12 m6 l6' %}
+    {% elseif column_left or column_right %}
+      {% set class = 's12 m9 l9' %}
+    {% else %}
+      {% set class = 's12' %}
+    {% endif %}
+
+    <div id="content" class="{{ class }}">
+      {{ content_top }}
+
+      <h1>Новости</h1>
+
+      {% if news_list %}
+        <div class="news-page">
+          {% for news in news_list %}
+            <article class="news-page__item {% if news.is_first %}is-open{% else %}is-collapsed{% endif %}" data-news-item>
+              <div class="news-page__head">
+                <div class="news-page__meta">
+                  <span class="news-page__date">{{ news.date_news_fmt }}</span>
+                  <span class="news-page__tag">{{ news.tag }}</span>
+                </div>
+
+                <h2 class="news-page__title">{{ news.title }}</h2>
+              </div>
+
+              <div class="news-page__body {% if not news.is_first %}news-page__body--collapsed{% endif %}" data-news-body>
+                {{ news.display_text|raw }}
+              </div>
+
+                {% if not news.is_first %}
+                    <div class="news-page__actions" data-news-actions>
+                    <button type="button" class="news-page__toggle" data-news-toggle>
+                        Показать полностью
+                    </button>
+                    </div>
+                {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+
+        <script>
+          (function () {
+            var articles = document.querySelectorAll('[data-news-item]');
+            if (!articles.length) return;
+
+            articles.forEach(function (article) {
+              var body = article.querySelector('[data-news-body]');
+              var actions = article.querySelector('[data-news-actions]');
+              var toggle = article.querySelector('[data-news-toggle]');
+
+              if (!body || !actions || !toggle) {
+                return;
+              }
+
+              var isOverflowing = body.scrollHeight > body.clientHeight + 2;
+
+              if (!isOverflowing) {
+                actions.style.display = 'none';
+                article.classList.remove('is-collapsed');
+                article.classList.add('is-open');
+                body.classList.remove('news-page__body--collapsed');
+                return;
+              }
+
+              toggle.addEventListener('click', function () {
+                var isCollapsed = article.classList.contains('is-collapsed');
+
+                if (isCollapsed) {
+                  article.classList.remove('is-collapsed');
+                  article.classList.add('is-open');
+                  body.classList.remove('news-page__body--collapsed');
+                  toggle.textContent = 'Свернуть';
+                } else {
+                  article.classList.remove('is-open');
+                  article.classList.add('is-collapsed');
+                  body.classList.add('news-page__body--collapsed');
+                  toggle.textContent = 'Показать полностью';
+                }
+              });
+            });
+          })();
+        </script>
+      {% else %}
+        <div class="alert alert-info">
+          Новости пока не добавлены.
+        </div>
+      {% endif %}
+
+      {{ content_bottom }}
+    </div>
+
+    {{ column_right }}
+  </div>
+</div>
+
+{{ footer }}

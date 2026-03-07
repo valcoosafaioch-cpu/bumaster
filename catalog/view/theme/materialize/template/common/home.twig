@@ -53,15 +53,38 @@
         {# Центральная колонка — A5 / A6 #}
         <div class="col s12 m7 l7 hp-center hp-top-center">
           <div class="hp-block hp-block--center hp-block--text">
-            <div class="hp-text">
-              {% if home_text %}
-                {{ home_text|raw }}
-              {% else %}
-                <div class="hp-placeholder">
-                  Текстовый блок (A5)
+            {% if latest_news %}
+              <div class="hp-news">
+                <div class="hp-news__head">
+                  <div class="hp-news__meta">
+                    <span class="hp-news__date">{{ latest_news.date_news_fmt }}</span>
+                    <span class="hp-news__tag">{{ latest_news.tag }}</span>
+                  </div>
+
+                  <a href="{{ news_page_href }}" class="hp-news__all-link">Все новости</a>
                 </div>
-              {% endif %}
-            </div>
+
+                <div class="hp-news__title">
+                  {{ latest_news.title }}
+                </div>
+
+                <div class="hp-news__text">
+                  {{ latest_news.short_text|raw }}
+                </div>
+
+                {% if latest_news.has_full_text %}
+                  <div class="hp-news__actions">
+                    <a href="{{ news_page_href }}" class="hp-news__readmore">
+                      Читать полностью
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="hp-placeholder">
+                Новости пока не добавлены
+              </div>
+            {% endif %}
           </div>
 
           {# A6. НАЧАЛО: Слайдер #}
