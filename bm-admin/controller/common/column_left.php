@@ -181,6 +181,35 @@ class ControllerCommonColumnLeft extends Controller {
 				);
 			}
 
+			// Бумажный Мастер
+			$bm_master = array();
+
+			if ($this->user->hasPermission('access', 'extension/module/bm_home')) {
+				$bm_master[] = array(
+					'name'	   => $this->language->get('text_bm_home'),
+					'href'     => $this->url->link('extension/module/bm_home', 'user_token=' . $this->session->data['user_token'], true),
+					'children' => array()
+				);
+			}
+
+			if ($this->user->hasPermission('access', 'extension/module/bm_reviews_import')) {
+				$bm_master[] = array(
+					'name'	   => $this->language->get('text_bm_reviews_import'),
+					'href'     => $this->url->link('extension/module/bm_reviews_import', 'user_token=' . $this->session->data['user_token'], true),
+					'children' => array()
+				);
+			}
+
+			if ($bm_master) {
+				$data['menus'][] = array(
+					'id'       => 'menu-bm-master',
+					'icon'	   => 'fa-bookmark',
+					'name'	   => $this->language->get('text_bm_master'),
+					'href'     => '',
+					'children' => $bm_master
+				);
+			}
+
 			// Design
 			$design = array();
 
