@@ -1,13 +1,7 @@
 {{ header }}
 
 <div class="container">
-  <ul class="breadcrumb">
-    {% for breadcrumb in breadcrumbs %}
-      <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
-    {% endfor %}
-  </ul>
-
-  <div class="row">
+    <div class="row">
     {{ column_left }}
 
     {% if column_left and column_right %}
@@ -43,7 +37,7 @@
                 {% if not news.is_first %}
                     <div class="news-page__actions" data-news-actions>
                     <button type="button" class="news-page__toggle" data-news-toggle>
-                        Показать полностью
+                        Показать полностью →
                     </button>
                     </div>
                 {% endif %}
@@ -82,12 +76,12 @@
                   article.classList.remove('is-collapsed');
                   article.classList.add('is-open');
                   body.classList.remove('news-page__body--collapsed');
-                  toggle.textContent = 'Свернуть';
+                  toggle.textContent = 'Свернуть ↑';
                 } else {
                   article.classList.remove('is-open');
                   article.classList.add('is-collapsed');
                   body.classList.add('news-page__body--collapsed');
-                  toggle.textContent = 'Показать полностью';
+                  toggle.textContent = 'Показать полностью →';
                 }
               });
             });

@@ -27,6 +27,8 @@ class ControllerExtensionModuleBmHome extends Controller {
                         true
                     )
                 );
+
+                return;
             }
 
             if ($news_action === 'delete_news') {
@@ -47,6 +49,8 @@ class ControllerExtensionModuleBmHome extends Controller {
                         true
                     )
                 );
+
+                return;
             }
 
             $this->model_setting_setting->editSetting('bm_home', $this->request->post);
@@ -67,6 +71,13 @@ class ControllerExtensionModuleBmHome extends Controller {
             $data['error_warning'] = $this->error['warning'];
         } else {
             $data['error_warning'] = '';
+        }
+
+        if (isset($this->session->data['success'])) {
+            $data['success'] = $this->session->data['success'];
+            unset($this->session->data['success']);
+        } else {
+            $data['success'] = '';
         }
 
         // Хлебные крошки
@@ -306,7 +317,7 @@ class ControllerExtensionModuleBmHome extends Controller {
         return !$this->error;
     }
 
-        private function getNewsList() {
+    private function getNewsList() {
         $query = $this->db->query("
             SELECT
                 news_id,
@@ -320,7 +331,15 @@ class ControllerExtensionModuleBmHome extends Controller {
             ORDER BY date_news DESC, news_id DESC
         ");
 
-        return $query->rows;
+        $news_list = $query->rows;
+
+        foreach ($news_list as &$news) {
+            $news['short_text'] = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
+            $news['full_text'] = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
+        }
+        unset($news);
+
+        return $news_list;
     }
 
     private function saveNews(array $post) {
