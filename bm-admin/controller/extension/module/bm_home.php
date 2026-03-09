@@ -963,7 +963,7 @@ class ControllerExtensionModuleBmHome extends Controller {
         }
 
         $send_id = $this->getNextNewsSendId($news_id);
-        $subject = 'Бумажный Мастер — ' . (string)$news['title'];
+        $subject = (string)$news['title'];
         $news_url = HTTPS_CATALOG . 'news';
 
         $message = '';
@@ -1059,6 +1059,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 $mail->setFrom($this->config->get('config_email'));
                 $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
                 $mail->setSubject($subject);
+                $mail->setText(trim(html_entity_decode(strip_tags(str_replace(array('<br>', '<br/>', '<br />', '</p>'), array("\n", "\n", "\n", "</p>\n"), $message)), ENT_QUOTES, 'UTF-8')));
                 $mail->setHtml($message);
                 $mail->send();
 
