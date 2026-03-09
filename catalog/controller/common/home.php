@@ -176,8 +176,10 @@ class ControllerCommonHome extends Controller {
                 short_text,
                 full_text,
                 date_news,
-                mail_sent
+                mail_sent,
+                content_type
             FROM `" . DB_PREFIX . "bm_news`
+            WHERE content_type = 'news'
             ORDER BY date_news DESC, news_id DESC
             LIMIT 1
         ");

@@ -10,10 +10,20 @@ class ControllerExtensionModuleBmHome extends Controller {
         $this->load->model('setting/setting');
         $this->load->model('tool/image');
 
-        if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
+         if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
             $news_action = isset($this->request->post['bm_home_news_action'])
                 ? (string)$this->request->post['bm_home_news_action']
                 : '';
+
+            $content_type = isset($this->request->post['bm_home_content_type'])
+                ? trim((string)$this->request->post['bm_home_content_type'])
+                : 'news';
+
+            if (!in_array($content_type, array('news', 'mailing'), true)) {
+                $content_type = 'news';
+            }
+
+            $redirect_tab = ($content_type === 'mailing') ? 'mailing' : 'news';
 
             if ($news_action === 'save_news') {
                 $this->saveNews($this->request->post);
@@ -23,7 +33,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 $this->response->redirect(
                     $this->url->link(
                         'extension/module/bm_home',
-                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=' . $redirect_tab,
                         true
                     )
                 );
@@ -37,7 +47,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     : 0;
 
                 if ($news_id > 0) {
-                    $this->deleteNews($news_id);
+                    $this->deleteNews($news_id, $content_type);
                 }
 
                 $this->session->data['success'] = 'Новость успешно удалена!';
@@ -45,7 +55,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 $this->response->redirect(
                     $this->url->link(
                         'extension/module/bm_home',
-                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=' . $redirect_tab,
                         true
                     )
                 );
@@ -59,7 +69,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     : 0;
 
                 if ($news_id > 0) {
-                    $this->sendNewsMail($news_id);
+                    $this->sendNewsMail($news_id, false, $content_type);
                 }
 
                 $this->session->data['success'] = 'Рассылка запущена!';
@@ -67,7 +77,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 $this->response->redirect(
                     $this->url->link(
                         'extension/module/bm_home',
-                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=' . $redirect_tab,
                         true
                     )
                 );
@@ -81,7 +91,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     : 0;
 
                 if ($news_id > 0) {
-                    $this->sendNewsMail($news_id, true);
+                    $this->sendNewsMail($news_id, true, $content_type);
                 }
 
                 $this->session->data['success'] = 'Повторная рассылка запущена!';
@@ -89,7 +99,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 $this->response->redirect(
                     $this->url->link(
                         'extension/module/bm_home',
-                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=' . $redirect_tab,
                         true
                     )
                 );
@@ -103,13 +113,13 @@ class ControllerExtensionModuleBmHome extends Controller {
                     : 0;
 
                 if ($news_id > 0) {
-                    $this->hideNewsMailPrompt($news_id);
+                    $this->hideNewsMailPrompt($news_id, $content_type);
                 }
 
                 $this->response->redirect(
                     $this->url->link(
                         'extension/module/bm_home',
-                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=' . $redirect_tab,
                         true
                     )
                 );
@@ -308,7 +318,8 @@ class ControllerExtensionModuleBmHome extends Controller {
         }
 
         // --- Новости A5 ---
-        $data['bm_home_news'] = $this->getNewsList();
+        $data['bm_home_news'] = $this->getNewsListByType('news');
+        $data['bm_home_mailings'] = $this->getNewsListByType('mailing');
 
         $data['bm_home_news_tags'] = array(
             'Поступления',
@@ -391,7 +402,7 @@ class ControllerExtensionModuleBmHome extends Controller {
         $data['placeholder'] = $this->model_tool_image->resize('no_image.png', 100, 100);
         $data['active_tab'] = isset($this->request->get['tab'])
             ? (string)$this->request->get['tab']
-            : '';
+            : 'contacts';
 
         // Общие части админки
         $data['header']      = $this->load->controller('common/header');
@@ -409,7 +420,13 @@ class ControllerExtensionModuleBmHome extends Controller {
         return !$this->error;
     }
 
-    private function getNewsList() {
+    private function getNewsListByType($type) {
+        $type = trim((string)$type);
+
+        if (!in_array($type, array('news', 'mailing'), true)) {
+            $type = 'news';
+        }
+
         $query = $this->db->query("
             SELECT
                 news_id,
@@ -418,6 +435,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 short_text,
                 full_text,
                 date_news,
+                content_type,
                 mail_sent,
                 mail_prompt_hidden,
                 mail_total_count,
@@ -426,6 +444,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 mail_started_at,
                 mail_completed_at
             FROM `" . DB_PREFIX . "bm_news`
+            WHERE content_type = '" . $this->db->escape($type) . "'
             ORDER BY date_news DESC, news_id DESC
         ");
 
@@ -435,8 +454,13 @@ class ControllerExtensionModuleBmHome extends Controller {
         $customer_count = $this->getCustomersCount();
 
         foreach ($news_list as &$news) {
+            $news['content_type'] = isset($news['content_type']) ? (string)$news['content_type'] : 'news';
             $news['short_text'] = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
             $news['full_text'] = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
+
+            if ($news['content_type'] === 'mailing') {
+                $news['short_text'] = '';
+            }
             $news['mail_sent'] = (int)$news['mail_sent'];
             $news['mail_prompt_hidden'] = (int)$news['mail_prompt_hidden'];
             $news['mail_total_count'] = (int)$news['mail_total_count'];
@@ -446,11 +470,13 @@ class ControllerExtensionModuleBmHome extends Controller {
             $news['mail_completed_at'] = $news['mail_completed_at'] ? $news['mail_completed_at'] : '';
             $news['subscriber_count'] = $subscriber_count;
             $news['customer_count'] = $customer_count;
+
             if (in_array($news['mail_sent'], array(2, 3), true)) {
                 $news['retry_fail_count'] = $this->getRetrySubscribersCount((int)$news['news_id']);
             } else {
                 $news['retry_fail_count'] = 0;
             }
+
             $news['send_attempts'] = $this->getNewsSendAttempts((int)$news['news_id']);
             $news['send_attempts_count'] = count($news['send_attempts']);
         }
@@ -465,6 +491,11 @@ class ControllerExtensionModuleBmHome extends Controller {
         $tag = isset($post['bm_home_news_tag']) ? trim((string)$post['bm_home_news_tag']) : '';
         $short_text = isset($post['bm_home_news_short_text']) ? (string)$post['bm_home_news_short_text'] : '';
         $full_text = isset($post['bm_home_news_full_text']) ? (string)$post['bm_home_news_full_text'] : '';
+        $content_type = isset($post['bm_home_content_type']) ? trim((string)$post['bm_home_content_type']) : 'news';
+
+        if (!in_array($content_type, array('news', 'mailing'), true)) {
+            $content_type = 'news';
+        }
 
         if ($title === '') {
             return;
@@ -474,6 +505,10 @@ class ControllerExtensionModuleBmHome extends Controller {
             $tag = 'Новости магазина';
         }
 
+        if ($content_type === 'mailing') {
+            $short_text = '';
+        }
+
         if ($news_id > 0) {
             $this->db->query("
                 UPDATE `" . DB_PREFIX . "bm_news`
@@ -481,7 +516,8 @@ class ControllerExtensionModuleBmHome extends Controller {
                     `title` = '" . $this->db->escape($title) . "',
                     `tag` = '" . $this->db->escape($tag) . "',
                     `short_text` = '" . $this->db->escape($short_text) . "',
-                    `full_text` = '" . $this->db->escape($full_text) . "'
+                    `full_text` = '" . $this->db->escape($full_text) . "',
+                    `content_type` = '" . $this->db->escape($content_type) . "'
                 WHERE `news_id` = " . (int)$news_id . "
                   AND `mail_sent` = 0
             ");
@@ -496,6 +532,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                 `tag` = '" . $this->db->escape($tag) . "',
                 `short_text` = '" . $this->db->escape($short_text) . "',
                 `full_text` = '" . $this->db->escape($full_text) . "',
+                `content_type` = '" . $this->db->escape($content_type) . "',
                 `date_news` = NOW(),
                 `mail_sent` = 0,
                 `mail_prompt_hidden` = 0,
@@ -507,8 +544,13 @@ class ControllerExtensionModuleBmHome extends Controller {
         ");
     }
 
-    private function deleteNews($news_id) {
+    private function deleteNews($news_id, $content_type = 'news') {
         $news_id = (int)$news_id;
+        $content_type = trim((string)$content_type);
+
+        if (!in_array($content_type, array('news', 'mailing'), true)) {
+            $content_type = 'news';
+        }
 
         if ($news_id <= 0) {
             return;
@@ -517,11 +559,17 @@ class ControllerExtensionModuleBmHome extends Controller {
         $this->db->query("
             DELETE FROM `" . DB_PREFIX . "bm_news`
             WHERE `news_id` = " . $news_id . "
+              AND `content_type` = '" . $this->db->escape($content_type) . "'
         ");
     }
 
-    private function hideNewsMailPrompt($news_id) {
+    private function hideNewsMailPrompt($news_id, $content_type = 'news') {
         $news_id = (int)$news_id;
+        $content_type = trim((string)$content_type);
+
+        if (!in_array($content_type, array('news', 'mailing'), true)) {
+            $content_type = 'news';
+        }
 
         if ($news_id <= 0) {
             return;
@@ -531,7 +579,8 @@ class ControllerExtensionModuleBmHome extends Controller {
             UPDATE `" . DB_PREFIX . "bm_news`
             SET `mail_prompt_hidden` = 1
             WHERE `news_id` = " . $news_id . "
-            AND `mail_sent` = 0
+              AND `content_type` = '" . $this->db->escape($content_type) . "'
+              AND `mail_sent` = 0
         ");
     }
 
@@ -814,8 +863,13 @@ class ControllerExtensionModuleBmHome extends Controller {
         exit;
     }
 
-    private function updateNewsMailAggregate($news_id) {
+    private function updateNewsMailAggregate($news_id, $content_type = 'news') {
         $news_id = (int)$news_id;
+        $content_type = trim((string)$content_type);
+
+        if (!in_array($content_type, array('news', 'mailing'), true)) {
+            $content_type = 'news';
+        }
 
         if ($news_id <= 0) {
             return;
@@ -824,9 +878,11 @@ class ControllerExtensionModuleBmHome extends Controller {
         $news_query = $this->db->query("
             SELECT
                 `mail_total_count`,
-                `mail_started_at`
+                `mail_started_at`,
+                `content_type`
             FROM `" . DB_PREFIX . "bm_news`
             WHERE `news_id` = " . $news_id . "
+              AND `content_type` = '" . $this->db->escape($content_type) . "'
             LIMIT 1
         ");
 
@@ -887,11 +943,17 @@ class ControllerExtensionModuleBmHome extends Controller {
                 `mail_started_at` = " . $mail_started_at_sql . ",
                 `mail_completed_at` = NOW()
             WHERE `news_id` = " . $news_id . "
+              AND `content_type` = '" . $this->db->escape($content_type) . "'
         ");
     }
 
-    private function sendNewsMail($news_id, $is_retry = false) {
+    private function sendNewsMail($news_id, $is_retry = false, $content_type = 'news') {
         $news_id = (int)$news_id;
+        $content_type = trim((string)$content_type);
+
+        if (!in_array($content_type, array('news', 'mailing'), true)) {
+            $content_type = 'news';
+        }
 
         if ($news_id <= 0) {
             return false;
@@ -904,12 +966,14 @@ class ControllerExtensionModuleBmHome extends Controller {
                 tag,
                 short_text,
                 full_text,
+                content_type,
                 date_news,
                 mail_sent,
                 mail_total_count,
                 mail_started_at
             FROM `" . DB_PREFIX . "bm_news`
             WHERE news_id = " . $news_id . "
+              AND content_type = '" . $this->db->escape($content_type) . "'
             LIMIT 1
         ");
 
@@ -919,6 +983,11 @@ class ControllerExtensionModuleBmHome extends Controller {
 
         $news = $news_query->row;
         $current_mail_sent = isset($news['mail_sent']) ? (int)$news['mail_sent'] : 0;
+        $actual_content_type = isset($news['content_type']) ? (string)$news['content_type'] : 'news';
+
+        if (!in_array($actual_content_type, array('news', 'mailing'), true)) {
+            $actual_content_type = 'news';
+        }
 
         if (!$is_retry && $current_mail_sent !== 0) {
             return false;
@@ -930,7 +999,16 @@ class ControllerExtensionModuleBmHome extends Controller {
 
         $short_text = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
         $full_text = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
-        $mail_text = trim(strip_tags($full_text)) !== '' ? $full_text : $short_text;
+
+        if ($actual_content_type === 'mailing') {
+            $mail_text = $full_text;
+        } else {
+            $mail_text = trim(strip_tags($full_text)) !== '' ? $full_text : $short_text;
+        }
+
+        if (trim(strip_tags($mail_text)) === '') {
+            return false;
+        }
 
         if ($is_retry) {
             $subscribers = $this->getRetrySubscribers($news_id);
@@ -950,12 +1028,14 @@ class ControllerExtensionModuleBmHome extends Controller {
                         `mail_started_at` = NOW(),
                         `mail_completed_at` = NOW()
                     WHERE `news_id` = " . $news_id . "
+                      AND `content_type` = '" . $this->db->escape($actual_content_type) . "'
                 ");
             } else {
                 $this->db->query("
                     UPDATE `" . DB_PREFIX . "bm_news`
                     SET `mail_completed_at` = NOW()
                     WHERE `news_id` = " . $news_id . "
+                      AND `content_type` = '" . $this->db->escape($actual_content_type) . "'
                 ");
             }
 
@@ -970,10 +1050,14 @@ class ControllerExtensionModuleBmHome extends Controller {
         $message .= '<html><body>';
         $message .= '<h2>' . htmlspecialchars((string)$news['title'], ENT_QUOTES, 'UTF-8') . '</h2>';
         $message .= '<div>' . $mail_text . '</div>';
-        $message .= '<p><a href="' . $news_url . '">Перейти к новостям</a></p>';
+
+        if ($actual_content_type === 'news') {
+            $message .= '<p><a href="' . $news_url . '">Перейти к новостям</a></p>';
+        }
+
         $message .= '<hr>';
         $message .= '<p style="font-size:13px;color:#777;">';
-        $message .= 'Если вы не хотите получать новостные рассылки от магазина «Бумажный Мастер», ';
+        $message .= 'Если вы не хотите получать рассылки от магазина «Бумажный Мастер», ';
         $message .= 'вы можете отключить их в ';
         $message .= '<a href="' . HTTPS_CATALOG . 'index.php?route=account/account">личном кабинете</a>.';
         $message .= '</p>';
@@ -991,6 +1075,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     `mail_started_at` = NOW(),
                     `mail_completed_at` = NULL
                 WHERE `news_id` = " . $news_id . "
+                  AND `content_type` = '" . $this->db->escape($actual_content_type) . "'
             ");
         } else {
             $started_at_sql = !empty($news['mail_started_at'])
@@ -1004,6 +1089,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     " . $started_at_sql . ",
                     `mail_completed_at` = NULL
                 WHERE `news_id` = " . $news_id . "
+                  AND `content_type` = '" . $this->db->escape($actual_content_type) . "'
             ");
         }
 
@@ -1085,7 +1171,7 @@ class ControllerExtensionModuleBmHome extends Controller {
             ");
         }
 
-        $this->updateNewsMailAggregate($news_id);
+        $this->updateNewsMailAggregate($news_id, $actual_content_type);
 
         return true;
     }

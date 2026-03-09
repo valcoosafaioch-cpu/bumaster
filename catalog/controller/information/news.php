@@ -24,8 +24,10 @@ class ControllerInformationNews extends Controller {
                 tag,
                 short_text,
                 full_text,
-                date_news
+                date_news,
+                content_type
             FROM `" . DB_PREFIX . "bm_news`
+            WHERE content_type = 'news'
             ORDER BY date_news DESC, news_id DESC
         ");
 
