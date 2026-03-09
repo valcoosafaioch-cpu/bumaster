@@ -53,6 +53,98 @@ class ControllerExtensionModuleBmHome extends Controller {
                 return;
             }
 
+            if ($news_action === 'send_news_confirm') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                if ($news_id > 0) {
+                    $this->sendNewsMail($news_id);
+                }
+
+                $this->session->data['success'] = 'Рассылка запущена!';
+
+                $this->response->redirect(
+                    $this->url->link(
+                        'extension/module/bm_home',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        true
+                    )
+                );
+
+                return;
+            }
+
+            if ($news_action === 'send_news_retry_confirm') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                if ($news_id > 0) {
+                    $this->sendNewsMail($news_id, true);
+                }
+
+                $this->session->data['success'] = 'Повторная рассылка запущена!';
+
+                $this->response->redirect(
+                    $this->url->link(
+                        'extension/module/bm_home',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        true
+                    )
+                );
+
+                return;
+            }
+
+            if ($news_action === 'hide_news_mail_prompt') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                if ($news_id > 0) {
+                    $this->hideNewsMailPrompt($news_id);
+                }
+
+                $this->response->redirect(
+                    $this->url->link(
+                        'extension/module/bm_home',
+                        'user_token=' . $this->session->data['user_token'] . '&tab=a5',
+                        true
+                    )
+                );
+
+                return;
+            }
+
+            if ($news_action === 'download_news_log') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                if ($news_id > 0) {
+                    $this->downloadNewsLogCsv($news_id);
+                }
+
+                return;
+            }
+
+            if ($news_action === 'download_news_attempt_log') {
+                $news_id = isset($this->request->post['bm_home_news_id'])
+                    ? (int)$this->request->post['bm_home_news_id']
+                    : 0;
+
+                $send_id = isset($this->request->post['bm_home_send_id'])
+                    ? (int)$this->request->post['bm_home_send_id']
+                    : 0;
+
+                if ($news_id > 0 && $send_id > 0) {
+                    $this->downloadNewsAttemptLogCsv($news_id, $send_id);
+                }
+
+                return;
+            }
+
             $this->model_setting_setting->editSetting('bm_home', $this->request->post);
 
             $this->session->data['success'] = $this->language->get('text_success');
@@ -326,16 +418,41 @@ class ControllerExtensionModuleBmHome extends Controller {
                 short_text,
                 full_text,
                 date_news,
-                mail_sent
+                mail_sent,
+                mail_prompt_hidden,
+                mail_total_count,
+                mail_success_count,
+                mail_fail_count,
+                mail_started_at,
+                mail_completed_at
             FROM `" . DB_PREFIX . "bm_news`
             ORDER BY date_news DESC, news_id DESC
         ");
 
         $news_list = $query->rows;
 
+        $subscriber_count = $this->getNewsSubscribersCount();
+        $customer_count = $this->getCustomersCount();
+
         foreach ($news_list as &$news) {
             $news['short_text'] = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
             $news['full_text'] = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
+            $news['mail_sent'] = (int)$news['mail_sent'];
+            $news['mail_prompt_hidden'] = (int)$news['mail_prompt_hidden'];
+            $news['mail_total_count'] = (int)$news['mail_total_count'];
+            $news['mail_success_count'] = (int)$news['mail_success_count'];
+            $news['mail_fail_count'] = (int)$news['mail_fail_count'];
+            $news['mail_started_at'] = $news['mail_started_at'] ? $news['mail_started_at'] : '';
+            $news['mail_completed_at'] = $news['mail_completed_at'] ? $news['mail_completed_at'] : '';
+            $news['subscriber_count'] = $subscriber_count;
+            $news['customer_count'] = $customer_count;
+            if (in_array($news['mail_sent'], array(2, 3), true)) {
+                $news['retry_fail_count'] = $this->getRetrySubscribersCount((int)$news['news_id']);
+            } else {
+                $news['retry_fail_count'] = 0;
+            }
+            $news['send_attempts'] = $this->getNewsSendAttempts((int)$news['news_id']);
+            $news['send_attempts_count'] = count($news['send_attempts']);
         }
         unset($news);
 
@@ -366,6 +483,7 @@ class ControllerExtensionModuleBmHome extends Controller {
                     `short_text` = '" . $this->db->escape($short_text) . "',
                     `full_text` = '" . $this->db->escape($full_text) . "'
                 WHERE `news_id` = " . (int)$news_id . "
+                  AND `mail_sent` = 0
             ");
 
             return;
@@ -379,22 +497,14 @@ class ControllerExtensionModuleBmHome extends Controller {
                 `short_text` = '" . $this->db->escape($short_text) . "',
                 `full_text` = '" . $this->db->escape($full_text) . "',
                 `date_news` = NOW(),
-                `mail_sent` = 0
+                `mail_sent` = 0,
+                `mail_prompt_hidden` = 0,
+                `mail_total_count` = 0,
+                `mail_success_count` = 0,
+                `mail_fail_count` = 0,
+                `mail_started_at` = NULL,
+                `mail_completed_at` = NULL
         ");
-
-        $news_id = (int)$this->db->getLastId();
-
-        if ($news_id > 0) {
-            $mail_sent = $this->sendNewsMail($news_id);
-
-            if ($mail_sent) {
-                $this->db->query("
-                    UPDATE `" . DB_PREFIX . "bm_news`
-                    SET `mail_sent` = '1'
-                    WHERE `news_id` = " . $news_id . "
-                ");
-            }
-        }
     }
 
     private function deleteNews($news_id) {
@@ -410,9 +520,46 @@ class ControllerExtensionModuleBmHome extends Controller {
         ");
     }
 
+    private function hideNewsMailPrompt($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return;
+        }
+
+        $this->db->query("
+            UPDATE `" . DB_PREFIX . "bm_news`
+            SET `mail_prompt_hidden` = 1
+            WHERE `news_id` = " . $news_id . "
+            AND `mail_sent` = 0
+        ");
+    }
+
+    private function getNewsSubscribersCount() {
+        $query = $this->db->query("
+            SELECT COUNT(*) AS total
+            FROM `" . DB_PREFIX . "customer`
+            WHERE newsletter = '1'
+              AND status = '1'
+              AND email <> ''
+        ");
+
+        return isset($query->row['total']) ? (int)$query->row['total'] : 0;
+    }
+
+    private function getCustomersCount() {
+        $query = $this->db->query("
+            SELECT COUNT(*) AS total
+            FROM `" . DB_PREFIX . "customer`
+            WHERE status = '1'
+        ");
+
+        return isset($query->row['total']) ? (int)$query->row['total'] : 0;
+    }
+
     private function getNewsSubscribers() {
         $query = $this->db->query("
-            SELECT email
+            SELECT customer_id, email
             FROM `" . DB_PREFIX . "customer`
             WHERE newsletter = '1'
               AND status = '1'
@@ -423,7 +570,327 @@ class ControllerExtensionModuleBmHome extends Controller {
         return $query->rows;
     }
 
-    private function sendNewsMail($news_id) {
+    private function getLastNewsSendId($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return 0;
+        }
+
+        $query = $this->db->query("
+            SELECT MAX(send_id) AS send_id
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE news_id = " . $news_id . "
+        ");
+
+        return !empty($query->row['send_id']) ? (int)$query->row['send_id'] : 0;
+    }
+
+    private function getRetrySubscribersCount($news_id) {
+        $news_id = (int)$news_id;
+        $last_send_id = $this->getLastNewsSendId($news_id);
+
+        if ($news_id <= 0 || $last_send_id <= 0) {
+            return 0;
+        }
+
+        $query = $this->db->query("
+            SELECT COUNT(*) AS total
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE news_id = " . $news_id . "
+              AND send_id = " . $last_send_id . "
+              AND is_sent = 0
+        ");
+
+        return isset($query->row['total']) ? (int)$query->row['total'] : 0;
+    }
+
+    private function getRetrySubscribers($news_id) {
+        $news_id = (int)$news_id;
+        $last_send_id = $this->getLastNewsSendId($news_id);
+
+        if ($news_id <= 0 || $last_send_id <= 0) {
+            return array();
+        }
+
+        $query = $this->db->query("
+            SELECT
+                s.customer_id,
+                IFNULL(c.email, '') AS email
+            FROM `" . DB_PREFIX . "bm_news_send` s
+            LEFT JOIN `" . DB_PREFIX . "customer` c
+                ON c.customer_id = s.customer_id
+            WHERE s.news_id = " . $news_id . "
+            AND s.send_id = " . $last_send_id . "
+            AND s.is_sent = 0
+            ORDER BY s.send_row_id ASC
+        ");
+
+        return $query->rows;
+    }
+
+    private function getNextNewsSendId($news_id) {
+        return $this->getLastNewsSendId((int)$news_id) + 1;
+    }
+
+    private function getNewsSendAttempts($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return array();
+        }
+
+        $query = $this->db->query("
+            SELECT
+                send_id,
+                COUNT(*) AS total_count,
+                SUM(CASE WHEN is_sent = 1 THEN 1 ELSE 0 END) AS success_count,
+                MIN(date_attempt) AS started_at,
+                MAX(date_attempt) AS completed_at
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE news_id = " . $news_id . "
+            GROUP BY send_id
+            ORDER BY send_id ASC
+        ");
+
+        $attempts = array();
+
+        foreach ($query->rows as $row) {
+            $total_count = isset($row['total_count']) ? (int)$row['total_count'] : 0;
+            $success_count = isset($row['success_count']) ? (int)$row['success_count'] : 0;
+
+            if ($success_count > $total_count) {
+                $success_count = $total_count;
+            }
+
+            $attempts[] = array(
+                'send_id' => (int)$row['send_id'],
+                'total_count' => $total_count,
+                'success_count' => $success_count,
+                'fail_count' => max(0, $total_count - $success_count),
+                'started_at' => !empty($row['started_at']) ? $row['started_at'] : '',
+                'completed_at' => !empty($row['completed_at']) ? $row['completed_at'] : ''
+            );
+        }
+
+        return $attempts;
+    }
+
+    private function downloadNewsLogCsv($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return;
+        }
+
+        $news_query = $this->db->query("
+            SELECT news_id, title
+            FROM `" . DB_PREFIX . "bm_news`
+            WHERE news_id = " . $news_id . "
+            LIMIT 1
+        ");
+
+        if (empty($news_query->row)) {
+            return;
+        }
+
+        $rows_query = $this->db->query("
+            SELECT
+                send_id,
+                customer_id,
+                email,
+                is_sent,
+                error_text,
+                date_attempt
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE news_id = " . $news_id . "
+            ORDER BY send_id ASC, send_row_id ASC
+        ");
+
+        $filename = 'news-log-' . $news_id . '-' . date('Y-m-d-H-i-s') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, array(
+            'send_id',
+            'news_id',
+            'customer_id',
+            'email',
+            'is_sent',
+            'error_text',
+            'date_attempt'
+        ), ';');
+
+        foreach ($rows_query->rows as $row) {
+            fputcsv($output, array(
+                isset($row['send_id']) ? (int)$row['send_id'] : 0,
+                $news_id,
+                isset($row['customer_id']) ? (int)$row['customer_id'] : 0,
+                isset($row['email']) ? $row['email'] : '',
+                !empty($row['is_sent']) ? 1 : 0,
+                isset($row['error_text']) ? $row['error_text'] : '',
+                isset($row['date_attempt']) ? $row['date_attempt'] : ''
+            ), ';');
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    private function downloadNewsAttemptLogCsv($news_id, $send_id) {
+        $news_id = (int)$news_id;
+        $send_id = (int)$send_id;
+
+        if ($news_id <= 0 || $send_id <= 0) {
+            return;
+        }
+
+        $news_query = $this->db->query("
+            SELECT news_id, title
+            FROM `" . DB_PREFIX . "bm_news`
+            WHERE news_id = " . $news_id . "
+            LIMIT 1
+        ");
+
+        if (empty($news_query->row)) {
+            return;
+        }
+
+        $rows_query = $this->db->query("
+            SELECT
+                send_id,
+                customer_id,
+                email,
+                is_sent,
+                error_text,
+                date_attempt
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE news_id = " . $news_id . "
+              AND send_id = " . $send_id . "
+            ORDER BY send_row_id ASC
+        ");
+
+        $filename = 'news-log-' . $news_id . '-attempt-' . $send_id . '-' . date('Y-m-d-H-i-s') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, array(
+            'send_id',
+            'news_id',
+            'customer_id',
+            'email',
+            'is_sent',
+            'error_text',
+            'date_attempt'
+        ), ';');
+
+        foreach ($rows_query->rows as $row) {
+            fputcsv($output, array(
+                isset($row['send_id']) ? (int)$row['send_id'] : 0,
+                $news_id,
+                isset($row['customer_id']) ? (int)$row['customer_id'] : 0,
+                isset($row['email']) ? $row['email'] : '',
+                !empty($row['is_sent']) ? 1 : 0,
+                isset($row['error_text']) ? $row['error_text'] : '',
+                isset($row['date_attempt']) ? $row['date_attempt'] : ''
+            ), ';');
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    private function updateNewsMailAggregate($news_id) {
+        $news_id = (int)$news_id;
+
+        if ($news_id <= 0) {
+            return;
+        }
+
+        $news_query = $this->db->query("
+            SELECT
+                `mail_total_count`,
+                `mail_started_at`
+            FROM `" . DB_PREFIX . "bm_news`
+            WHERE `news_id` = " . $news_id . "
+            LIMIT 1
+        ");
+
+        if (empty($news_query->row)) {
+            return;
+        }
+
+        $mail_total_count = isset($news_query->row['mail_total_count'])
+            ? (int)$news_query->row['mail_total_count']
+            : 0;
+
+        $mail_started_at = !empty($news_query->row['mail_started_at'])
+            ? $news_query->row['mail_started_at']
+            : null;
+
+        if ($mail_total_count < 0) {
+            $mail_total_count = 0;
+        }
+
+        $success_query = $this->db->query("
+            SELECT COUNT(DISTINCT customer_id) AS total
+            FROM `" . DB_PREFIX . "bm_news_send`
+            WHERE `news_id` = " . $news_id . "
+              AND `is_sent` = 1
+        ");
+
+        $mail_success_count = isset($success_query->row['total'])
+            ? (int)$success_query->row['total']
+            : 0;
+
+        if ($mail_success_count > $mail_total_count) {
+            $mail_success_count = $mail_total_count;
+        }
+
+        $mail_fail_count = max(0, $mail_total_count - $mail_success_count);
+
+        if ($mail_total_count === 0) {
+            $mail_sent = 3;
+        } elseif ($mail_success_count === 0) {
+            $mail_sent = 3;
+        } elseif ($mail_fail_count === 0) {
+            $mail_sent = 1;
+        } else {
+            $mail_sent = 2;
+        }
+
+        $mail_started_at_sql = $mail_started_at
+            ? "'" . $this->db->escape($mail_started_at) . "'"
+            : "NULL";
+
+        $this->db->query("
+            UPDATE `" . DB_PREFIX . "bm_news`
+            SET
+                `mail_sent` = " . (int)$mail_sent . ",
+                `mail_total_count` = " . (int)$mail_total_count . ",
+                `mail_success_count` = " . (int)$mail_success_count . ",
+                `mail_fail_count` = " . (int)$mail_fail_count . ",
+                `mail_started_at` = " . $mail_started_at_sql . ",
+                `mail_completed_at` = NOW()
+            WHERE `news_id` = " . $news_id . "
+        ");
+    }
+
+    private function sendNewsMail($news_id, $is_retry = false) {
         $news_id = (int)$news_id;
 
         if ($news_id <= 0) {
@@ -437,7 +904,10 @@ class ControllerExtensionModuleBmHome extends Controller {
                 tag,
                 short_text,
                 full_text,
-                date_news
+                date_news,
+                mail_sent,
+                mail_total_count,
+                mail_started_at
             FROM `" . DB_PREFIX . "bm_news`
             WHERE news_id = " . $news_id . "
             LIMIT 1
@@ -448,55 +918,174 @@ class ControllerExtensionModuleBmHome extends Controller {
         }
 
         $news = $news_query->row;
+        $current_mail_sent = isset($news['mail_sent']) ? (int)$news['mail_sent'] : 0;
 
-        $short_text = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
-        $full_text = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
-
-        $mail_text = trim(strip_tags($full_text)) !== '' ? $full_text : $short_text;
-
-        $subscribers = $this->getNewsSubscribers();
-
-        if (!$subscribers) {
+        if (!$is_retry && $current_mail_sent !== 0) {
             return false;
         }
 
-        $subject = 'Бумажный Мастер — ' . (string)$news['title'];
+        if ($is_retry && !in_array($current_mail_sent, array(2, 3), true)) {
+            return false;
+        }
 
+        $short_text = html_entity_decode((string)$news['short_text'], ENT_QUOTES, 'UTF-8');
+        $full_text = html_entity_decode((string)$news['full_text'], ENT_QUOTES, 'UTF-8');
+        $mail_text = trim(strip_tags($full_text)) !== '' ? $full_text : $short_text;
+
+        if ($is_retry) {
+            $subscribers = $this->getRetrySubscribers($news_id);
+        } else {
+            $subscribers = $this->getNewsSubscribers();
+        }
+
+        if (!$subscribers) {
+            if (!$is_retry) {
+                $this->db->query("
+                    UPDATE `" . DB_PREFIX . "bm_news`
+                    SET
+                        `mail_sent` = 3,
+                        `mail_total_count` = 0,
+                        `mail_success_count` = 0,
+                        `mail_fail_count` = 0,
+                        `mail_started_at` = NOW(),
+                        `mail_completed_at` = NOW()
+                    WHERE `news_id` = " . $news_id . "
+                ");
+            } else {
+                $this->db->query("
+                    UPDATE `" . DB_PREFIX . "bm_news`
+                    SET `mail_completed_at` = NOW()
+                    WHERE `news_id` = " . $news_id . "
+                ");
+            }
+
+            return false;
+        }
+
+        $send_id = $this->getNextNewsSendId($news_id);
+        $subject = 'Бумажный Мастер — ' . (string)$news['title'];
         $news_url = HTTPS_CATALOG . 'news';
 
         $message = '';
         $message .= '<html><body>';
         $message .= '<h2>' . htmlspecialchars((string)$news['title'], ENT_QUOTES, 'UTF-8') . '</h2>';
-        $message .= '<p><strong>Дата:</strong> ' . date('d.m.Y', strtotime($news['date_news'])) . '</p>';
         $message .= '<div>' . $mail_text . '</div>';
         $message .= '<p><a href="' . $news_url . '">Перейти к новостям</a></p>';
+        $message .= '<hr>';
+        $message .= '<p style="font-size:13px;color:#777;">';
+        $message .= 'Если вы не хотите получать новостные рассылки от магазина «Бумажный Мастер», ';
+        $message .= 'вы можете отключить их в ';
+        $message .= '<a href="' . HTTPS_CATALOG . 'index.php?route=account/account">личном кабинете</a>.';
+        $message .= '</p>';
         $message .= '</body></html>';
 
-        $sent_count = 0;
+        if (!$is_retry) {
+            $this->db->query("
+                UPDATE `" . DB_PREFIX . "bm_news`
+                SET
+                    `mail_sent` = 4,
+                    `mail_prompt_hidden` = 0,
+                    `mail_total_count` = " . (int)count($subscribers) . ",
+                    `mail_success_count` = 0,
+                    `mail_fail_count` = 0,
+                    `mail_started_at` = NOW(),
+                    `mail_completed_at` = NULL
+                WHERE `news_id` = " . $news_id . "
+            ");
+        } else {
+            $started_at_sql = !empty($news['mail_started_at'])
+                ? "`mail_started_at` = `mail_started_at`"
+                : "`mail_started_at` = NOW()";
+
+            $this->db->query("
+                UPDATE `" . DB_PREFIX . "bm_news`
+                SET
+                    `mail_sent` = 4,
+                    " . $started_at_sql . ",
+                    `mail_completed_at` = NULL
+                WHERE `news_id` = " . $news_id . "
+            ");
+        }
 
         foreach ($subscribers as $subscriber) {
-            if (empty($subscriber['email'])) {
+            $customer_id = isset($subscriber['customer_id']) ? (int)$subscriber['customer_id'] : 0;
+            $email = isset($subscriber['email']) ? trim((string)$subscriber['email']) : '';
+
+            if ($email === '') {
+                $this->db->query("
+                    INSERT INTO `" . DB_PREFIX . "bm_news_send`
+                    SET
+                        `send_id` = " . (int)$send_id . ",
+                        `news_id` = " . $news_id . ",
+                        `customer_id` = " . $customer_id . ",
+                        `email` = '',
+                        `is_sent` = 0,
+                        `error_text` = '" . $this->db->escape('Пустой email') . "',
+                        `date_attempt` = NOW()
+                ");
+
                 continue;
             }
 
-            $mail = new Mail($this->config->get('config_mail_engine'));
-            $mail->parameter = $this->config->get('config_mail_parameter');
-            $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
-            $mail->smtp_username = $this->config->get('config_mail_smtp_username');
-            $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
-            $mail->smtp_port = $this->config->get('config_mail_smtp_port');
-            $mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->db->query("
+                    INSERT INTO `" . DB_PREFIX . "bm_news_send`
+                    SET
+                        `send_id` = " . (int)$send_id . ",
+                        `news_id` = " . $news_id . ",
+                        `customer_id` = " . $customer_id . ",
+                        `email` = '" . $this->db->escape($email) . "',
+                        `is_sent` = 0,
+                        `error_text` = '" . $this->db->escape('Некорректный email') . "',
+                        `date_attempt` = NOW()
+                ");
 
-            $mail->setTo($subscriber['email']);
-            $mail->setFrom($this->config->get('config_email'));
-            $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
-            $mail->setSubject($subject);
-            $mail->setHtml($message);
-            $mail->send();
+                continue;
+            }
 
-            $sent_count++;
+            $is_sent = 0;
+            $error_text = '';
+
+            try {
+                $mail = new Mail($this->config->get('config_mail_engine'));
+                $mail->parameter = $this->config->get('config_mail_parameter');
+                $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+                $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+                $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+                $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+                $mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+
+                $mail->setTo($email);
+                $mail->setFrom($this->config->get('config_email'));
+                $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+                $mail->setSubject($subject);
+                $mail->setHtml($message);
+                $mail->send();
+
+                $is_sent = 1;
+            } catch (\Exception $e) {
+                $is_sent = 0;
+                $error_text = $e->getMessage();
+            } catch (\Throwable $e) {
+                $is_sent = 0;
+                $error_text = $e->getMessage();
+            }
+
+            $this->db->query("
+                INSERT INTO `" . DB_PREFIX . "bm_news_send`
+                SET
+                    `send_id` = " . (int)$send_id . ",
+                    `news_id` = " . $news_id . ",
+                    `customer_id` = " . $customer_id . ",
+                    `email` = '" . $this->db->escape($email) . "',
+                    `is_sent` = " . (int)$is_sent . ",
+                    `error_text` = '" . $this->db->escape($error_text) . "',
+                    `date_attempt` = NOW()
+            ");
         }
 
-        return ($sent_count > 0);
+        $this->updateNewsMailAggregate($news_id);
+
+        return true;
     }
 }

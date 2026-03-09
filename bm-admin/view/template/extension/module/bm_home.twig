@@ -291,20 +291,98 @@
                             </h3>
 
                             <div>
-                              {% if news.mail_sent %}
-                                <span class="label label-success">{{ entry_news_mail_sent }}: {{ text_mail_sent_yes }}</span>
-                              {% else %}
-                                <span class="label label-default">{{ entry_news_mail_sent }}: {{ text_mail_sent_no }}</span>
-                              {% endif %}
+                              <span class="js-news-mail-status-static">
+                                {% if news.mail_sent == 0 %}
+                                  <span class="label label-default">{{ entry_news_mail_sent }}: Рассылка не формировалась</span>
+
+                                  {% if news.mail_prompt_hidden == 1 %}
+                                    <button type="button"
+                                            class="btn btn-default btn-xs js-news-mail-prompt-toggle"
+                                            data-news-id="{{ news.news_id }}"
+                                            aria-expanded="false"
+                                            title="Показать блок отправки"
+                                            style="margin-left: 6px; padding: 1px 6px; line-height: 1.2; vertical-align: middle;">
+                                      <i class="fa fa-chevron-down" id="news-mail-prompt-icon-{{ news.news_id }}"></i>
+                                    </button>
+                                  {% endif %}
+                                {% elseif news.mail_sent == 1 %}
+                                  <span class="label label-success">{{ entry_news_mail_sent }}: Рассылка отправлена успешно</span>
+                                {% elseif news.mail_sent == 2 %}
+                                  <span class="label label-warning">{{ entry_news_mail_sent }}: Рассылка отправлена частично</span>
+                                {% elseif news.mail_sent == 3 %}
+                                  <span class="label label-danger">{{ entry_news_mail_sent }}: Ошибка отправки рассылки</span>
+                                {% elseif news.mail_sent == 4 %}
+                                  <span class="label label-primary">{{ entry_news_mail_sent }}: Рассылка в процессе отправки</span>
+                                {% endif %}
+
+                                {% if news.send_attempts_count > 0 %}
+                                  <button type="button"
+                                          class="btn btn-default btn-xs js-news-download-log"
+                                          data-news-id="{{ news.news_id }}"
+                                          data-toggle="tooltip"
+                                          title="Скачать лог"
+                                          style="display: inline-block; margin-left: 8px; vertical-align: middle; padding: 2px 6px;">
+                                    <i class="fa fa-file-text-o"></i>
+                                  </button>
+                                {% endif %}
+
+                                {% if news.send_attempts_count > 1 %}
+                                  <button type="button"
+                                          class="btn btn-default btn-xs js-news-attempts-toggle"
+                                          data-news-id="{{ news.news_id }}"
+                                          aria-expanded="false"
+                                          style="display: inline-block; margin-left: 8px; vertical-align: middle; padding: 2px 6px;">
+                                    <i class="fa fa-chevron-down" id="news-attempts-icon-{{ news.news_id }}"></i>
+                                    Попытки рассылки ({{ news.send_attempts_count }})
+                                  </button>
+                                {% endif %}
+
+                                {% if news.mail_sent == 4 %}
+                                  <div style="margin-top: 6px; font-size: 12px; color: #666;">
+                                    {{ news.mail_total_count }} покупателей{% if news.mail_started_at %}; Начало рассылки: {{ news.mail_started_at }}{% endif %}
+                                  </div>
+                                {% elseif news.mail_sent == 1 %}
+                                  <div style="margin-top: 6px; font-size: 12px; color: #666;">
+                                    Отправлено {{ news.mail_success_count }} из {{ news.mail_total_count }}
+                                    {% if news.mail_started_at %}; Начало рассылки: {{ news.mail_started_at }}{% endif %}
+                                    {% if news.mail_completed_at %}; Завершение рассылки: {{ news.mail_completed_at }}{% endif %}
+                                  </div>
+                                {% elseif news.mail_sent == 2 %}
+                                  <div style="margin-top: 6px; font-size: 12px; color: #666;">
+                                    Отправлено {{ news.mail_success_count }} из {{ news.mail_total_count }}
+                                    {% if news.mail_started_at %}; Начало рассылки: {{ news.mail_started_at }}{% endif %}
+                                    {% if news.mail_completed_at %}; Завершение рассылки: {{ news.mail_completed_at }}{% endif %}
+                                  </div>
+                                {% elseif news.mail_sent == 3 %}
+                                  <div style="margin-top: 6px; font-size: 12px; color: #666;">
+                                    Отправлено {{ news.mail_success_count }} из {{ news.mail_total_count }}
+                                    {% if news.mail_started_at %}; Начало рассылки: {{ news.mail_started_at }}{% endif %}
+                                    {% if news.mail_completed_at %}; Завершение рассылки: {{ news.mail_completed_at }}{% endif %}
+                                  </div>
+                                {% endif %}
+                              </span>
+
+                              <span class="js-news-mail-status-loading" style="display: none;">
+                                <span class="label label-primary">{{ entry_news_mail_sent }}: В процессе отправки...</span>
+                              </span>
                             </div>
                           </div>
 
                           <div class="pull-right text-right">
-                            <button type="button"
-                                    class="btn btn-primary btn-sm js-news-edit-open"
-                                    data-news-id="{{ news.news_id }}">
-                              <i class="fa fa-pencil"></i> Редактировать
-                            </button>
+                            {% if news.mail_sent == 0 %}
+                              <button type="button"
+                                      class="btn btn-primary btn-sm js-news-edit-open"
+                                      data-news-id="{{ news.news_id }}">
+                                <i class="fa fa-pencil"></i> Редактировать
+                              </button>
+                            {% else %}
+                              <button type="button"
+                                      class="btn btn-default btn-sm"
+                                      disabled="disabled"
+                                      title="После запуска рассылки редактирование недоступно">
+                                <i class="fa fa-lock"></i> Редактирование недоступно
+                              </button>
+                            {% endif %}
 
                             <div id="news-toggle-wrap-{{ news.news_id }}" style="margin-top: 6px;">
                               <button type="button"
@@ -317,6 +395,97 @@
                             </div>
                           </div>
                         </div>
+
+                        {% if news.mail_sent == 0 %}
+                          <div class="panel-body js-news-mail-prompt-wrap"
+                              id="news-mail-prompt-{{ news.news_id }}"
+                              style="border-top: 1px solid #eee; background: #fcfcfc;{% if news.mail_prompt_hidden == 1 %} display: none;{% endif %}">
+                            <div class="alert alert-info" style="margin-bottom: 15px;">
+                              Новость сохранена. Рассылка ещё не запускалась.
+                            </div>
+
+                            <div style="margin-bottom: 12px;">
+                              <strong>Отправить покупателям с активной рассылкой?</strong><br />
+                              {{ news.subscriber_count }} из {{ news.customer_count }} покупателей подписаны на рассылку.
+                            </div>
+
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                              <button type="button"
+                                      class="btn btn-success js-news-send-confirm"
+                                      data-news-id="{{ news.news_id }}">
+                                <i class="fa fa-envelope"></i> Подтвердить отправку
+                              </button>
+
+                              <button type="button"
+                                      class="btn btn-default js-news-send-decline"
+                                      data-news-id="{{ news.news_id }}">
+                                <i class="fa fa-times"></i> Не отправлять
+                              </button>
+                            </div>
+                          </div>
+                        {% endif %}
+
+                        {% if (news.mail_sent == 2 or news.mail_sent == 3) and news.retry_fail_count > 0 %}
+                          <div class="panel-body" style="border-top: 1px solid #eee; background: #fffaf2;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                              <button type="button"
+                                      class="btn btn-warning btn-sm js-news-retry-open"
+                                      data-news-id="{{ news.news_id }}">
+                                <i class="fa fa-refresh"></i> Отправить рассылку повторно
+                              </button>
+                            </div>
+
+                            <div id="news-retry-confirm-{{ news.news_id }}"
+                                 style="display: none; margin-top: 12px;">
+                              <div class="alert alert-warning" style="margin-bottom: 15px;">
+                                Отправить повторно тем, кому письмо не было доставлено?
+                              </div>
+
+                              <div style="margin-bottom: 12px;">
+                                {{ news.retry_fail_count }} из {{ news.mail_total_count }} покупателей не получили рассылку.
+                              </div>
+
+                              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <button type="button"
+                                        class="btn btn-warning js-news-send-retry-confirm"
+                                        data-news-id="{{ news.news_id }}">
+                                  <i class="fa fa-envelope"></i> Подтвердить повторную отправку
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-default js-news-retry-cancel"
+                                        data-news-id="{{ news.news_id }}">
+                                  <i class="fa fa-times"></i> Отмена
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        {% endif %}
+
+                        {% if news.send_attempts_count > 1 %}
+                          <div class="panel-body" id="news-attempts-{{ news.news_id }}" style="display: none; border-top: 1px solid #eee; background: #fafafa;">
+                            {% for attempt in news.send_attempts %}
+                              <div style="padding: 8px 0; border-top: {% if loop.first %}0{% else %}1px solid #eee{% endif %}; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                <div>
+                                  Попытка {{ loop.index }}
+                                  (отправлено {{ attempt.success_count }} из {{ attempt.total_count }}
+                                  {% if attempt.started_at %}; Начало: {{ attempt.started_at }}{% endif %}
+                                  {% if attempt.completed_at %}; Завершение: {{ attempt.completed_at }}{% endif %})
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-default btn-xs js-news-download-attempt-log"
+                                        data-news-id="{{ news.news_id }}"
+                                        data-send-id="{{ attempt.send_id }}"
+                                        data-toggle="tooltip"
+                                        title="Скачать лог"
+                                        style="padding: 2px 6px; flex: 0 0 auto;">
+                                  <i class="fa fa-file-text-o"></i>
+                                </button>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
 
                         <div class="panel-body" id="news-view-{{ news.news_id }}" style="display: none;">
                           <div class="row" style="margin-bottom: 15px;">
@@ -423,11 +592,19 @@
                               <i class="fa fa-reply"></i> Отмена
                             </button>
 
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    form="form-bm-home-news-edit-{{ news.news_id }}">
-                              <i class="fa fa-save"></i> Сохранить
-                            </button>
+                            {% if news.mail_sent == 0 %}
+                              <button type="submit"
+                                      class="btn btn-primary"
+                                      form="form-bm-home-news-edit-{{ news.news_id }}">
+                                <i class="fa fa-save"></i> Сохранить
+                              </button>
+                            {% else %}
+                              <button type="button"
+                                      class="btn btn-default"
+                                      disabled="disabled">
+                                <i class="fa fa-lock"></i> Сохранение недоступно
+                              </button>
+                            {% endif %}
                           </div>
                         </div>
                       </div>
@@ -651,6 +828,41 @@ function bmNewsSetToggleOpened(news_id) {
   $('[data-news-id="' + news_id + '"].js-news-view-toggle').attr('aria-expanded', 'true');
 }
 
+function bmNewsMailPromptSetClosed(news_id) {
+  $('#news-mail-prompt-icon-' + news_id)
+    .removeClass('fa-chevron-up')
+    .addClass('fa-chevron-down');
+
+  $('.js-news-mail-prompt-toggle[data-news-id="' + news_id + '"]').attr('aria-expanded', 'false');
+}
+
+function bmNewsMailPromptSetOpened(news_id) {
+  $('#news-mail-prompt-icon-' + news_id)
+    .removeClass('fa-chevron-down')
+    .addClass('fa-chevron-up');
+
+  $('.js-news-mail-prompt-toggle[data-news-id="' + news_id + '"]').attr('aria-expanded', 'true');
+}
+
+function bmNewsPostAction(fields) {
+  var $form = $('<form>', {
+    method: 'post',
+    action: '{{ action|replace({'&amp;': '&'}) }}',
+    style: 'display:none;'
+  });
+
+  $.each(fields, function(name, value) {
+    $('<input>', {
+      type: 'hidden',
+      name: name,
+      value: value
+    }).appendTo($form);
+  });
+
+  $('body').append($form);
+  $form.trigger('submit');
+}
+
 $(document).on('click', '.js-news-view-toggle', function() {
   var news_id = $(this).data('news-id');
   var $view = $('#news-view-' + news_id);
@@ -662,6 +874,90 @@ $(document).on('click', '.js-news-view-toggle', function() {
     $view.stop(true, true).slideDown(200);
     bmNewsSetToggleOpened(news_id);
   }
+});
+
+$(document).on('click', '.js-news-mail-prompt-toggle', function() {
+  var news_id = $(this).data('news-id');
+  var $wrap = $('#news-mail-prompt-' + news_id);
+
+  if ($wrap.is(':visible')) {
+    $wrap.stop(true, true).slideUp(200);
+    bmNewsMailPromptSetClosed(news_id);
+  } else {
+    $wrap.stop(true, true).slideDown(200);
+    bmNewsMailPromptSetOpened(news_id);
+  }
+});
+
+$(document).on('click', '.js-news-send-confirm', function() {
+  if (!confirm('Отправить рассылку по этой новости?')) {
+    return;
+  }
+
+  var news_id = $(this).data('news-id');
+  var $panel = $('#news-mail-prompt-' + news_id);
+  var $newsPanel = $panel.closest('.panel');
+
+  $panel.find('.js-news-send-confirm').prop('disabled', true);
+  $panel.find('.js-news-send-decline').prop('disabled', true);
+
+  $newsPanel.find('.js-news-mail-status-static').hide();
+  $newsPanel.find('.js-news-mail-status-loading').show();
+
+  bmNewsPostAction({
+    bm_home_news_action: 'send_news_confirm',
+    bm_home_news_id: news_id
+  });
+});
+
+$(document).on('click', '.js-news-send-decline', function() {
+  var news_id = $(this).data('news-id');
+
+  bmNewsPostAction({
+    bm_home_news_action: 'hide_news_mail_prompt',
+    bm_home_news_id: news_id
+  });
+});
+
+$(document).on('click', '.js-news-send-retry-confirm', function() {
+  if (!confirm('Запустить повторную отправку только по недоставленным адресам последней попытки?')) {
+    return;
+  }
+
+  var news_id = $(this).data('news-id');
+  var $panel = $('#news-retry-confirm-' + news_id);
+  var $newsPanel = $panel.closest('.panel');
+
+  $panel.find('.js-news-send-retry-confirm').prop('disabled', true);
+  $panel.find('.js-news-retry-cancel').prop('disabled', true);
+
+  $newsPanel.find('.js-news-mail-status-static').hide();
+  $newsPanel.find('.js-news-mail-status-loading').show();
+
+  bmNewsPostAction({
+    bm_home_news_action: 'send_news_retry_confirm',
+    bm_home_news_id: news_id
+  });
+});
+
+$(document).on('click', '.js-news-download-log', function() {
+  var news_id = $(this).data('news-id');
+
+  bmNewsPostAction({
+    bm_home_news_action: 'download_news_log',
+    bm_home_news_id: news_id
+  });
+});
+
+$(document).on('click', '.js-news-download-attempt-log', function() {
+  var news_id = $(this).data('news-id');
+  var send_id = $(this).data('send-id');
+
+  bmNewsPostAction({
+    bm_home_news_action: 'download_news_attempt_log',
+    bm_home_news_id: news_id,
+    bm_home_send_id: send_id
+  });
 });
 
 $(document).on('click', '.js-news-edit-open', function() {
@@ -682,7 +978,43 @@ $(document).on('click', '.js-news-edit-cancel', function() {
     bmNewsSetToggleOpened(news_id);
   });
 });
+
+
+$(document).on('click', '.js-news-retry-open', function() {
+  var news_id = $(this).data('news-id');
+
+  $('#news-retry-confirm-' + news_id).stop(true, true).slideDown(200);
+  $(this).prop('disabled', true);
+});
+
+$(document).on('click', '.js-news-retry-cancel', function() {
+  var news_id = $(this).data('news-id');
+
+  $('#news-retry-confirm-' + news_id).stop(true, true).slideUp(200, function() {
+    $('.js-news-retry-open[data-news-id="' + news_id + '"]').prop('disabled', false);
+  });
+});
+
+$(document).on('click', '.js-news-attempts-toggle', function() {
+  var news_id = $(this).data('news-id');
+  var $wrap = $('#news-attempts-' + news_id);
+  var $icon = $('#news-attempts-icon-' + news_id);
+  var is_open = $wrap.is(':visible');
+
+  if (is_open) {
+    $wrap.stop(true, true).slideUp(200);
+    $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    $(this).attr('aria-expanded', 'false');
+  } else {
+    $wrap.stop(true, true).slideDown(200);
+    $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    $(this).attr('aria-expanded', 'true');
+  }
+});
+
 //--></script>
+
+
 
 <style>
 #tab-text .bm-news-short-editor + .note-editor {

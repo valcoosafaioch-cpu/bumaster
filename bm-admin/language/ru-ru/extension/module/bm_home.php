@@ -55,6 +55,16 @@ $_['text_news_tag_important'] = 'Важно';
 // News mail status
 $_['text_mail_sent_yes'] = 'Отправлена';
 $_['text_mail_sent_no']  = 'Не отправлена';
+$_['text_mail_status_not_started'] = 'Рассылка не формировалась';
+$_['text_mail_status_success'] = 'Рассылка отправлена успешно';
+$_['text_mail_status_partial'] = 'Рассылка отправлена частично';
+$_['text_mail_status_error'] = 'Ошибка отправки рассылки';
+$_['text_mail_status_progress'] = 'Рассылка в процессе отправки';
+
+$_['text_news_mail_pending'] = 'Новость сохранена. Рассылка ещё не запускалась.';
+$_['text_news_mail_confirm'] = 'Отправить покупателям с активной рассылкой?';
+$_['text_news_mail_edit_locked'] = 'После запуска рассылки редактирование недоступно';
+$_['button_news_send_confirm'] = 'Подтвердить отправку';
 
 // Entry — слайды
 $_['entry_slides']         = 'Слайды главной страницы (A1)';
