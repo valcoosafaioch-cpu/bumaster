@@ -76,13 +76,29 @@
 									<label for="input-password" class="text-bold">{{ entry_password }}</label>
 								</div>
 								<a href="{{ forgotten }}">{{ text_forgotten }}</a>
+
 								<div class="flex-reverse">
 									<button type="submit" value="{{ button_login }}" class="btn waves-effect waves-light red">{{ button_login }}</button>
 								</div>
+
+								{% if confirm_email_message %}
+									<div class="login-confirm-email-message">{{ confirm_email_message }}</div>
+								{% endif %}
+
 								{% if redirect %}
 								<input type="hidden" name="redirect" value="{{ redirect }}">
 								{% endif %}
 							</form>
+
+							{% if show_confirm_email_button %}
+								<form action="{{ confirm_email_action }}" method="post" enctype="multipart/form-data" style="margin-top: 16px;">
+									<input type="hidden" name="confirm_unverified_email" value="1">
+									<input type="hidden" name="confirm_email_email" value="{{ confirm_email_email }}">
+									<div class="flex-reverse">
+										<button type="submit" class="btn waves-effect waves-light grey lighten-1 black-text">Подтвердить email</button>
+									</div>
+								</form>
+							{% endif %}
 						</div>
 					</div>
 					<div class="col s12 m6">

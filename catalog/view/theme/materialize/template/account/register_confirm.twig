@@ -1,0 +1,115 @@
+{{ header }}
+<div id="account-register-confirm" class="container">
+  
+  {% if success %}
+    <div class="alert alert-success alert-dismissible">
+      <i class="fa fa-check-circle"></i> {{ success }}
+    </div>
+  {% endif %}
+
+  <div class="row">
+    {{ column_left }}
+    {% if column_left and column_right %}
+      {% set class = 'col-sm-6' %}
+    {% elseif column_left or column_right %}
+      {% set class = 'col-sm-9' %}
+    {% else %}
+      {% set class = 'col-sm-12' %}
+    {% endif %}
+    <div id="content" class="{{ class }}">
+      {{ content_top }}
+
+      <div class="account-box account-confirm-box">
+        <div class="account-confirm-head">
+          <h1>{{ heading_title }}</h1>
+          <p class="account-confirm-text">{{ text_description }}</p>
+          <p class="account-confirm-email"><strong>{{ text_email_masked }}</strong></p>
+          <p class="account-confirm-expire">{{ text_code_lifetime }}</p>
+        </div>
+
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" class="account-confirm-form">
+          <div class="account-confirm-field">
+            <label for="input-verify-code"><span class="account-required-mark">*</span> {{ entry_code }}</label>
+            <input type="text" name="verify_code" value="" placeholder="{{ entry_code }}" id="input-verify-code" class="form-control" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+            {% if error_code %}
+              <div class="account-confirm-error">{{ error_code }}</div>
+            {% endif %}
+          </div>
+
+          <div class="account-confirm-actions">
+            <button type="submit"
+                    class="btn btn-primary"
+                    {% if error_code and 'Превышено количество попыток' in error_code %}disabled="disabled"{% endif %}>
+              {{ button_confirm }}
+            </button>
+          </div>
+        </form>
+
+        <div class="account-confirm-resend">
+          <p>{{ text_resend_hint }}</p>
+
+          {% if can_resend %}
+            <p class="account-confirm-wait" id="resend-wait-text"></p>
+            <form action="{{ action_resend }}" method="post" enctype="multipart/form-data" id="resend-code-form">
+              <input type="hidden" name="resend_code" value="1" />
+              <button type="submit" class="btn btn-default account-btn-secondary" id="resend-code-button">{{ button_resend }}</button>
+            </form>
+          {% else %}
+            <p class="account-confirm-wait" id="resend-wait-text" data-wait-seconds="{{ wait_seconds }}">Повторная отправка будет доступна через {{ wait_seconds }} сек.</p>
+            <form action="{{ action_resend }}" method="post" enctype="multipart/form-data" id="resend-code-form">
+              <input type="hidden" name="resend_code" value="1" />
+              <button type="submit" class="btn btn-default account-btn-secondary" id="resend-code-button" disabled="disabled">{{ button_resend }}</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      {{ content_bottom }}
+    </div>
+    {{ column_right }}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var waitText = document.getElementById('resend-wait-text');
+  var resendButton = document.getElementById('resend-code-button');
+
+  if (!waitText || !resendButton) {
+    return;
+  }
+
+  var waitSeconds = parseInt(waitText.getAttribute('data-wait-seconds'), 10);
+
+  if (!waitSeconds || waitSeconds <= 0) {
+    waitText.textContent = '';
+    resendButton.disabled = false;
+    return;
+  }
+
+  var updateWaitText = function (seconds) {
+    if (seconds > 0) {
+      waitText.textContent = 'Повторная отправка будет доступна через ' + seconds + ' сек.';
+    } else {
+      waitText.textContent = 'Можно отправить новый код.';
+      resendButton.disabled = false;
+    }
+  };
+
+  updateWaitText(waitSeconds);
+
+  var timer = setInterval(function () {
+    waitSeconds--;
+
+    if (waitSeconds <= 0) {
+      clearInterval(timer);
+      updateWaitText(0);
+      return;
+    }
+
+    updateWaitText(waitSeconds);
+  }, 1000);
+});
+</script>
+
+{{ footer }}

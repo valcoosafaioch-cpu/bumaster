@@ -22,17 +22,9 @@ class ControllerAccountSuccess extends Controller {
 			'href' => $this->url->link('account/success')
 		);
 
-		if ($this->customer->isLogged()) {
-			$data['text_message'] = sprintf($this->language->get('text_message'), $this->url->link('information/contact'));
-		} else {
-			$data['text_message'] = sprintf($this->language->get('text_approval'), $this->config->get('config_name'), $this->url->link('information/contact'));
-		}
+		$data['text_message'] = $this->language->get('text_message');
 
-		if ($this->cart->hasProducts()) {
-			$data['continue'] = $this->url->link('checkout/cart');
-		} else {
-			$data['continue'] = $this->url->link('account/account', '', true);
-		}
+		$data['continue'] = $this->url->link('account/account', '', true);
 
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['column_right'] = $this->load->controller('common/column_right');

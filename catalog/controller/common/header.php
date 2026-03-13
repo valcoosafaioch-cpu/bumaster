@@ -11,6 +11,11 @@ class ControllerCommonHeader extends Controller {
 		if ($route === '' || $route === 'common/home') {
 			$this->document->addStyle('catalog/view/theme/materialize/stylesheet/home.css?v=2025-12-08');
 		}
+		
+		// Стили только для блока аккаунта
+		if (isset($this->request->get['route']) && strpos($this->request->get['route'], 'account/') === 0) {
+			$this->document->addStyle('catalog/view/theme/materialize/stylesheet/account.css');
+		}
 
 		// Analytics
 		$this->load->model('setting/extension');

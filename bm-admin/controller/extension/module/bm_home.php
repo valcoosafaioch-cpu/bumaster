@@ -590,6 +590,7 @@ class ControllerExtensionModuleBmHome extends Controller {
             FROM `" . DB_PREFIX . "customer`
             WHERE newsletter = '1'
               AND status = '1'
+              AND email_confirmed = '1'
               AND email <> ''
         ");
 
@@ -601,6 +602,7 @@ class ControllerExtensionModuleBmHome extends Controller {
             SELECT COUNT(*) AS total
             FROM `" . DB_PREFIX . "customer`
             WHERE status = '1'
+              AND email_confirmed = '1'
         ");
 
         return isset($query->row['total']) ? (int)$query->row['total'] : 0;
@@ -612,6 +614,7 @@ class ControllerExtensionModuleBmHome extends Controller {
             FROM `" . DB_PREFIX . "customer`
             WHERE newsletter = '1'
               AND status = '1'
+              AND email_confirmed = '1'
               AND email <> ''
             ORDER BY customer_id ASC
         ");

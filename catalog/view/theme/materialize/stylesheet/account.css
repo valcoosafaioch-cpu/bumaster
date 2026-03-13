@@ -1,0 +1,369 @@
+/* =========================================================
+   ACCOUNT — ОБЩАЯ ОБОЛОЧКА
+   ========================================================= */
+
+#account-register-confirm {
+  margin-top: 24px;
+  margin-bottom: 40px;
+}
+
+#account-register-confirm #content {
+  margin-bottom: 0;
+}
+
+
+/* =========================================================
+   ACCOUNT — БЕЛАЯ ПОДЛОЖКА
+   ========================================================= */
+
+.account-box {
+  background: #ffffff;
+  border: 1px solid #e7e1d5;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  padding: 32px;
+}
+
+
+/* =========================================================
+   ACCOUNT CONFIRM — ОСНОВНОЙ КОНТЕЙНЕР
+   ========================================================= */
+
+.account-confirm-box {
+  max-width: 760px;
+}
+
+.account-confirm-head {
+  margin-bottom: 28px;
+}
+
+.account-confirm-head h1 {
+  margin: 0 0 20px;
+}
+
+.account-confirm-text,
+.account-confirm-email,
+.account-confirm-expire {
+  margin: 0 0 16px;
+}
+
+.account-confirm-email strong {
+  color: #2f4156;
+}
+
+
+/* =========================================================
+   ACCOUNT CONFIRM — ФОРМА ПОДТВЕРЖДЕНИЯ
+   ========================================================= */
+
+.account-confirm-form {
+  max-width: 420px;
+  margin: 0;
+}
+
+.account-confirm-field {
+  margin-bottom: 20px;
+}
+
+.account-confirm-field label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #2f4156;
+}
+
+.account-required-mark {
+  display: inline-block;
+  margin-right: 4px;
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.account-confirm-error {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  color: #b71c1c;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.account-confirm-field .form-control {
+  width: 100%;
+  max-width: 420px;
+}
+
+.account-confirm-actions {
+  margin-top: 8px;
+}
+
+.account-confirm-actions .btn {
+  min-width: 160px;
+}
+
+.account-confirm-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   ACCOUNT CONFIRM — ПОВТОРНАЯ ОТПРАВКА КОДА
+   ========================================================= */
+
+.account-confirm-resend {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #ece6db;
+  max-width: 420px;
+}
+
+.account-confirm-resend p {
+  margin: 0 0 14px;
+}
+
+.account-confirm-wait {
+  color: #6b7280;
+}
+
+
+
+/* =========================================================
+   ACCOUNT — ВТОРИЧНЫЕ КНОПКИ
+   ========================================================= */
+
+.account-btn-secondary,
+.account-btn-secondary:focus,
+.account-btn-secondary:hover {
+  background: #f3efe7;
+  border-color: #d8cfbf;
+  color: #3c4854;
+  box-shadow: none;
+}
+
+.account-btn-secondary:not([disabled]) {
+  cursor: pointer;
+}
+
+.account-btn-secondary[disabled],
+.account-btn-secondary[disabled]:hover,
+.account-btn-secondary[disabled]:focus {
+  background: #f5f5f5;
+  border-color: #dddddd;
+  color: #9a9a9a;
+  opacity: 1;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* =================================================
+   Ошибка: email уже зарегистрирован
+================================================= */
+
+.register-email-error {
+  margin: 8px 0 18px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  color: #b71c1c;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* ссылки внутри ошибки */
+
+.register-email-error a {
+  color: #8e0000;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.register-email-error a:hover {
+  color: #5f0000;
+}
+
+/* =========================================================
+   ACCOUNT REGISTER — TELEPHONE
+   ========================================================= */
+
+#account-register .register-telephone-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+#account-register .register-telephone-country {
+  flex: 0 0 210px;
+  min-width: 210px;
+}
+
+#account-register .register-telephone-number {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#account-register .register-telephone-country label,
+#account-register .register-telephone-number label {
+  display: block;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  min-height: 18px;
+}
+
+#account-register .register-telephone-country .select-wrapper {
+  margin: 0;
+}
+
+#account-register .register-telephone-country .select-wrapper input.select-dropdown {
+  box-sizing: border-box;
+  width: 100%;
+  height: 46px;
+  margin: 0;
+  padding: 0 36px 0 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3c4854;
+  font-size: 14px;
+  line-height: 44px;
+}
+
+#account-register .register-telephone-country .select-wrapper input.select-dropdown:focus {
+  border-bottom: 1px solid #b71c1c;
+  box-shadow: none;
+}
+
+#account-register .register-telephone-country .select-wrapper .caret {
+  right: 12px;
+  fill: #3c4854;
+}
+
+#account-register .register-telephone-number.input-field {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+#account-register .register-telephone-number.input-field input[type="tel"] {
+  height: 46px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 0 0 0;
+  line-height: 44px;
+}
+
+#account-register .register-telephone-number.input-field label {
+  top: -10px;
+}
+
+#account-register .register-telephone-number.input-field label.active {
+  transform: translateY(-14px) scale(0.8);
+}
+
+#account-register .register-telephone-number input[type="tel"] {
+  margin-bottom: 0;
+}
+
+#account-register .register-telephone-hint {
+  margin: 0 0 18px;
+  color: #8a8f98;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 767px) {
+  #account-register .register-telephone-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #account-register .register-telephone-country,
+  #account-register .register-telephone-number {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   ACCOUNT CONFIRM — ПРАВАЯ КОЛОНКА
+   ========================================================= */
+
+@media (min-width: 992px) {
+  #account-register-confirm .row {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  #account-register-confirm #content.col-sm-9 {
+    width: calc(100% - 320px);
+    max-width: calc(100% - 320px);
+    flex: 0 0 calc(100% - 320px);
+  }
+
+  #account-register-confirm .col-sm-3 {
+    width: 320px;
+    max-width: 320px;
+    flex: 0 0 320px;
+    margin-left: 0;
+  }
+
+  #account-register-confirm .account-confirm-box {
+    max-width: 100%;
+  }
+}
+
+
+/* =========================================================
+   ACCOUNT — АДАПТИВ
+   ========================================================= */
+
+@media (max-width: 991px) {
+  .account-box {
+    padding: 24px;
+  }
+
+  .account-confirm-box {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  #account-register-confirm {
+    margin-top: 16px;
+    margin-bottom: 28px;
+  }
+
+  .account-box {
+    padding: 18px;
+    border-radius: 6px;
+  }
+
+  .account-confirm-form,
+  .account-confirm-field .form-control,
+  .account-confirm-resend {
+    max-width: 100%;
+  }
+
+  .account-confirm-actions .btn,
+  .account-confirm-resend .btn {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   ACCOUNT LOGIN — CONFIRM EMAIL MESSAGE
+   ========================================================= */
+
+#content .login-confirm-email-message {
+  margin: 14px 0 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fff4e5;
+  border: 1px solid #ffd59a;
+  color: #8a5300;
+  font-size: 14px;
+  line-height: 1.45;
+}

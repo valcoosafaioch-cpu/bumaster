@@ -22,6 +22,16 @@ class ModelAccountCustomer extends Model {
 		return $customer_id;
 	}
 
+	public function updatePendingCustomerByEmail($email, $data) {
+		if (isset($data['customer_group_id']) && is_array($this->config->get('config_customer_group_display')) && in_array($data['customer_group_id'], $this->config->get('config_customer_group_display'))) {
+			$customer_group_id = $data['customer_group_id'];
+		} else {
+			$customer_group_id = $this->config->get('config_customer_group_id');
+		}
+
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$customer_group_id . "', firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? json_encode($data['custom_field']['account']) : '') . "', salt = '" . $this->db->escape($salt = token(9)) . "', password = '" . $this->db->escape(sha1($salt . sha1($salt . sha1($data['password'])))) . "', newsletter = '" . (isset($data['newsletter']) ? (int)$data['newsletter'] : 0) . "' WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "' AND email_confirmed = '0'");
+	}
+	
 	public function editCustomer($customer_id, $data) {
 		$this->db->query("UPDATE " . DB_PREFIX . "customer SET firstname = '" . $this->db->escape($data['firstname']) . "', lastname = '" . $this->db->escape($data['lastname']) . "', email = '" . $this->db->escape($data['email']) . "', telephone = '" . $this->db->escape($data['telephone']) . "', custom_field = '" . $this->db->escape(isset($data['custom_field']['account']) ? json_encode($data['custom_field']['account']) : '') . "' WHERE customer_id = '" . (int)$customer_id . "'");
 	}
@@ -72,6 +82,58 @@ class ModelAccountCustomer extends Model {
 		$query = $this->db->query("SELECT COUNT(*) AS total FROM " . DB_PREFIX . "customer WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
 
 		return $query->row['total'];
+	}
+
+	public function getCustomerForEmailVerify($email) {
+		$query = $this->db->query("SELECT customer_id, firstname, lastname, email, password, salt, status, newsletter, email_confirmed, email_verify_code, email_verify_expires, email_verify_sent_at, email_verify_attempts FROM " . DB_PREFIX . "customer WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
+
+		return $query->row;
+	}
+
+	public function isEmailConfirmed($email) {
+		$query = $this->db->query("SELECT email_confirmed FROM " . DB_PREFIX . "customer WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "' LIMIT 1");
+
+		return !empty($query->row['email_confirmed']);
+	}
+
+	public function setEmailVerifyCode($email, $code, $expires_at) {
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET email_verify_code = '" . $this->db->escape($code) . "', email_verify_expires = '" . $this->db->escape($expires_at) . "', email_verify_sent_at = NOW(), email_verify_attempts = 0 WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
+	}
+
+	public function confirmEmail($email) {
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET email_confirmed = 1, email_verify_code = '', email_verify_expires = NULL, email_verify_sent_at = NULL, email_verify_attempts = 0 WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
+	}
+
+	public function incrementEmailVerifyAttempts($email) {
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET email_verify_attempts = (email_verify_attempts + 1) WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
+	}
+
+	public function resetEmailVerify($email) {
+		$this->db->query("UPDATE " . DB_PREFIX . "customer SET email_verify_code = '', email_verify_expires = NULL, email_verify_sent_at = NULL, email_verify_attempts = 0 WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "'");
+	}
+
+	public function getEmailVerifyResendInfo($email, $cooldown = 60) {
+		$query = $this->db->query("SELECT email_verify_sent_at FROM " . DB_PREFIX . "customer WHERE LOWER(email) = '" . $this->db->escape(utf8_strtolower($email)) . "' LIMIT 1");
+
+		if (!$query->num_rows || empty($query->row['email_verify_sent_at']) || $query->row['email_verify_sent_at'] == '0000-00-00 00:00:00') {
+			return array(
+				'can_resend' => true,
+				'wait_seconds' => 0
+			);
+		}
+
+		$sent_at = strtotime($query->row['email_verify_sent_at']);
+		$now = time();
+		$wait_seconds = $cooldown - ($now - $sent_at);
+
+		if ($wait_seconds < 0) {
+			$wait_seconds = 0;
+		}
+
+		return array(
+			'can_resend' => ($wait_seconds === 0),
+			'wait_seconds' => $wait_seconds
+		);
 	}
 
 	public function addTransaction($customer_id, $description, $amount = '', $order_id = 0) {

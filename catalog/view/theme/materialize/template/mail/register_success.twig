@@ -1,0 +1,32 @@
+{% if mail_type == 'customer_success' %}
+
+<p>{{ text_success_greeting }}</p>
+
+<p>{{ text_success_intro }}</p>
+
+<p>{{ text_success_account }}</p>
+
+<p>{{ text_success_newsletter }}</p>
+
+<p>{{ text_success_pickup }}</p>
+
+<p>{{ text_success_bonus }}</p>
+
+<p>{{ text_success_promotions }}</p>
+
+<p><a href="{{ promotions_link }}">{{ promotions_link }}</a></p>
+
+<p>{{ text_signature }}<br>{{ store }}</p>
+
+{% elseif mail_type == 'admin_success' %}
+
+{{ text_admin_intro }}
+
+{{ text_admin_name }}
+{{ text_admin_email }}
+{{ text_admin_phone }}
+{{ text_admin_newsletter }}
+{{ text_admin_date }}
+{{ text_admin_status }}
+
+{% endif %}

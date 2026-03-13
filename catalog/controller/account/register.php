@@ -15,30 +15,59 @@ class ControllerAccountRegister extends Controller {
 		$this->document->addScript('catalog/view/javascript/jquery/datetimepicker/moment/moment-with-locales.min.js');
 		$this->document->addScript('catalog/view/javascript/jquery/datetimepicker/bootstrap-datetimepicker.min.js');
 		$this->document->addStyle('catalog/view/javascript/jquery/datetimepicker/bootstrap-datetimepicker.min.css');
+		$this->document->addStyle('catalog/view/theme/materialize/stylesheet/account.css');
 
 		$this->load->model('account/customer');
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
-			$customer_id = $this->model_account_customer->addCustomer($this->request->post);
+			$email = trim($this->request->post['email']);
+			$customer_info = $this->model_account_customer->getCustomerForEmailVerify($email);
 
-			// Clear any previous login attempts for unregistered accounts.
-			$this->model_account_customer->deleteLoginAttempts($this->request->post['email']);
+			if (!$customer_info) {
+				$this->model_account_customer->addCustomer($this->request->post);
 
-			$this->customer->login($this->request->post['email'], $this->request->post['password']);
+				// Clear any previous login attempts for unregistered accounts.
+				$this->model_account_customer->deleteLoginAttempts($email);
 
-			unset($this->session->data['guest']);
+				$customer_info = $this->model_account_customer->getCustomerForEmailVerify($email);
+			} elseif (empty($customer_info['email_confirmed'])) {
+				$this->model_account_customer->updatePendingCustomerByEmail($email, $this->request->post);
+				$customer_info = $this->model_account_customer->getCustomerForEmailVerify($email);
+			}
 
-			// Если пришёл redirect и он ведёт на наш домен — отправляем туда
+			$verify_code = $this->generateEmailVerifyCode();
+			$verify_expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+			$this->model_account_customer->setEmailVerifyCode($email, $verify_code, $verify_expires);
+
+			$mail_customer_info = $this->model_account_customer->getCustomerByEmail($email);
+
+			if (!$mail_customer_info) {
+				$mail_customer_info = $customer_info;
+			}
+
+			$mail_customer_info['verify_code'] = $verify_code;
+			$mail_customer_info['verify_expires'] = $verify_expires;
+
+			$this->load->controller('mail/register/verify', $mail_customer_info);
+			$this->load->controller('mail/register/alert', array($mail_customer_info));
+
+			$this->session->data['register_confirm_email'] = $email;
+
 			if (!empty($this->request->post['redirect'])
 				&& (
 					strpos($this->request->post['redirect'], $this->config->get('config_url')) !== false
 					|| strpos($this->request->post['redirect'], $this->config->get('config_ssl')) !== false
 				)
 			) {
-				$this->response->redirect($this->request->post['redirect']);
+				$this->session->data['register_success_redirect'] = $this->request->post['redirect'];
 			} else {
-				$this->response->redirect($this->url->link('account/success'));
+				unset($this->session->data['register_success_redirect']);
 			}
+
+			unset($this->session->data['guest']);
+
+			$this->response->redirect($this->url->link('account/register_confirm', '', true));
 		}
 
 		$data['breadcrumbs'] = array();
@@ -153,6 +182,18 @@ class ControllerAccountRegister extends Controller {
 			$data['telephone'] = '';
 		}
 
+		if (isset($this->request->post['telephone_country'])) {
+			$data['telephone_country'] = $this->request->post['telephone_country'];
+		} else {
+			$data['telephone_country'] = 'RU';
+		}
+
+		if (isset($this->request->post['telephone_number'])) {
+			$data['telephone_number'] = preg_replace('/\D/', '', $this->request->post['telephone_number']);
+		} else {
+			$data['telephone_number'] = '';
+		}
+
 		// Custom Fields
 		$data['custom_fields'] = array();
 		
@@ -187,7 +228,7 @@ class ControllerAccountRegister extends Controller {
 		if (isset($this->request->post['newsletter'])) {
 			$data['newsletter'] = $this->request->post['newsletter'];
 		} else {
-			$data['newsletter'] = '';
+			$data['newsletter'] = 1;
 		}
 
 		// Captcha
@@ -264,12 +305,38 @@ class ControllerAccountRegister extends Controller {
 			$this->error['email'] = $this->language->get('error_email');
 		}
 
-		if ($this->model_account_customer->getTotalCustomersByEmail($this->request->post['email'])) {
-			$this->error['warning'] = $this->language->get('error_exists');
+		$customer_info = $this->model_account_customer->getCustomerForEmailVerify($this->request->post['email']);
+
+		if ($customer_info && !empty($customer_info['email_confirmed'])) {
+			$this->error['email'] = sprintf(
+				$this->language->get('error_email_exists_confirmed'),
+				$this->url->link('account/login', '', true),
+				$this->url->link('account/forgotten', '', true)
+			);
 		}
 
-		if ((utf8_strlen($this->request->post['telephone']) < 3) || (utf8_strlen($this->request->post['telephone']) > 32)) {
-			$this->error['telephone'] = $this->language->get('error_telephone');
+		$telephone_country = isset($this->request->post['telephone_country']) ? $this->request->post['telephone_country'] : 'RU';
+		$telephone_number = isset($this->request->post['telephone_number']) ? preg_replace('/\D/', '', $this->request->post['telephone_number']) : '';
+
+		if ($telephone_country === 'RU') {
+			if (!preg_match('/^\d{10}$/', $telephone_number)) {
+				$this->error['telephone'] = $this->language->get('error_telephone_russia');
+			}
+		} else {
+			if ($telephone_number === '') {
+				$this->error['telephone'] = $this->language->get('error_telephone_other');
+			}
+		}
+
+		if (!$this->error) {
+			$telephone_code = '+7';
+
+			if ($telephone_country === 'BY') {
+				$telephone_code = '+375';
+			}
+
+			$this->request->post['telephone_number'] = $telephone_number;
+			$this->request->post['telephone'] = $telephone_code . $telephone_number;
 		}
 
 		// Customer Group
@@ -323,6 +390,10 @@ class ControllerAccountRegister extends Controller {
 		}
 		
 		return !$this->error;
+	}
+
+	private function generateEmailVerifyCode() {
+		return str_pad((string)mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
 	}
 
 	public function customfield() {
