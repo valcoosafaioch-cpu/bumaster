@@ -8,6 +8,7 @@ class ControllerAccountAccount extends Controller {
 		}
 
 		$this->load->language('account/account');
+		$this->load->model('account/customer');
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -25,80 +26,117 @@ class ControllerAccountAccount extends Controller {
 
 		if (isset($this->session->data['success'])) {
 			$data['success'] = $this->session->data['success'];
-
 			unset($this->session->data['success']);
 		} else {
 			$data['success'] = '';
-		} 
+		}
 
-		// Текст для ссылки "Отзывы / вопросы покупателей"
-        $data['text_feedback_admin'] = $this->language->get('text_feedback_admin');
+		$customer_info = $this->model_account_customer->getCustomer($this->customer->getId());
+
+		$data['heading_title'] = $this->language->get('heading_title');
 
 		$data['edit'] = $this->url->link('account/edit', '', true);
-		$data['password'] = $this->url->link('account/password', '', true);
-		$data['address'] = $this->url->link('account/address', '', true);
-		
-		$data['credit_cards'] = array();
-		
-		$files = glob(DIR_APPLICATION . 'controller/extension/credit_card/*.php');
-		
-		foreach ($files as $file) {
-			$code = basename($file, '.php');
-			
-			if ($this->config->get('payment_' . $code . '_status') && $this->config->get('payment_' . $code . '_card')) {
-				$this->load->language('extension/credit_card/' . $code, 'extension');
+		$data['pickup_points'] = $this->url->link('account/pickup_points', '', true);
+		$data['newsletter_action'] = $this->url->link('account/newsletter', '', true);
 
-				$data['credit_cards'][] = array(
-					'name' => $this->language->get('extension')->get('heading_title'),
-					'href' => $this->url->link('extension/credit_card/' . $code, '', true)
-				);
-			}
-		}
-		
-		$data['wishlist'] = $this->url->link('account/wishlist');
-		$data['order'] = $this->url->link('account/order', '', true);
-		$data['download'] = $this->url->link('account/download', '', true);
-		
-		if ($this->config->get('total_reward_status')) {
-			$data['reward'] = $this->url->link('account/reward', '', true);
-		} else {
-			$data['reward'] = '';
-		}		
-		
-		$data['return'] = $this->url->link('account/return', '', true);
-		$data['transaction'] = $this->url->link('account/transaction', '', true);
-		$data['newsletter'] = $this->url->link('account/newsletter', '', true);
-		$data['recurring'] = $this->url->link('account/recurring', '', true);
-		// Раздел "Отзывы / вопросы покупателей" — только для аккаунта с ID = 1
-		if ((int)$this->customer->getId() === 1) {
-			$data['feedback_admin'] = $this->url->link('account/feedback_admin', '', true);
-		} else {
-			$data['feedback_admin'] = '';
-		}
-		$this->load->model('account/customer');
-		
-		$affiliate_info = $this->model_account_customer->getAffiliate($this->customer->getId());
-		
-		if (!$affiliate_info) {	
-			$data['affiliate'] = $this->url->link('account/affiliate/add', '', true);
-		} else {
-			$data['affiliate'] = $this->url->link('account/affiliate/edit', '', true);
-		}
-		
-		if ($affiliate_info) {		
-			$data['tracking'] = $this->url->link('account/tracking', '', true);
-		} else {
-			$data['tracking'] = '';
-		}
-		
+		$data['text_profile_title'] = $this->language->get('text_profile_title');
+		$data['text_stats_title'] = $this->language->get('text_stats_title');
+
+		$data['text_lastname'] = $this->language->get('text_lastname');
+		$data['text_firstname'] = $this->language->get('text_firstname');
+		$data['text_telephone'] = $this->language->get('text_telephone');
+		$data['text_email_label'] = $this->language->get('text_email_label');
+		$data['text_newsletter_label'] = $this->language->get('text_newsletter_label');
+
+		$data['text_reward_total'] = $this->language->get('text_reward_total');
+		$data['text_cashback_level'] = $this->language->get('text_cashback_level');
+		$data['text_active_orders'] = $this->language->get('text_active_orders');
+		$data['text_total_orders'] = $this->language->get('text_total_orders');
+		$data['text_total_completed_sum'] = $this->language->get('text_total_completed_sum');
+
+		$data['text_pickup_points_title'] = $this->language->get('text_pickup_points_title');
+		$data['text_pickup_points_stub'] = $this->language->get('text_pickup_points_stub');
+		$data['text_go_to_pickup_points'] = $this->language->get('text_go_to_pickup_points');
+
+		$data['text_yes_short'] = $this->language->get('text_yes_short');
+		$data['text_no_short'] = $this->language->get('text_no_short');
+		$data['text_empty_value'] = $this->language->get('text_empty_value');
+		$data['text_currency_rub_short'] = $this->language->get('text_currency_rub_short');
+		$data['text_edit_profile'] = $this->language->get('text_edit_profile');
+
+		$data['firstname'] = !empty($customer_info['firstname']) ? $customer_info['firstname'] : $data['text_empty_value'];
+		$data['lastname'] = !empty($customer_info['lastname']) ? $customer_info['lastname'] : $data['text_empty_value'];
+		$data['telephone'] = !empty($customer_info['telephone']) ? $customer_info['telephone'] : $data['text_empty_value'];
+		$data['email'] = !empty($customer_info['email']) ? $customer_info['email'] : $data['text_empty_value'];
+
+		$data['newsletter'] = !empty($customer_info['newsletter']) ? 1 : 0;
+		$data['newsletter_text'] = $data['newsletter'] ? $data['text_yes_short'] : $data['text_no_short'];
+
+		$customer_id = (int)$this->customer->getId();
+
+		$active_status_ids = array(1, 2, 3, 4, 5, 6, 7);
+		$total_status_ids = array(1, 2, 3, 4, 5, 6, 7, 8);
+		$completed_status_ids = array(8);
+
+		$data['reward_total'] = $this->getRewardTotal($customer_id);
+		$data['active_orders_total'] = $this->getOrdersCountByStatuses($customer_id, $active_status_ids);
+		$data['orders_total'] = $this->getOrdersCountByStatuses($customer_id, $total_status_ids);
+		$data['orders_completed_sum'] = $this->getOrdersSumByStatuses($customer_id, $completed_status_ids);
+
+		$data['cashback_level'] = $data['text_empty_value'];
+
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['column_right'] = $this->load->controller('common/column_right');
 		$data['content_top'] = $this->load->controller('common/content_top');
 		$data['content_bottom'] = $this->load->controller('common/content_bottom');
 		$data['footer'] = $this->load->controller('common/footer');
 		$data['header'] = $this->load->controller('common/header');
-		
+
 		$this->response->setOutput($this->load->view('account/account', $data));
+	}
+
+	protected function getRewardTotal($customer_id) {
+		$query = $this->db->query("
+			SELECT COALESCE(SUM(points), 0) AS total
+			FROM `" . DB_PREFIX . "customer_reward`
+			WHERE customer_id = '" . (int)$customer_id . "'
+		");
+
+		return (int)$query->row['total'];
+	}
+
+	protected function getOrdersCountByStatuses($customer_id, array $status_ids) {
+		if (!$status_ids) {
+			return 0;
+		}
+
+		$statuses = implode(',', array_map('intval', $status_ids));
+
+		$query = $this->db->query("
+			SELECT COUNT(*) AS total
+			FROM `" . DB_PREFIX . "order`
+			WHERE customer_id = '" . (int)$customer_id . "'
+			  AND order_status_id IN (" . $statuses . ")
+		");
+
+		return (int)$query->row['total'];
+	}
+
+	protected function getOrdersSumByStatuses($customer_id, array $status_ids) {
+		if (!$status_ids) {
+			return '0';
+		}
+
+		$statuses = implode(',', array_map('intval', $status_ids));
+
+		$query = $this->db->query("
+			SELECT COALESCE(SUM(total), 0) AS total
+			FROM `" . DB_PREFIX . "order`
+			WHERE customer_id = '" . (int)$customer_id . "'
+			  AND order_status_id IN (" . $statuses . ")
+		");
+
+		return number_format((float)$query->row['total'], 0, '.', ' ');
 	}
 
 	public function country() {
@@ -126,5 +164,4 @@ class ControllerAccountAccount extends Controller {
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
 	}
-
 }

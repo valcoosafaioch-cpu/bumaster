@@ -32,6 +32,7 @@
 	]
 }
 </script>
+
 {% if column_left and column_right %}
 	{% set main = 's12 l6' %}
 {% elseif column_left or column_right %}
@@ -39,6 +40,7 @@
 {% else %}
 	{% set main = 's12' %}
 {% endif %}
+
 <main>
 	<div class="container">
 		<nav id="breadcrumbs" class="breadcrumb-wrapper transparent z-depth-0">
@@ -53,70 +55,134 @@
 				{% endfor %}
 			</div>
 		</nav>
+
 		<h1>{{ heading_title }}</h1>
+
 		<div class="row">
 			{{ column_left }}
+
 			<div class="col {{ main }} section href-underline">
 				{{ content_top }}
-				<div class="card-panel">
-					<div class="row">
-						<div class="col s12 xl6">
-							<div class="collection with-header href-underline">
-								<div class="collection-header"><h2>{{ text_my_account }}</h2></div>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ edit }}"><i class="material-icons left">assignment</i>{{ text_edit }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ password }}"><i class="material-icons left">lock</i>{{ text_password }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ address }}"><i class="material-icons left">home</i>{{ text_address }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ wishlist }}"><i class="material-icons left">favorite</i>{{ text_wishlist }}</a>
+
+				<div class="card-panel account-dashboard-card">
+					<div class="account-dashboard-top">
+						<div class="account-profile-block">
+							<div class="account-profile-header">
+								<h2>{{ text_profile_title }}</h2>
+
+								<a href="{{ edit }}" class="btn waves-effect waves-light red">
+									{{ text_edit_profile }}
+								</a>
+							</div>
+
+							<div class="account-profile-grid">
+								<div class="account-profile-item">
+									<div class="account-profile-label">{{ text_lastname }}</div>
+									<div class="account-profile-value">{{ lastname }}</div>
+								</div>
+
+								<div class="account-profile-item">
+									<div class="account-profile-label">{{ text_firstname }}</div>
+									<div class="account-profile-value">{{ firstname }}</div>
+								</div>
+
+								<div class="account-profile-item">
+									<div class="account-profile-label">{{ text_telephone }}</div>
+									<div class="account-profile-value">{{ telephone }}</div>
+								</div>
+
+								<div class="account-profile-item">
+									<div class="account-profile-label">{{ text_email_label }}</div>
+									<div class="account-profile-value">{{ email }}</div>
+								</div>
+
+								<div class="account-profile-item account-profile-item-newsletter">
+									<div class="account-profile-label">{{ text_newsletter_label }}</div>
+
+									<div class="account-profile-newsletter-line">
+
+										<form action="{{ newsletter_action }}" method="post" class="account-newsletter-form">
+											<input type="hidden" name="newsletter" value="0">
+
+											<div class="switch">
+												<label>
+
+													<span>нет</span>
+
+													<input
+														type="checkbox"
+														name="newsletter"
+														value="1"
+														{% if newsletter %}checked="checked"{% endif %}
+														onchange="this.form.submit();"
+													>
+
+													<span class="lever"></span>
+
+													<span>да</span>
+
+												</label>
+											</div>
+
+										</form>
+
+									</div>
+								</div>
 							</div>
 						</div>
-						<div class="col s12 xl6">
-							<div class="collection with-header href-underline">
-								<div class="collection-header"><h2>{{ text_my_orders }}</h2></div>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ order }}"><i class="material-icons left">history</i>{{ text_order }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ download }}"><i class="material-icons left">file_download</i>{{ text_download }}</a>
-								{% if reward %}
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ reward }}"><i class="material-icons left">account_balance_wallet</i>{{ text_reward }}</a>
-								{% endif %}
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ return }}"><i class="material-icons left">cached</i>{{ text_return }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ transaction }}"><i class="material-icons left">payment</i>{{ text_transaction }}</a>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ recurring }}"><i class="material-icons left">receipt</i>{{ text_recurring }}</a>
-							</div>
-						</div>
-						<div class="col s12 xl6">
-							<div class="collection with-header href-underline">
-								<div class="collection-header"><h2>{{ text_my_affiliate }}</h2></div>
-								{% if not tracking %}
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ affiliate }}"><i class="material-icons left">contacts</i>{{ text_affiliate_add }}</a></li>
-								{% else %}
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ affiliate }}"><i class="material-icons left">border_color</i>{{ text_affiliate_edit }}</a></li>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ tracking }}"><i class="material-icons left">code</i>{{ text_tracking }}</a></li>
-								{% endif %}
-							</div>
-						</div>
-						{% if credit_cards %}
-						<div class="col s12 xl6">
-							<div class="collection with-header href-underline">
-								<div class="collection-header"><h2>{{ text_credit_card }}</h2></div>
-								{% for credit_card in credit_cards %}
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ credit_card.href }}"><i class="material-icons left">credit_card</i>{{ credit_card.name }}</a>
-								{% endfor %}
-							</div>
-						</div>
-						{% endif %}
-						<div class="col s12 xl6">
-							<div class="collection with-header href-underline">
-								<div class="collection-header"><h2>{{ text_my_newsletter }}</h2></div>
-								<a class="collection-item waves-effect blue-grey-text text-darken-4" href="{{ newsletter }}"><i class="material-icons left">add_alert</i>{{ text_newsletter }}</a>
+
+						<div class="account-stats-block">
+							<h2>{{ text_stats_title }}</h2>
+
+							<div class="account-stats-list">
+								<div class="account-stats-item">
+									<span class="account-stats-label">{{ text_reward_total }}: </span>
+									<span class="account-stats-value">{{ reward_total }}</span>
+								</div>
+
+								<div class="account-stats-item">
+									<span class="account-stats-label">{{ text_cashback_level }}: </span>
+									<span class="account-stats-value">{{ cashback_level }}</span>
+								</div>
+
+								<div class="account-stats-item">
+									<span class="account-stats-label">{{ text_active_orders }}: </span>
+									<span class="account-stats-value">{{ active_orders_total }}</span>
+								</div>
+
+								<div class="account-stats-item">
+									<span class="account-stats-label">{{ text_total_orders }}: </span>
+									<span class="account-stats-value">{{ orders_total }}</span>
+								</div>
+
+								<div class="account-stats-item">
+									<span class="account-stats-label">{{ text_total_completed_sum }}: </span>
+									<span class="account-stats-value">{{ orders_completed_sum }} {{ text_currency_rub_short }}</span>
+								</div>
 							</div>
 						</div>
 					</div>
+
+					<div class="account-dashboard-bottom">
+						<div class="account-pickup-block">
+							<h2>{{ text_pickup_points_title }}</h2>
+							<p>{{ text_pickup_points_stub }}</p>
+
+							<a href="{{ pickup_points }}" class="btn-flat waves-effect">
+								{{ text_go_to_pickup_points }}
+							</a>
+						</div>
+					</div>
 				</div>
+
 				{{ content_bottom }}
 			</div>
+
 			{{ column_right }}
 		</div>
 	</div>
 </main>
+
 <script>
 document.addEventListener("DOMContentLoaded", function(event) {
 	{% if success %}M.toast({html: '<i class="material-icons left">check</i>{{ success }}', classes: 'toast-success'}){% endif %}

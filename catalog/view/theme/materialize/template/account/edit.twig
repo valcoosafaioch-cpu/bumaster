@@ -69,9 +69,9 @@
 							<label for="input-lastname" class="text-bold required">{{ entry_lastname }}</label>
 						</div>
 						<div class="input-field form-group">
-							<input type="email" name="email" value="{{ email }}" id="input-email" class="validate">
+							<input type="email" name="email" value="{{ email }}" id="input-email" class="validate" readonly>
 							<label for="input-email" class="text-bold required">{{ entry_email }}</label>
-							<span class="helper-text" data-error="{{ text_email_error }}" data-success="{{ text_email_success }}"></span>
+							<span class="helper-text">E-mail нельзя изменить</span>
 						</div>
 						<div class="input-field form-group">
 							<input type="tel" name="telephone" value="{{ telephone }}" id="input-telephone" class="validate">

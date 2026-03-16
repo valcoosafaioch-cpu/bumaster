@@ -406,3 +406,181 @@
 .account-logout:hover {
     background-color: #f5f5f5;
 }
+
+/* =========================================================
+   ACCOUNT  — Моя информация
+   ========================================================= */
+
+.account-dashboard-card{
+  padding:22px 22px 0;
+}
+
+.account-dashboard-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:40px;
+  padding-bottom:24px;
+}
+
+.account-profile-block{
+  flex:1 1 60%;
+}
+
+.account-stats-block{
+  flex:0 0 280px;
+}
+
+.account-profile-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+
+.account-profile-header h2,
+.account-stats-block h2,
+.account-pickup-block h2{
+  margin:0;
+  font-size:1.35rem;
+  font-weight:700;
+  color:#33475b;
+}
+
+.account-profile-header .btn{
+  height:38px;
+  line-height:38px;
+  padding:0 18px;
+  font-size:0.9rem;
+}
+
+.account-profile-grid{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.account-profile-item{
+  padding-bottom:8px;
+  border-bottom:1px solid #e3e6e8;
+}
+
+.account-profile-item-newsletter{
+  border-bottom:none;
+}
+
+.account-profile-label{
+  margin-bottom:4px;
+  font-size:0.9rem;
+  color:#6c7a86;
+}
+
+.account-profile-value{
+  font-size:1rem;
+  font-weight:500;
+  color:#33475b;
+}
+
+.account-profile-newsletter-line{
+  margin-top:8px;
+}
+
+.account-newsletter-form{
+  margin:0;
+}
+
+.account-newsletter-form .switch{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.account-newsletter-form .switch label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:0.9rem;
+  color:#54616d;
+}
+
+.account-newsletter-form .switch label .lever{
+  margin:0;
+}
+
+.account-stats-list{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.account-stats-label{
+  font-size:0.9rem;
+  color:#6c7a86;
+}
+
+.account-stats-value{
+  font-size:1.05rem;
+  font-weight:600;
+  color:#33475b;
+}
+
+.account-dashboard-bottom{
+  margin:0 -22px;
+  padding:22px;
+  border-top:1px solid #e3e6e8;
+}
+
+.account-pickup-block p{
+  margin:12px 0 16px;
+  font-size:0.95rem;
+  color:#54616d;
+}
+
+.account-pickup-block .btn-flat{
+  padding:0;
+  font-size:0.9rem;
+  font-weight:600;
+  color:#33475b;
+}
+
+.account-pickup-block .btn-flat:hover{
+  background:none;
+  color:#f44336;
+}
+
+/* адаптив */
+
+@media (max-width:992px){
+
+.account-dashboard-top{
+  flex-direction:column;
+}
+
+.account-stats-block{
+  width:100%;
+}
+
+}
+
+@media (max-width:600px){
+
+.account-profile-header{
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.account-profile-header .btn{
+  width:100%;
+}
+
+}
+
+/* =========================================================
+   ACCOUNT  — Моя информация редактирование
+   ========================================================= */
+
+  #input-email[readonly]{
+    color:#777;
+    cursor:not-allowed;
+  }

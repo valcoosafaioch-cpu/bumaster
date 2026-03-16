@@ -1,26 +1,26 @@
 <?php
-// Heading
-$_['heading_title']       = 'Личный Кабинет';
+$_['heading_title'] = 'Мой аккаунт';
+$_['text_profile_title'] = 'Моя информация';
+$_['text_stats_title'] = 'Статистика';
 
-// Text
-$_['text_account']        = 'Личный Кабинет';
-$_['text_my_account']     = 'Моя учетная запись';
-$_['text_my_orders']      = 'Мои заказы';
-$_['text_my_affiliate']   = 'Мой партнерский аккаунт';
-$_['text_my_newsletter']  = 'Подписка';
-$_['text_edit']           = 'Изменить контактную информацию';
-$_['text_password']       = 'Изменить свой пароль';
-$_['text_address']        = 'Изменить мои адреса';
-$_['text_credit_card']    = 'Управление кредитными картами';
-$_['text_wishlist']       = 'Посмотреть закладки';
-$_['text_order']          = 'История заказов';
-$_['text_download']       = 'Файлы для скачивания';
-$_['text_reward']         = 'Бонусные баллы';
-$_['text_return']         = 'Запросы на возврат';
-$_['text_transaction']    = 'История транзакций';
-$_['text_newsletter']     = 'Подписаться или отказаться от рассылки новостей';
-$_['text_recurring']      = 'Периодические платежи';
-$_['text_transactions']   = 'Транзакции';
-$_['text_affiliate_add']  = 'Регистрация партнерского аккаунта';
-$_['text_affiliate_edit'] = 'Изменить партнерскую информацию';
-$_['text_tracking']       = 'Код отслеживания партнерских отношений';
+$_['text_lastname'] = 'Фамилия';
+$_['text_firstname'] = 'Имя';
+$_['text_telephone'] = 'Телефон';
+$_['text_email_label'] = 'E-mail';
+$_['text_newsletter_label'] = 'Подписка на новостную рассылку';
+
+$_['text_reward_total'] = 'Мои бонусы';
+$_['text_cashback_level'] = 'Уровень кэшбэка';
+$_['text_active_orders'] = 'Активных заказов';
+$_['text_total_orders'] = 'Всего заказов';
+$_['text_total_completed_sum'] = 'Общая сумма заказов';
+
+$_['text_pickup_points_title'] = 'Мои пункты выдачи';
+$_['text_pickup_points_stub'] = 'Раздел находится в разработке. Здесь будут отображаться сохранённые пункты выдачи.';
+$_['text_go_to_pickup_points'] = 'Перейти в раздел';
+
+$_['text_yes_short'] = 'Да';
+$_['text_no_short'] = 'Нет';
+$_['text_empty_value'] = '—';
+$_['text_currency_rub_short'] = 'руб.';
+$_['text_edit_profile'] = 'Редактировать';

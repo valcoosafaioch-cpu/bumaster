@@ -22,7 +22,13 @@ class ControllerAccountReviews extends Controller {
 			'href' => $this->url->link('account/account', '', true)
 		);
 
-		$data['breadcrumbs'][] = array(
+		$data['breadcrumbs'][] = array(<div class="account-menu-divider"></div>
+
+<a class="collection-item waves-effect blue-grey-text text-darken-4 account-logout"
+   href="{{ logout }}"
+   rel="nofollow">
+   {{ text_logout }}
+</a>
 			'text' => 'Мои отзывы и вопросы',
 			'href' => $this->url->link('account/reviews', '', true)
 		);
