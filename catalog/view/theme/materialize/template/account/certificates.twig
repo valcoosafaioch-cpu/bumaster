@@ -1,17 +1,6 @@
 {{ header }}
 <div id="account-account" class="container">
-	<nav class="breadcrumb-wrapper">
-		<div class="nav-wrapper">
-			{% for breadcrumb in breadcrumbs %}
-				{% if loop.last %}
-					<span class="breadcrumb">{{ breadcrumb.text }}</span>
-				{% else %}
-					<a href="{{ breadcrumb.href }}" class="breadcrumb">{{ breadcrumb.text }}</a>
-				{% endif %}
-			{% endfor %}
-		</div>
-	</nav>
-
+	
 	<div class="row">
 		{{ column_left }}
 

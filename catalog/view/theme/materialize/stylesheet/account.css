@@ -584,3 +584,197 @@
     color:#777;
     cursor:not-allowed;
   }
+
+
+
+
+/* =========================================================
+   ACCOUNT  — Пункты выдачи
+   ========================================================= */
+					.pickup-points-list {
+						display: flex;
+						flex-direction: column;
+						gap: 20px;
+					}
+
+					.pickup-point-card {
+						margin-bottom: 0;
+					}
+
+					.pickup-point-card__title {
+						margin: 0 0 18px;
+						font-size: 1.5rem;
+						line-height: 1.3;
+					}
+
+					.pickup-point-card__label,
+					.pickup-point-card__empty,
+					.pickup-point-card__meta {
+						font-size: 1rem;
+						line-height: 1.5;
+						color: #5f6b76;
+					}
+
+					.pickup-point-card__address {
+						margin-top: 8px;
+						font-size: 1.125rem;
+						line-height: 1.5;
+						color: #2f3a44;
+					}
+
+					.pickup-point-card__meta {
+						margin-top: 8px;
+					}
+
+					.pickup-point-card__footer {
+						margin-top: 20px;
+						text-align: right;
+					}
+
+					.pickup-point-modal {
+						position: fixed;
+						inset: 0;
+						z-index: 9999;
+						display: none;
+					}
+
+					.pickup-point-modal.is-open {
+						display: block;
+					}
+
+					.pickup-point-modal__overlay {
+						position: absolute;
+						inset: 0;
+						background: rgba(0, 0, 0, 0.45);
+					}
+
+					.pickup-point-modal__dialog {
+						position: relative;
+						width: calc(100% - 32px);
+						max-width: 920px;
+						max-height: calc(100vh - 48px);
+						margin: 24px auto;
+						background: #ffffff;
+						border-radius: 12px;
+						overflow: hidden;
+						box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+					}
+
+					.pickup-point-modal__header {
+						display: flex;
+						align-items: center;
+						justify-content: space-between;
+						padding: 20px 24px;
+						border-bottom: 1px solid #e6e9ed;
+					}
+
+					.pickup-point-modal__title {
+						margin: 0;
+						font-size: 1.5rem;
+						line-height: 1.3;
+					}
+
+					.pickup-point-modal__close {
+						padding: 0;
+						border: 0;
+						background: transparent;
+						font-size: 2rem;
+						line-height: 1;
+						cursor: pointer;
+					}
+
+					.pickup-point-modal__content {
+						padding: 24px;
+						overflow-y: auto;
+						max-height: calc(100vh - 140px);
+					}
+
+					.pickup-point-modal__search {
+						margin-bottom: 24px;
+					}
+
+					.pickup-point-modal__label {
+						display: block;
+						margin-bottom: 8px;
+						font-weight: 600;
+						color: #2f3a44;
+					}
+
+					.pickup-point-modal__input {
+						width: 100%;
+						height: 44px;
+						padding: 0 14px;
+						border: 1px solid #d7dce2;
+						border-radius: 8px;
+						box-sizing: border-box;
+					}
+
+					.pickup-point-modal__section + .pickup-point-modal__section {
+						margin-top: 24px;
+					}
+
+					.pickup-point-modal__section-title {
+						margin-bottom: 12px;
+						font-size: 1.125rem;
+						font-weight: 600;
+						color: #2f3a44;
+					}
+
+					.pickup-point-modal__map {
+						min-height: 220px;
+						padding: 16px;
+						border: 1px dashed #c8d0d9;
+						border-radius: 10px;
+						background: #fafbfc;
+						color: #6e7a86;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						text-align: center;
+					}
+
+					.pickup-point-modal__state,
+					.pickup-point-modal__list-stub {
+						padding: 14px 16px;
+						border: 1px solid #e6e9ed;
+						border-radius: 10px;
+						background: #fafbfc;
+						color: #6e7a86;
+					}
+
+					.pickup-point-modal__list {
+						margin-top: 12px;
+					}
+
+					body.pickup-modal-open {
+						overflow: hidden;
+					}
+
+					@media (max-width: 767px) {
+						.pickup-point-card__footer {
+							text-align: left;
+						}
+
+						.pickup-point-card__button {
+							width: 100%;
+						}
+
+						.pickup-point-modal__dialog {
+							width: calc(100% - 16px);
+							max-height: calc(100vh - 16px);
+							margin: 8px auto;
+						}
+
+						.pickup-point-modal__header {
+							padding: 16px;
+						}
+
+						.pickup-point-modal__content {
+							padding: 16px;
+							max-height: calc(100vh - 96px);
+						}
+
+						.pickup-point-modal__title {
+							font-size: 1.25rem;
+						}
+					}
