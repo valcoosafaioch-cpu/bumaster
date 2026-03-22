@@ -11,11 +11,51 @@ class ControllerCommonHeader extends Controller {
 		if ($route === '' || $route === 'common/home') {
 			$this->document->addStyle('catalog/view/theme/materialize/stylesheet/home.css?v=2025-12-08');
 		}
-		
+
 		// Стили только для блока аккаунта
-		if (isset($this->request->get['route']) && strpos($this->request->get['route'], 'account/') === 0) {
+		if (strpos($route, 'account/') === 0) {
 			$this->document->addStyle('catalog/view/theme/materialize/stylesheet/account.css');
 		}
+
+		// Глобальные скрипты
+		$this->document->addScript('catalog/view/theme/materialize/js/custom.js');
+
+		// Скрипты главной
+		if ($route === '' || $route === 'common/home') {
+			$this->document->addScript('catalog/view/theme/materialize/js/home.js');
+		}
+
+		// Скрипты блока аккаунта
+		if (strpos($route, 'account/') === 0) {
+			$this->document->addScript('catalog/view/theme/materialize/js/account.js');
+		}
+
+		// Скрипты страницы пунктов выдачи
+		if ($route === 'account/pickup_points') {
+			$this->document->addScript('catalog/view/theme/materialize/js/pickup-points.js');
+		}
+
+		// Скрипты каталога
+		if ($route === 'product/all') {
+			$this->document->addScript('catalog/view/theme/materialize/js/katalog.js');
+		}
+
+		// Скрипты карточки товара
+		if ($route === 'product/product') {
+			$this->document->addScript('catalog/view/theme/materialize/js/product-page.js');
+		}
+
+		// Скрипты оформления заказа
+		if ($route === 'checkout/checkout') {
+			$this->document->addScript('catalog/view/theme/materialize/js/checkout.js');
+		}
+
+		// Скрипты корзины
+		// Пока не подключаем cart.js.
+		// Если для checkout/cart появится отдельная логика, добавим так:
+		// if ($route === 'checkout/cart') {
+		// 	$this->document->addScript('catalog/view/theme/materialize/js/cart.js');
+		// }
 
 		// Analytics
 		$this->load->model('setting/extension');

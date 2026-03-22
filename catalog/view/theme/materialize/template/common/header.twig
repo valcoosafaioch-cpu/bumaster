@@ -72,6 +72,10 @@
 <link rel="{{ style.rel ?: 'stylesheet' }}" href="{{ style.href }}" media="{{ style.media ?: 'all' }}"/>
 {% endfor %}
 
+{% for script in scripts %}
+<script src="{{ script }}" type="text/javascript"></script>
+{% endfor %}
+
 </head>
 <body class="{{ color_background }}">
 	<header class="href-underline">

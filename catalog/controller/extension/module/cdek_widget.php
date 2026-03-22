@@ -10,6 +10,7 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 	private const TOKEN_TTL = 3500;
     private const OFFICES_CACHE_KEY_PREFIX = 'cdek_widget_offices_';
     private const OFFICES_TTL = 600;
+	private const ALLOWED_COUNTRIES = array('RU', 'BY', 'KZ');
 
 	public function service(): void {
 		$this->login = (string)$this->config->get('cdek_widget_account');
@@ -106,30 +107,51 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 	}
 
 	private function getOffices(): array {
-        $time = $this->startMetrics();
+		$time = $this->startMetrics();
 
-        $cacheData = $this->requestData;
-        unset($cacheData['action']);
+		$cacheData = $this->requestData;
+		unset($cacheData['action']);
 
-        ksort($cacheData);
+		ksort($cacheData);
 
-        $cacheKey = self::OFFICES_CACHE_KEY_PREFIX . md5(json_encode($cacheData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        $cachedResult = $this->cache->get($cacheKey);
+		$cacheKey = self::OFFICES_CACHE_KEY_PREFIX . 'v3_' . md5(json_encode($cacheData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+		$cachedResult = $this->cache->get($cacheKey);
 
-        if (is_array($cachedResult) && isset($cachedResult['result'])) {
-            $this->endMetrics('office_cache', 'Offices Cache Hit', $time);
+		if (is_array($cachedResult) && isset($cachedResult['result'])) {
+			$this->endMetrics('office_cache', 'Offices Cache Hit', $time);
 
-            return $cachedResult;
-        }
+			return $cachedResult;
+		}
 
-        $result = $this->httpRequest('deliverypoints', $this->requestData);
+		$result = $this->httpRequest('deliverypoints', $this->requestData);
 
-        $this->cache->set($cacheKey, $result, self::OFFICES_TTL);
+		$decoded = json_decode($result['result'], true);
 
-        $this->endMetrics('office', 'Offices Request', $time);
+		if (is_array($decoded)) {
+			$decoded = array_values(array_filter($decoded, function ($office) {
+				if (!is_array($office)) {
+					return false;
+				}
 
-        return $result;
-    }
+				$type = strtoupper((string)($office['type'] ?? ''));
+				$country = strtoupper((string)($office['location']['country_code'] ?? ''));
+
+				if ($type !== 'PVZ') {
+					return false;
+				}
+
+				return in_array($country, self::ALLOWED_COUNTRIES, true);
+			}));
+
+			$result['result'] = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		}
+
+		$this->cache->set($cacheKey, $result, self::OFFICES_TTL);
+
+		$this->endMetrics('office', 'Offices Request', $time);
+
+		return $result;
+	}
 
 	private function calculate(): array {
 		$time = $this->startMetrics();
