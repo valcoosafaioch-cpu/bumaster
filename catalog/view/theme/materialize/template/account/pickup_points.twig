@@ -135,44 +135,118 @@
 										{{ text_modal_empty }}
 									</div>
 
-									<div
-										id="pickup-point-cdek-widget-container"
-										class="pickup-point-modal__widget-container"
-										data-widget-version="{{ cdek_widget.version }}"
-										data-widget-default-lat="55.7558"
-										data-widget-default-lng="37.6176"
-										data-widget-lang="{{ cdek_widget.lang }}"
-										data-widget-account="{{ cdek_widget.account }}"
-										data-widget-api-key="84d59f66-4d4e-4b37-8e27-bf03d2764821"
-										data-save-url="{{ pickup_point_save_url }}"
-										data-point-code-label="{{ text_point_code_label }}"
-									></div>
+									<div class="pickup-point-modal__widget-layout">
+										<div
+											id="pickup-point-cdek-widget-container"
+											class="pickup-point-modal__widget-container"
+											data-widget-version="{{ cdek_widget.version }}"
+											data-widget-default-lat="55.7558"
+											data-widget-default-lng="37.6176"
+											data-widget-lang="{{ cdek_widget.lang }}"
+											data-widget-account="{{ cdek_widget.account }}"
+											data-widget-api-key="84d59f66-4d4e-4b37-8e27-bf03d2764821"
+											data-save-url="{{ cdek_save_url }}"
+											data-point-code-label="{{ text_point_code_label }}"
+										></div>
+
+										<div class="pickup-point-modal__widget-sidebar">
+											<div
+												id="pickup-point-cdek-selection"
+												class="pickup-point-modal__selection"
+												style="display:none;"
+											>
+												<div class="pickup-point-modal__section-title">
+													{{ text_selected_pickup_point }}
+												</div>
+
+												<div
+													id="pickup-point-cdek-selection-address"
+													class="pickup-point-modal__selection-address"
+												></div>
+
+												<div
+													id="pickup-point-cdek-selection-code"
+													class="pickup-point-modal__selection-code"
+												></div>
+
+												<div style="margin-top:16px;">
+													<button
+														type="button"
+														id="pickup-point-cdek-save-button"
+														class="btn waves-effect waves-light red"
+														disabled="disabled"
+														data-default-text="{{ button_save_pickup_point }}"
+														data-loading-text="{{ text_pickup_point_saving }}"
+													>
+														{{ button_save_pickup_point }}
+													</button>
+												</div>
+											</div>
+										</div>
+									</div>
 
 									<div
-										id="pickup-point-cdek-selection"
+										id="pickup-point-yandex-widget-wrap"
+										class="pickup-point-modal__widget-wrap"
+										style="display:none;"
+									>
+										<div class="pickup-point-modal__widget-hint">
+											{{ text_yandex_widget_hint }}
+										</div>
+
+										<div
+											id="pickup-point-yandex-loading"
+											class="pickup-point-modal__widget-loading"
+											style="display:none;"
+										>
+											{{ text_map_updating }}
+										</div>
+
+										<div
+											id="pickup-point-yandex-widget-container"
+											class="pickup-point-modal__widget-container"
+											data-config-url="{{ yandex_widget_service_url }}"
+											data-save-url="{{ yandex_save_url }}"
+											data-point-code-label="{{ text_point_code_label }}"
+											data-point-kind-label="{{ text_point_kind_label }}"
+											data-point-kind-pickup-point="{{ text_point_kind_pickup_point }}"
+											data-point-kind-terminal="{{ text_point_kind_terminal }}"
+											data-point-brand-label="{{ text_point_brand_label }}"
+											data-point-brand-yandex="{{ text_point_brand_yandex }}"
+											data-point-brand-partner="{{ text_point_brand_partner }}"
+										></div>
+									</div>
+
+									<div
+										id="pickup-point-yandex-selection"
 										class="pickup-point-modal__selection"
-										style="display:none; margin-top:16px; padding:16px; border-top:1px solid #e0e0e0;"
+										style="display:none;"
 									>
 										<div class="pickup-point-modal__section-title">
 											{{ text_selected_pickup_point }}
 										</div>
 
 										<div
-											id="pickup-point-cdek-selection-address"
+											id="pickup-point-yandex-selection-address"
 											class="pickup-point-modal__selection-address"
-											style="margin-top:8px; font-weight:600;"
 										></div>
 
 										<div
-											id="pickup-point-cdek-selection-code"
-											class="pickup-point-modal__selection-code"
-											style="margin-top:6px; color:#5f6b76;"
+											id="pickup-point-yandex-selection-format"
+											class="pickup-point-modal__selection-type"
+											style="display:none;"
+										></div>
+
+										<div
+											id="pickup-point-yandex-selection-comment"
+											class="pickup-point-modal__selection-brand"
+											style="display:none;"
 										></div>
 
 										<div style="margin-top:16px;">
 											<button
 												type="button"
-												id="pickup-point-cdek-save-button"
+												id="pickup-point-yandex-save-button"
 												class="btn waves-effect waves-light red"
 												disabled="disabled"
 												data-default-text="{{ button_save_pickup_point }}"
@@ -188,23 +262,21 @@
 					</div>
 				</div>
 
-
-
 				{{ content_bottom }}
-
-				<script src="https://api-maps.yandex.ru/2.1/?apikey=84d59f66-4d4e-4b37-8e27-bf03d2764821&lang=ru_RU"></script>
 
 				{% if cdek_widget_enabled %}
 					<script src="https://cdn.jsdelivr.net/npm/@cdek-it/widget@3"></script>
+				{% endif %}
+
+				{% if yandex_widget_enabled %}
+					<script async src="https://ndd-widget.landpro.site/widget.js"></script>
 				{% endif %}
 			</div>
 
 			{{ column_right }}
 		</div>
-		
-	</div>
 
-	
+	</div>
 </main>
 
 {% endapply %}

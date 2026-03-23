@@ -589,197 +589,342 @@
 
 
 /* =========================================================
-   ACCOUNT  — Пункты выдачи
+   ACCOUNT — Пункты выдачи
    ========================================================= */
 
-   .pickup-point-modal__widget-container {
-      height: 600px;
+  .pickup-points-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .pickup-point-card {
+    margin-bottom: 0;
+  }
+
+  .pickup-point-card__title {
+    margin: 0 0 18px;
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .pickup-point-card__label,
+  .pickup-point-card__empty,
+  .pickup-point-card__meta {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #5f6b76;
+  }
+
+  .pickup-point-card__address {
+    margin-top: 8px;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    color: #2f3a44;
+  }
+
+  .pickup-point-card__meta {
+    margin-top: 8px;
+  }
+
+  .pickup-point-card__footer {
+    margin-top: 20px;
+    text-align: right;
+  }
+
+  .pickup-point-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+  }
+
+  .pickup-point-modal.is-open {
+    display: block;
+  }
+
+  .pickup-point-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .pickup-point-modal__dialog {
+    position: relative;
+    width: calc(100% - 24px);
+    max-width: 1280px;
+    max-height: calc(100vh - 32px);
+    margin: 16px auto;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .pickup-point-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e6e9ed;
+  }
+
+  .pickup-point-modal__title {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .pickup-point-modal__close {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .pickup-point-modal__content {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(100vh - 140px);
+  }
+
+  .pickup-point-modal__search {
+    margin-bottom: 24px;
+  }
+
+  .pickup-point-modal__label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2f3a44;
+  }
+
+  .pickup-point-modal__input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #d7dce2;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  .pickup-point-modal__section + .pickup-point-modal__section {
+    margin-top: 24px;
+  }
+
+  .pickup-point-modal__section-title {
+    margin-bottom: 12px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2f3a44;
+  }
+
+  .pickup-point-modal__map {
+    min-height: 220px;
+    padding: 16px;
+    border: 1px dashed #c8d0d9;
+    border-radius: 10px;
+    background: #fafbfc;
+    color: #6e7a86;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .pickup-point-modal__state,
+  .pickup-point-modal__list-stub {
+    padding: 14px 16px;
+    border: 1px solid #e6e9ed;
+    border-radius: 10px;
+    background: #fafbfc;
+    color: #6e7a86;
+  }
+
+  .pickup-point-modal__list {
+    margin-top: 12px;
+  }
+
+  .pickup-point-modal__widget {
+    width: 100%;
+  }
+
+  .pickup-point-modal__widget-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    height: 500px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7f7f7;
+  }
+
+  .pickup-point-modal__widget-container {
+    width: 100%;
+    min-height: 500px;
+    height: 500px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7f7f7;
+  }
+
+  .pickup-point-modal__widget-loading {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    max-width: 260px;
+    min-height: 40px;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #3c4854;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e0d8c8;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+  }
+
+  .pickup-point-modal__widget-layout {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .pickup-point-modal__widget-layout .pickup-point-modal__widget-container {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pickup-point-modal__widget-sidebar {
+    flex: 0 0 280px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pickup-point-modal__widget-sidebar .pickup-point-modal__selection {
+    display: block;
+    margin-top: 0;
+    height: 100%;
+    border-top: 0;
+  }
+
+  .pickup-point-modal__selection {
+    margin-top: 16px;
+    padding: 16px 18px;
+    border-top: 1px solid #e0e0e0;
+    background: #faf8f3;
+    border-radius: 10px;
+  }
+
+  .pickup-point-modal__selection-address {
+    margin-top: 8px;
+    font-weight: 600;
+    color: #2f3a44;
+  }
+
+  .pickup-point-modal__selection-code,
+  .pickup-point-modal__selection-type,
+  .pickup-point-modal__selection-brand {
+    margin-top: 6px;
+    color: #5f6b76;
+    line-height: 1.45;
+  }
+
+  .pickup-point-modal__selection-type {
+    font-weight: 600;
+    color: #3c4854;
+  }
+
+  .pickup-point-modal__selection-brand {
+    font-size: 0.95rem;
+  }
+
+  body.pickup-modal-open {
+    overflow: hidden;
+  }
+
+  .pickup-point-modal__widget-hint {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #66727f;
+    background: #faf7f1;
+    border: 1px solid #e8e0d2;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 991px) {
+    .pickup-point-modal__dialog {
+      max-width: 1120px;
+    }
+
+    .pickup-point-modal__widget-wrap,
+    .pickup-point-modal__widget-container {
+      min-height: 460px;
+      height: 460px;
+    }
+
+    .pickup-point-modal__widget-layout {
+      flex-direction: column;
+    }
+
+    .pickup-point-modal__widget-sidebar {
+      flex: 1 1 auto;
       width: 100%;
     }
-					.pickup-points-list {
-						display: flex;
-						flex-direction: column;
-						gap: 20px;
-					}
 
-					.pickup-point-card {
-						margin-bottom: 0;
-					}
+    .pickup-point-modal__widget-sidebar .pickup-point-modal__selection {
+      height: auto;
+    }
+  }
 
-					.pickup-point-card__title {
-						margin: 0 0 18px;
-						font-size: 1.5rem;
-						line-height: 1.3;
-					}
+  @media (max-width: 767px) {
+    .pickup-point-card__footer {
+      text-align: left;
+    }
 
-					.pickup-point-card__label,
-					.pickup-point-card__empty,
-					.pickup-point-card__meta {
-						font-size: 1rem;
-						line-height: 1.5;
-						color: #5f6b76;
-					}
+    .pickup-point-card__button {
+      width: 100%;
+    }
 
-					.pickup-point-card__address {
-						margin-top: 8px;
-						font-size: 1.125rem;
-						line-height: 1.5;
-						color: #2f3a44;
-					}
+    .pickup-point-modal__dialog {
+      width: calc(100% - 16px);
+      max-height: calc(100vh - 16px);
+      margin: 8px auto;
+    }
 
-					.pickup-point-card__meta {
-						margin-top: 8px;
-					}
+    .pickup-point-modal__header {
+      padding: 16px;
+    }
 
-					.pickup-point-card__footer {
-						margin-top: 20px;
-						text-align: right;
-					}
+    .pickup-point-modal__content {
+      padding: 16px;
+      max-height: calc(100vh - 96px);
+    }
 
-					.pickup-point-modal {
-						position: fixed;
-						inset: 0;
-						z-index: 9999;
-						display: none;
-					}
+    .pickup-point-modal__title {
+      font-size: 1.25rem;
+    }
 
-					.pickup-point-modal.is-open {
-						display: block;
-					}
+    .pickup-point-modal__widget-wrap,
+    .pickup-point-modal__widget-container {
+      min-height: 420px;
+      height: 420px;
+    }
 
-					.pickup-point-modal__overlay {
-						position: absolute;
-						inset: 0;
-						background: rgba(0, 0, 0, 0.45);
-					}
+    .pickup-point-modal__selection {
+      padding: 14px 14px;
+    }
+  }
 
-					.pickup-point-modal__dialog {
-						position: relative;
-						width: calc(100% - 32px);
-						max-width: 920px;
-						max-height: calc(100vh - 48px);
-						margin: 24px auto;
-						background: #ffffff;
-						border-radius: 12px;
-						overflow: hidden;
-						box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-					}
-
-					.pickup-point-modal__header {
-						display: flex;
-						align-items: center;
-						justify-content: space-between;
-						padding: 20px 24px;
-						border-bottom: 1px solid #e6e9ed;
-					}
-
-					.pickup-point-modal__title {
-						margin: 0;
-						font-size: 1.5rem;
-						line-height: 1.3;
-					}
-
-					.pickup-point-modal__close {
-						padding: 0;
-						border: 0;
-						background: transparent;
-						font-size: 2rem;
-						line-height: 1;
-						cursor: pointer;
-					}
-
-					.pickup-point-modal__content {
-						padding: 24px;
-						overflow-y: auto;
-						max-height: calc(100vh - 140px);
-					}
-
-					.pickup-point-modal__search {
-						margin-bottom: 24px;
-					}
-
-					.pickup-point-modal__label {
-						display: block;
-						margin-bottom: 8px;
-						font-weight: 600;
-						color: #2f3a44;
-					}
-
-					.pickup-point-modal__input {
-						width: 100%;
-						height: 44px;
-						padding: 0 14px;
-						border: 1px solid #d7dce2;
-						border-radius: 8px;
-						box-sizing: border-box;
-					}
-
-					.pickup-point-modal__section + .pickup-point-modal__section {
-						margin-top: 24px;
-					}
-
-					.pickup-point-modal__section-title {
-						margin-bottom: 12px;
-						font-size: 1.125rem;
-						font-weight: 600;
-						color: #2f3a44;
-					}
-
-					.pickup-point-modal__map {
-						min-height: 220px;
-						padding: 16px;
-						border: 1px dashed #c8d0d9;
-						border-radius: 10px;
-						background: #fafbfc;
-						color: #6e7a86;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						text-align: center;
-					}
-
-					.pickup-point-modal__state,
-					.pickup-point-modal__list-stub {
-						padding: 14px 16px;
-						border: 1px solid #e6e9ed;
-						border-radius: 10px;
-						background: #fafbfc;
-						color: #6e7a86;
-					}
-
-					.pickup-point-modal__list {
-						margin-top: 12px;
-					}
-
-					body.pickup-modal-open {
-						overflow: hidden;
-					}
-
-					@media (max-width: 767px) {
-						.pickup-point-card__footer {
-							text-align: left;
-						}
-
-						.pickup-point-card__button {
-							width: 100%;
-						}
-
-						.pickup-point-modal__dialog {
-							width: calc(100% - 16px);
-							max-height: calc(100vh - 16px);
-							margin: 8px auto;
-						}
-
-						.pickup-point-modal__header {
-							padding: 16px;
-						}
-
-						.pickup-point-modal__content {
-							padding: 16px;
-							max-height: calc(100vh - 96px);
-						}
-
-						.pickup-point-modal__title {
-							font-size: 1.25rem;
-						}
-					}

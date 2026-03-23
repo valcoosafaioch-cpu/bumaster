@@ -27,10 +27,22 @@ class ControllerAccountPickupPoints extends Controller {
 		$data['text_modal_list_stub'] = $this->language->get('text_modal_list_stub');
 		$data['text_modal_close'] = $this->language->get('text_modal_close');
 
-		$data['text_selected_pickup_point'] = 'Выбранный пункт выдачи';
-		$data['text_point_code_label'] = 'ПВЗ';
-		$data['button_save_pickup_point'] = 'Сохранить пункт выдачи';
-		$data['text_pickup_point_saving'] = 'Сохраняем...';
+		$data['text_selected_pickup_point'] = $this->language->get('text_selected_pickup_point');
+		$data['text_point_code_label'] = $this->language->get('text_point_code_label');
+		$data['text_point_type_label'] = $this->language->get('text_point_type_label');
+		$data['text_point_type_pickup_point'] = $this->language->get('text_point_type_pickup_point');
+		$data['text_point_type_terminal'] = $this->language->get('text_point_type_terminal');
+		$data['button_save_pickup_point'] = $this->language->get('button_save_pickup_point');
+		$data['text_pickup_point_saving'] = $this->language->get('text_pickup_point_saving');
+		$data['text_map_updating'] = $this->language->get('text_map_updating');
+
+		$data['text_point_kind_label'] = $this->language->get('text_point_kind_label');
+		$data['text_point_kind_pickup_point'] = $this->language->get('text_point_kind_pickup_point');
+		$data['text_point_kind_terminal'] = $this->language->get('text_point_kind_terminal');
+
+		$data['text_point_brand_label'] = $this->language->get('text_point_brand_label');
+		$data['text_point_brand_yandex'] = $this->language->get('text_point_brand_yandex');
+		$data['text_point_brand_partner'] = $this->language->get('text_point_brand_partner');
 
 		$cdek_widget_enabled = (bool)$this->config->get('cdek_widget_enabled');
 		$cdek_widget_version = (string)$this->config->get('cdek_widget_version');
@@ -38,7 +50,17 @@ class ControllerAccountPickupPoints extends Controller {
 		$cdek_widget_default_city = (string)$this->config->get('cdek_widget_default_city');
 		$cdek_widget_lang = (string)$this->config->get('cdek_widget_lang');
 
+		$yandex_widget_enabled_raw = $this->config->get('yandex_widget_enabled');
+		$yandex_widget_enabled = $yandex_widget_enabled_raw === null ? true : (bool)$yandex_widget_enabled_raw;
+		$yandex_widget_default_city = (string)$this->config->get('yandex_widget_default_city');
+		$yandex_widget_lang = (string)$this->config->get('yandex_widget_lang');
+
+		if ($yandex_widget_lang === '') {
+			$yandex_widget_lang = 'ru_RU';
+		}
+
 		$data['cdek_widget_enabled'] = $cdek_widget_enabled;
+		$data['yandex_widget_enabled'] = $yandex_widget_enabled;
 
 		$data['cdek_widget'] = array(
 			'version' => $cdek_widget_version,
@@ -47,7 +69,14 @@ class ControllerAccountPickupPoints extends Controller {
 			'lang' => $cdek_widget_lang
 		);
 
-		$data['pickup_point_save_url'] = $this->url->link('account/pickup_points/saveCdekPoint', '', true);
+		$data['yandex_widget'] = array(
+			'default_city' => $yandex_widget_default_city,
+			'lang' => $yandex_widget_lang
+		);
+
+		$data['cdek_save_url'] = $this->url->link('account/pickup_points/saveCdekPoint', '', true);
+		$data['yandex_save_url'] = $this->url->link('account/pickup_points/saveYandexPoint', '', true);
+		$data['yandex_widget_service_url'] = $this->url->link('extension/module/yandex_widget/service', '', true);
 
 		$customer_id = (int)$this->customer->getId();
 		$saved_points = $this->model_account_pickup_point->getPickupPointsByCustomerId($customer_id);
@@ -82,8 +111,8 @@ class ControllerAccountPickupPoints extends Controller {
 					$this->language->get('text_modal_title_pickup_point'),
 					$this->language->get('text_service_yandex')
 				),
-				'picker_mode' => 'stub',
-				'widget_type' => ''
+				'picker_mode' => $yandex_widget_enabled ? 'widget' : 'stub',
+				'widget_type' => $yandex_widget_enabled ? 'yandex' : ''
 			),
 			array(
 				'code' => 'russian_post',
@@ -136,10 +165,39 @@ class ControllerAccountPickupPoints extends Controller {
 					} elseif (!empty($saved_point['point_code'])) {
 						$meta_line = $this->language->get('text_postal_code_prefix') . $saved_point['point_code'];
 					}
-				} else {
-					if (!empty($saved_point['point_code'])) {
-						$meta_line = $this->language->get('text_point_code_prefix') . $saved_point['point_code'];
+				} elseif ($service['code'] === 'yandex') {
+					$meta_parts = array();
+					$point_partner = (string)($saved_point['point_partner'] ?? '');
+					$point_type = (string)($saved_point['point_type'] ?? '');
+					$point_comment = trim((string)($saved_point['point_comment'] ?? ''));
+
+					if ($point_type === 'POSTAMAT') {
+						$meta_parts[] = 'Постамат';
+					} elseif ($point_partner === 'YANDEX_MARKET') {
+						$meta_parts[] = 'ПВЗ Яндекс.Маркет';
+					} elseif ($point_partner === '5POST') {
+						$meta_parts[] = 'ПВЗ 5Post';
+					} else {
+						$meta_parts[] = 'ПВЗ';
 					}
+
+					if ($point_comment !== '') {
+						$meta_parts[] = 'Как добраться: ' . $point_comment;
+					}
+
+					$meta_line = implode(' • ', $meta_parts);
+				} else {
+					$meta_parts = array();
+
+					if (!empty($saved_point['point_code'])) {
+						$meta_parts[] = $this->language->get('text_point_code_prefix') . $saved_point['point_code'];
+					}
+
+					if (!empty($saved_point['point_type'])) {
+						$meta_parts[] = $this->language->get('text_point_type_label') . ': ' . $this->formatPointType((string)$saved_point['point_type']);
+					}
+
+					$meta_line = implode(' • ', $meta_parts);
 				}
 			}
 
@@ -172,12 +230,13 @@ class ControllerAccountPickupPoints extends Controller {
 	}
 
 	public function saveCdekPoint(): void {
+		$this->load->language('account/pickup_points');
 		$this->response->addHeader('Content-Type: application/json; charset=utf-8');
 
 		if (!$this->customer->isLogged()) {
 			$this->sendJson(array(
 				'success' => false,
-				'error' => 'Необходимо авторизоваться'
+				'error' => $this->language->get('error_auth_required')
 			));
 
 			return;
@@ -186,7 +245,7 @@ class ControllerAccountPickupPoints extends Controller {
 		if (($this->request->server['REQUEST_METHOD'] ?? '') !== 'POST') {
 			$this->sendJson(array(
 				'success' => false,
-				'error' => 'Некорректный метод запроса'
+				'error' => $this->language->get('error_invalid_method')
 			));
 
 			return;
@@ -195,6 +254,7 @@ class ControllerAccountPickupPoints extends Controller {
 		$service_code = (string)($this->request->post['service_code'] ?? '');
 		$delivery_mode = (string)($this->request->post['delivery_mode'] ?? '');
 		$point_code = trim((string)($this->request->post['point_code'] ?? ''));
+		$point_type = trim((string)($this->request->post['point_type'] ?? ''));
 		$point_name = trim((string)($this->request->post['point_name'] ?? ''));
 		$point_address = trim((string)($this->request->post['point_address'] ?? ''));
 		$city = trim((string)($this->request->post['city'] ?? ''));
@@ -231,21 +291,7 @@ class ControllerAccountPickupPoints extends Controller {
 		if ($point_code === '' || $point_address === '') {
 			$this->sendJson(array(
 				'success' => false,
-				'error' => 'Не получены данные выбранного пункта',
-				'debug' => array(
-					'point_code' => $point_code,
-					'point_address' => $point_address,
-					'city' => $city
-				)
-			));
-
-			return;
-		}
-
-		if ($point_code === '' || $point_address === '') {
-			$this->sendJson(array(
-				'success' => false,
-				'error' => 'СДЭК вернул неполные данные по пункту выдачи'
+				'error' => $this->language->get('error_pickup_point_data')
 			));
 
 			return;
@@ -261,6 +307,7 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$raw_payload = json_encode(
 			array(
+				'source' => 'cdek_widget',
 				'delivery_mode' => $delivery_mode,
 				'tariff' => is_array($tariff) ? $tariff : array(),
 				'address' => $raw_payload_array
@@ -272,8 +319,9 @@ class ControllerAccountPickupPoints extends Controller {
 			(int)$this->customer->getId(),
 			array(
 				'service_code' => 'cdek',
-				'service_name' => 'СДЭК',
+				'service_name' => $this->language->get('text_service_cdek'),
 				'point_code' => $point_code,
+				'point_type' => $point_type,
 				'point_name' => $point_name,
 				'address' => $point_address,
 				'city' => $city,
@@ -287,7 +335,131 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$this->sendJson(array(
 			'success' => true,
-			'message' => 'Пункт выдачи сохранён'
+			'message' => $this->language->get('text_pickup_point_saved')
+		));
+	}
+
+	public function saveYandexPoint(): void {
+		$this->load->language('account/pickup_points');
+		$this->response->addHeader('Content-Type: application/json; charset=utf-8');
+
+		if (!$this->customer->isLogged()) {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_auth_required')
+			));
+
+			return;
+		}
+
+		if (($this->request->server['REQUEST_METHOD'] ?? '') !== 'POST') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_invalid_method')
+			));
+
+			return;
+		}
+
+		$service_code = (string)($this->request->post['service_code'] ?? '');
+		$point_code = trim((string)($this->request->post['point_code'] ?? ''));
+		$point_type = trim((string)($this->request->post['point_type'] ?? ''));
+		$point_name = trim((string)($this->request->post['point_name'] ?? ''));
+		$point_address = trim((string)($this->request->post['point_address'] ?? ''));
+		$point_comment = trim((string)($this->request->post['point_comment'] ?? ''));
+		$city = trim((string)($this->request->post['city'] ?? ''));
+		$postal_code = trim((string)($this->request->post['postal_code'] ?? ''));
+		$region = trim((string)($this->request->post['region'] ?? ''));
+		$country = trim((string)($this->request->post['country'] ?? ''));
+		$raw_payload = (string)($this->request->post['raw_payload'] ?? '');
+
+		if ($service_code !== 'yandex') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => 'Поддерживается только Яндекс Доставка'
+			));
+
+			return;
+		}
+
+		if ($point_code === '' || $point_address === '') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_pickup_point_data')
+			));
+
+			return;
+		}
+
+		$allowed_types = array('pickup_point', 'terminal');
+
+		if ($point_type !== '' && !in_array($point_type, $allowed_types, true)) {
+			$point_type = '';
+		}
+
+		$comment_lc = function_exists('mb_strtolower')
+			? mb_strtolower($point_comment, 'UTF-8')
+			: strtolower($point_comment);
+
+		$point_partner = '';
+
+		if ($comment_lc !== '') {
+			if (strpos($comment_lc, '5post') !== false || strpos($comment_lc, 'пятёрочк') !== false) {
+				$point_partner = '5POST';
+			} else {
+				$point_partner = 'YANDEX_MARKET';
+			}
+		}
+
+		if ($point_type === '') {
+			if ($comment_lc !== '' && strpos($comment_lc, 'постамат') !== false) {
+				$point_type = 'POSTAMAT';
+			} else {
+				$point_type = 'PVZ';
+			}
+		}
+
+		$display_line = $point_address !== ''
+			? $point_address
+			: $this->buildDisplayLine($city, $point_name);
+
+		$raw_payload_array = json_decode($raw_payload, true);
+
+		if (!is_array($raw_payload_array)) {
+			$raw_payload_array = array();
+		}
+
+		$raw_payload = json_encode(
+			array(
+				'source' => 'yandex_widget',
+				'point' => $raw_payload_array
+			),
+			JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+		);
+
+		$this->saveCustomerPickupPoint(
+			(int)$this->customer->getId(),
+			array(
+				'service_code' => 'yandex',
+				'service_name' => $this->language->get('text_service_yandex'),
+				'point_code' => $point_code,
+				'point_type' => $point_type,
+				'point_partner' => $point_partner,
+				'point_name' => $point_name,
+				'address' => $point_address,
+				'point_comment' => $point_comment,
+				'city' => $city,
+				'postal_code' => $postal_code,
+				'region' => $region,
+				'country' => $country,
+				'display_line' => $display_line,
+				'raw_payload' => $raw_payload
+			)
+		);
+
+		$this->sendJson(array(
+			'success' => true,
+			'message' => $this->language->get('text_pickup_point_saved')
 		));
 	}
 
@@ -296,8 +468,11 @@ class ControllerAccountPickupPoints extends Controller {
 		$service_code = $this->db->escape((string)$data['service_code']);
 		$service_name = $this->db->escape((string)$data['service_name']);
 		$point_code = $this->db->escape((string)$data['point_code']);
+		$point_type = $this->db->escape((string)($data['point_type'] ?? ''));
+		$point_partner = $this->db->escape((string)($data['point_partner'] ?? ''));
 		$point_name = $this->db->escape((string)$data['point_name']);
 		$address = $this->db->escape((string)$data['address']);
+		$point_comment = $this->db->escape((string)($data['point_comment'] ?? ''));
 		$city = $this->db->escape((string)$data['city']);
 		$postal_code = $this->db->escape((string)$data['postal_code']);
 		$region = $this->db->escape((string)$data['region']);
@@ -318,8 +493,11 @@ class ControllerAccountPickupPoints extends Controller {
 				"UPDATE `" . DB_PREFIX . "customer_pickup_point`
 				SET service_name = '" . $service_name . "',
 					point_code = '" . $point_code . "',
+					point_type = '" . $point_type . "',
+					point_partner = '" . $point_partner . "',
 					point_name = '" . $point_name . "',
 					address = '" . $address . "',
+					point_comment = '" . $point_comment . "',
 					city = '" . $city . "',
 					postal_code = '" . $postal_code . "',
 					region = '" . $region . "',
@@ -336,8 +514,11 @@ class ControllerAccountPickupPoints extends Controller {
 					service_code = '" . $service_code . "',
 					service_name = '" . $service_name . "',
 					point_code = '" . $point_code . "',
+					point_type = '" . $point_type . "',
+					point_partner = '" . $point_partner . "',
 					point_name = '" . $point_name . "',
 					address = '" . $address . "',
+					point_comment = '" . $point_comment . "',
 					city = '" . $city . "',
 					postal_code = '" . $postal_code . "',
 					region = '" . $region . "',
@@ -362,6 +543,20 @@ class ControllerAccountPickupPoints extends Controller {
 		}
 
 		return implode(', ', $parts);
+	}
+
+	private function formatPointType(string $point_type): string {
+		$this->load->language('account/pickup_points');
+
+		if ($point_type === 'terminal') {
+			return $this->language->get('text_point_type_terminal');
+		}
+
+		if ($point_type === 'pickup_point') {
+			return $this->language->get('text_point_type_pickup_point');
+		}
+
+		return $point_type;
 	}
 
 	private function sendJson(array $json): void {
