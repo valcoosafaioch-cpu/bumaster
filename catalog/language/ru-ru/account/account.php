@@ -24,3 +24,5 @@ $_['text_no_short'] = 'Нет';
 $_['text_empty_value'] = '—';
 $_['text_currency_rub_short'] = 'руб.';
 $_['text_edit_profile'] = 'Редактировать';
+
+$_['text_country_label'] = 'Страна';

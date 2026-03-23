@@ -68,14 +68,49 @@
 							<input type="text" name="lastname" value="{{ lastname }}" id="input-lastname" class="validate">
 							<label for="input-lastname" class="text-bold required">{{ entry_lastname }}</label>
 						</div>
-						<div class="input-field form-group">
-							<input type="email" name="email" value="{{ email }}" id="input-email" class="validate" readonly>
-							<label for="input-email" class="text-bold required">{{ entry_email }}</label>
-							<span class="helper-text">E-mail нельзя изменить</span>
+						<div class="form-group">
+							<label for="input-email" class="text-bold">{{ entry_email }}</label>
+							<input type="text" value="{{ email }}" id="input-email" readonly="readonly">
+							<span class="helper-text">{{ text_email_not_editable }}</span>
 						</div>
-						<div class="input-field form-group">
-							<input type="tel" name="telephone" value="{{ telephone }}" id="input-telephone" class="validate">
-							<label for="input-telephone" class="text-bold required">{{ entry_telephone }}</label>
+						<input type="hidden" name="telephone" value="{{ telephone }}" id="input-telephone-hidden">
+
+						<div class="form-group">
+							<div class="register-telephone-row" data-telephone-group="edit">
+								<div class="register-telephone-country">
+									<label for="input-country-id" class="text-bold required">{{ entry_country }}</label>
+									<select name="country_id" id="input-country-id" class="js-native-select">
+										{% for telephone_country in telephone_countries %}
+											<option
+												value="{{ telephone_country.country_id }}"
+												data-phone-code="{{ telephone_country.phone_code }}"
+												data-phone-digits="{{ telephone_country.phone_digits }}"
+												{% if telephone_country.country_id == country_id %}selected="selected"{% endif %}
+											>
+												{{ telephone_country.name }}
+											</option>
+										{% endfor %}
+									</select>
+								</div>
+
+								<div class="register-telephone-right">
+									<label for="input-telephone-number" class="text-bold required">{{ entry_telephone }}</label>
+
+									<div class="register-telephone-right-row">
+										<div class="register-telephone-code">
+											<span class="register-telephone-code-prefix" id="input-telephone-code"></span>
+										</div>
+
+										<div class="register-telephone-number">
+											<input type="text" name="telephone_number" value="{{ telephone_number }}" id="input-telephone-number" inputmode="numeric" autocomplete="tel-national">
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{% if error_telephone %}
+								<div class="text-danger">{{ error_telephone }}</div>
+							{% endif %}
 						</div>
 						{% for custom_field in custom_fields %}
 						{% if custom_field.type == 'select' %}
@@ -189,6 +224,7 @@
 							</div>
 						</div>
 					</div>
+					<input type="hidden" id="edit-phone-text-digits" value="{{ text_telephone_digits }}">
 				</form>
 				{{ content_bottom }}
 			</div>
@@ -201,7 +237,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	{% if error_warning %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_warning }}', classes: 'toast-warning'});{% endif %}
 	{% if error_firstname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_firstname }}', classes: 'toast-warning'});{% endif %}
 	{% if error_lastname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_lastname }}', classes: 'toast-warning'});{% endif %}
-	{% if error_email %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_email }}', classes: 'toast-warning'});{% endif %}
 	{% if error_telephone %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_telephone }}', classes: 'toast-warning'});{% endif %}
 	{% for custom_field in custom_fields %}
 			{% if error_custom_field[custom_field.custom_field_id] %}

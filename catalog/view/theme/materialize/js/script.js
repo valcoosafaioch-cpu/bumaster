@@ -230,7 +230,7 @@ $(document).ready(function() {
 		modal = $('.modal'),
 		tooltipped = $('.tooltipped'),
 		dropdown = $('.dropdown-trigger'),
-		select = $('select');
+		select = $('select').not('.js-native-select');
 
 	collapsible.collapsible();
 	collapsibleExpandable.collapsible({

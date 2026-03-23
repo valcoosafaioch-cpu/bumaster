@@ -9,6 +9,7 @@ class ControllerAccountAccount extends Controller {
 
 		$this->load->language('account/account');
 		$this->load->model('account/customer');
+		$this->load->model('localisation/country');
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -68,7 +69,16 @@ class ControllerAccountAccount extends Controller {
 		$data['lastname'] = !empty($customer_info['lastname']) ? $customer_info['lastname'] : $data['text_empty_value'];
 		$data['telephone'] = !empty($customer_info['telephone']) ? $customer_info['telephone'] : $data['text_empty_value'];
 		$data['email'] = !empty($customer_info['email']) ? $customer_info['email'] : $data['text_empty_value'];
+		$data['country'] = $data['text_empty_value'];
 
+		if (!empty($customer_info['country_id'])) {
+			$country_info = $this->model_localisation_country->getCountry((int)$customer_info['country_id']);
+
+			if ($country_info && !empty($country_info['name'])) {
+				$data['country'] = $country_info['name'];
+			}
+		}
+		
 		$data['newsletter'] = !empty($customer_info['newsletter']) ? 1 : 0;
 		$data['newsletter_text'] = $data['newsletter'] ? $data['text_yes_short'] : $data['text_no_short'];
 

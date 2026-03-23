@@ -18,6 +18,8 @@ class ControllerAccountRegister extends Controller {
 		$this->document->addStyle('catalog/view/theme/materialize/stylesheet/account.css');
 
 		$this->load->model('account/customer');
+		
+		$data['telephone_countries'] = $this->getAvailableTelephoneCountries();
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
 			$email = trim($this->request->post['email']);
@@ -182,18 +184,6 @@ class ControllerAccountRegister extends Controller {
 			$data['telephone'] = '';
 		}
 
-		if (isset($this->request->post['telephone_country'])) {
-			$data['telephone_country'] = $this->request->post['telephone_country'];
-		} else {
-			$data['telephone_country'] = 'RU';
-		}
-
-		if (isset($this->request->post['telephone_number'])) {
-			$data['telephone_number'] = preg_replace('/\D/', '', $this->request->post['telephone_number']);
-		} else {
-			$data['telephone_number'] = '';
-		}
-
 		// Custom Fields
 		$data['custom_fields'] = array();
 		
@@ -229,6 +219,18 @@ class ControllerAccountRegister extends Controller {
 			$data['newsletter'] = $this->request->post['newsletter'];
 		} else {
 			$data['newsletter'] = 1;
+		}
+
+		if (isset($this->request->post['country_id'])) {
+			$data['country_id'] = (int)$this->request->post['country_id'];
+		} else {
+			$data['country_id'] = 1;
+		}
+
+		if (isset($this->request->post['telephone_number'])) {
+			$data['telephone_number'] = preg_replace('/\D/', '', $this->request->post['telephone_number']);
+		} else {
+			$data['telephone_number'] = '';
 		}
 
 		// Captcha
@@ -292,6 +294,30 @@ class ControllerAccountRegister extends Controller {
 		$this->response->setOutput($this->load->view('account/register', $data));
 	}
 
+	private function getAvailableTelephoneCountries(): array {
+		$query = $this->db->query("
+			SELECT country_id, name, iso_code_2, phone_code, phone_digits
+			FROM `" . DB_PREFIX . "country`
+			WHERE status = '1'
+			  AND country_id IN (1, 2, 3)
+			ORDER BY FIELD(country_id, 1, 2, 3)
+		");
+
+		return $query->rows;
+	}
+
+	private function getTelephoneCountryById(int $country_id): array {
+		$countries = $this->getAvailableTelephoneCountries();
+
+		foreach ($countries as $country) {
+			if ((int)$country['country_id'] === $country_id) {
+				return $country;
+			}
+		}
+
+		return array();
+	}
+
 	private function validate() {
 		if ((utf8_strlen(trim($this->request->post['firstname'])) < 1) || (utf8_strlen(trim($this->request->post['firstname'])) > 32)) {
 			$this->error['firstname'] = $this->language->get('error_firstname');
@@ -315,28 +341,33 @@ class ControllerAccountRegister extends Controller {
 			);
 		}
 
-		$telephone_country = isset($this->request->post['telephone_country']) ? $this->request->post['telephone_country'] : 'RU';
+		$country_id = isset($this->request->post['country_id']) ? (int)$this->request->post['country_id'] : 0;
 		$telephone_number = isset($this->request->post['telephone_number']) ? preg_replace('/\D/', '', $this->request->post['telephone_number']) : '';
 
-		if ($telephone_country === 'RU') {
-			if (!preg_match('/^\d{10}$/', $telephone_number)) {
-				$this->error['telephone'] = $this->language->get('error_telephone_russia');
-			}
+		$telephone_country = $this->getTelephoneCountryById($country_id);
+
+		if (!$telephone_country) {
+			$this->error['telephone'] = $this->language->get('error_country');
 		} else {
-			if ($telephone_number === '') {
-				$this->error['telephone'] = $this->language->get('error_telephone_other');
+			$phone_digits = isset($telephone_country['phone_digits']) ? (int)$telephone_country['phone_digits'] : 0;
+			$phone_code = isset($telephone_country['phone_code']) ? trim($telephone_country['phone_code']) : '';
+
+			if ($phone_digits > 0) {
+				if (utf8_strlen($telephone_number) != $phone_digits) {
+					$this->error['telephone'] = sprintf($this->language->get('error_telephone_length'), $phone_digits);
+				}
+			} elseif ($telephone_number === '') {
+				$this->error['telephone'] = $this->language->get('error_telephone');
+			}
+
+			if (!$phone_code) {
+				$this->error['telephone'] = $this->language->get('error_telephone_code');
 			}
 		}
 
-		if (!$this->error) {
-			$telephone_code = '+7';
-
-			if ($telephone_country === 'BY') {
-				$telephone_code = '+375';
-			}
-
-			$this->request->post['telephone_number'] = $telephone_number;
-			$this->request->post['telephone'] = $telephone_code . $telephone_number;
+		if (!$this->error && $telephone_country) {
+			$this->request->post['telephone'] = $telephone_country['phone_code'] . $telephone_number;
+			$this->request->post['country_id'] = $country_id;
 		}
 
 		// Customer Group

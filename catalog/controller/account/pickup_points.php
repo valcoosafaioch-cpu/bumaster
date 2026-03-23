@@ -8,6 +8,7 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$this->load->language('account/pickup_points');
 		$this->load->model('account/pickup_point');
+		$this->load->model('account/customer');
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -60,7 +61,7 @@ class ControllerAccountPickupPoints extends Controller {
 		}
 
 		$data['cdek_widget_enabled'] = $cdek_widget_enabled;
-		$data['yandex_widget_enabled'] = $yandex_widget_enabled;
+		
 
 		$data['cdek_widget'] = array(
 			'version' => $cdek_widget_version,
@@ -79,8 +80,13 @@ class ControllerAccountPickupPoints extends Controller {
 		$data['yandex_widget_service_url'] = $this->url->link('extension/module/yandex_widget/service', '', true);
 
 		$customer_id = (int)$this->customer->getId();
-		$saved_points = $this->model_account_pickup_point->getPickupPointsByCustomerId($customer_id);
+		$customer_info = $this->model_account_customer->getCustomer($customer_id);
+		$customer_country_id = !empty($customer_info['country_id']) ? (int)$customer_info['country_id'] : 1;
+		$is_russia_customer = ($customer_country_id === 1);
 
+		$data['cdek_widget_enabled'] = $cdek_widget_enabled;
+		
+		$saved_points = $this->model_account_pickup_point->getPickupPointsByCustomerId($customer_id);
 		$saved_points_by_service = array();
 
 		foreach ($saved_points as $saved_point) {
@@ -100,8 +106,11 @@ class ControllerAccountPickupPoints extends Controller {
 				),
 				'picker_mode' => $cdek_widget_enabled ? 'widget' : 'stub',
 				'widget_type' => $cdek_widget_enabled ? 'cdek' : ''
-			),
-			array(
+			)
+		);
+
+		if ($is_russia_customer) {
+			$service_definitions[] = array(
 				'code' => 'yandex',
 				'name' => $this->language->get('text_service_yandex'),
 				'label_type' => 'pickup_point',
@@ -113,8 +122,9 @@ class ControllerAccountPickupPoints extends Controller {
 				),
 				'picker_mode' => $yandex_widget_enabled ? 'widget' : 'stub',
 				'widget_type' => $yandex_widget_enabled ? 'yandex' : ''
-			),
-			array(
+			);
+
+			$service_definitions[] = array(
 				'code' => 'russian_post',
 				'name' => $this->language->get('text_service_russian_post'),
 				'label_type' => 'department',
@@ -126,8 +136,8 @@ class ControllerAccountPickupPoints extends Controller {
 				),
 				'picker_mode' => 'stub',
 				'widget_type' => ''
-			)
-		);
+			);
+		}
 
 		$data['services'] = array();
 

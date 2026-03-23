@@ -103,27 +103,37 @@
 							<input type="hidden" name="telephone" value="{{ telephone }}" id="input-telephone-hidden">
 
 							<div class="form-group">
-								<div class="register-telephone-row">
+								<div class="register-telephone-row" data-telephone-group="register">
 									<div class="register-telephone-country">
-										<label for="input-telephone-country" class="text-bold required">{{ entry_telephone_code }}</label>
-										<select name="telephone_country" id="input-telephone-country">
-											<option value="RU" data-code="+7" {% if telephone_country == 'RU' %}selected="selected"{% endif %}>{{ text_country_russia }}</option>
-											<option value="KZ" data-code="+7" {% if telephone_country == 'KZ' %}selected="selected"{% endif %}>{{ text_country_kazakhstan }}</option>
-											<option value="BY" data-code="+375" {% if telephone_country == 'BY' %}selected="selected"{% endif %}>{{ text_country_belarus }}</option>
+										<label for="input-country-id" class="text-bold required">{{ entry_country }}</label>
+										<select name="country_id" id="input-country-id" class="js-native-select">
+											{% for telephone_country in telephone_countries %}
+												<option
+													value="{{ telephone_country.country_id }}"
+													data-phone-code="{{ telephone_country.phone_code }}"
+													data-phone-digits="{{ telephone_country.phone_digits }}"
+													{% if telephone_country.country_id == country_id %}selected="selected"{% endif %}
+												>
+													{{ telephone_country.name }}
+												</option>
+											{% endfor %}
 										</select>
 									</div>
 
-									<div class="register-telephone-number input-field">
-										<input type="tel" name="telephone_number" value="{{ telephone_number }}" id="input-telephone-number" class="validate" inputmode="numeric" autocomplete="tel-national">
-										<label for="input-telephone-number" class="text-bold required">{{ entry_telephone_number }}</label>
+									<div class="register-telephone-right">
+										<label for="input-telephone-number" class="text-bold required">{{ entry_telephone }}</label>
+
+										<div class="register-telephone-right-row">
+											<div class="register-telephone-code">
+												<span class="register-telephone-code-prefix" id="input-telephone-code"></span>
+											</div>
+
+											<div class="register-telephone-number">
+												<input type="text" name="telephone_number" value="{{ telephone_number }}" id="input-telephone-number" inputmode="numeric" autocomplete="tel-national">
+											</div>
+										</div>
 									</div>
 								</div>
-
-								<p class="register-telephone-hint">{{ text_telephone_hint }}</p>
-
-								{% if error_telephone %}
-									<div class="register-email-error">{{ error_telephone }}</div>
-								{% endif %}
 							</div>
 						</div>
 						{% for custom_field in custom_fields %}
@@ -277,6 +287,8 @@
 					{% if redirect %}
 						<input type="hidden" name="redirect" value="{{ redirect }}">
 					{% endif %}
+
+					<input type="hidden" id="register-phone-text-digits" value="{{ text_telephone_digits }}">
 				</form>
 				{{ content_bottom }}
 			</div>
@@ -317,56 +329,13 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		$('#newsletter').attr('value', ($('#newsletter').attr('value')==0) ? '1' : '0');
 	});
 
-	var telephoneCountry = document.getElementById('input-telephone-country');
-	var telephoneNumber = document.getElementById('input-telephone-number');
-	var telephoneHidden = document.getElementById('input-telephone-hidden');
-	var registerForm = document.querySelector('#account-register form');
-
-	if (telephoneCountry) {
-		M.FormSelect.init(telephoneCountry);
-	}
-
-	var normalizeTelephoneNumber = function () {
-		if (!telephoneCountry || !telephoneNumber || !telephoneHidden) {
-			return;
-		}
-
-		var country = telephoneCountry.value;
-		var digits = telephoneNumber.value.replace(/\D/g, '');
-
-		if (country === 'RU') {
-			digits = digits.substring(0, 10);
-		}
-
-		telephoneNumber.value = digits;
-
-		var code = telephoneCountry.options[telephoneCountry.selectedIndex].getAttribute('data-code');
-
-		if (digits.length) {
-			telephoneHidden.value = code + digits;
-		} else {
-			telephoneHidden.value = '';
-		}
-	};
-
-	if (telephoneCountry && telephoneNumber && telephoneHidden) {
-		telephoneCountry.addEventListener('change', normalizeTelephoneNumber);
-		telephoneNumber.addEventListener('input', normalizeTelephoneNumber);
-
-		if (registerForm) {
-			registerForm.addEventListener('submit', normalizeTelephoneNumber);
-		}
-
-		normalizeTelephoneNumber();
-	}
-
-	{% if error_firstname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_firstname }}', classes: 'toast-warning'});{% endif %}
-	{% if error_lastname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_lastname }}', classes: 'toast-warning'});{% endif %}
-	{% if error_email %}M.toast({html: '<i class="material-icons left">warning</i> Этот email уже зарегистрирован.', classes: 'toast-warning'});{% endif %}
-	{% if error_telephone %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_telephone }}', classes: 'toast-warning'});{% endif %}
-	{% if error_password %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_password }}', classes: 'toast-warning'});{% endif %}
-	{% if error_confirm %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_confirm }}', classes: 'toast-warning'});{% endif %}
-	{% for custom_field in custom_fields %}
+		{% if error_firstname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_firstname }}', classes: 'toast-warning'});{% endif %}
+		{% if error_lastname %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_lastname }}', classes: 'toast-warning'});{% endif %}
+		{% if error_email %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_email|e('js') }}', classes: 'toast-warning'});{% endif %}
+		{% if error_telephone %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_telephone }}', classes: 'toast-warning'});{% endif %}
+		{% if error_password %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_password }}', classes: 'toast-warning'});{% endif %}
+		{% if error_confirm %}M.toast({html: '<i class="material-icons left">warning</i>{{ error_confirm }}', classes: 'toast-warning'});{% endif %}
+		{% for custom_field in custom_fields %}
 		{% if error_custom_field[custom_field.custom_field_id] %}
 		M.toast({html: '<i class="material-icons left">warning</i>{{ error_custom_field[custom_field.custom_field_id] }}', classes: 'toast-warning'});
 		{% endif %}

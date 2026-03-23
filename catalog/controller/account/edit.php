@@ -20,7 +20,12 @@ class ControllerAccountEdit extends Controller {
 
 		$this->load->model('account/customer');
 
+		$data['telephone_countries'] = $this->getAvailableTelephoneCountries();
+		$customer_info = $this->model_account_customer->getCustomer($this->customer->getId());
+
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
+			$this->request->post['email'] = $customer_info['email'];
+
 			$this->model_account_customer->editCustomer($this->customer->getId(), $this->request->post);
 
 			$this->session->data['success'] = $this->language->get('text_success');
@@ -89,34 +94,44 @@ class ControllerAccountEdit extends Controller {
 
 		if (isset($this->request->post['firstname'])) {
 			$data['firstname'] = $this->request->post['firstname'];
-		} elseif (!empty($customer_info)) {
-			$data['firstname'] = $customer_info['firstname'];
 		} else {
-			$data['firstname'] = '';
+			$data['firstname'] = $customer_info['firstname'];
 		}
 
 		if (isset($this->request->post['lastname'])) {
 			$data['lastname'] = $this->request->post['lastname'];
-		} elseif (!empty($customer_info)) {
-			$data['lastname'] = $customer_info['lastname'];
 		} else {
-			$data['lastname'] = '';
+			$data['lastname'] = $customer_info['lastname'];
 		}
 
-		if (isset($this->request->post['email'])) {
-			$data['email'] = $this->request->post['email'];
-		} elseif (!empty($customer_info)) {
-			$data['email'] = $customer_info['email'];
+		$data['email'] = $customer_info['email'];
+
+		if (isset($this->request->post['country_id'])) {
+			$data['country_id'] = (int)$this->request->post['country_id'];
+		} elseif (!empty($customer_info['country_id'])) {
+			$data['country_id'] = (int)$customer_info['country_id'];
 		} else {
-			$data['email'] = '';
+			$data['country_id'] = 1;
+		}
+
+		$selected_country = $this->getTelephoneCountryById($data['country_id']);
+
+		if (!$selected_country) {
+			$data['country_id'] = 1;
+			$selected_country = $this->getTelephoneCountryById($data['country_id']);
+		}
+
+		if (isset($this->request->post['telephone_number'])) {
+			$data['telephone_number'] = preg_replace('/\D/', '', $this->request->post['telephone_number']);
+		} else {
+			$telephone_parts = $this->splitTelephoneByCountry($customer_info['telephone'], $selected_country);
+			$data['telephone_number'] = $telephone_parts['telephone_number'];
 		}
 
 		if (isset($this->request->post['telephone'])) {
 			$data['telephone'] = $this->request->post['telephone'];
-		} elseif (!empty($customer_info)) {
-			$data['telephone'] = $customer_info['telephone'];
 		} else {
-			$data['telephone'] = '';
+			$data['telephone'] = $customer_info['telephone'];
 		}
 
 		if (isset($this->request->post['custom_field']['account'])) {
@@ -170,6 +185,48 @@ class ControllerAccountEdit extends Controller {
 		$this->response->setOutput($this->load->view('account/edit', $data));
 	}
 
+	private function getAvailableTelephoneCountries(): array {
+		$query = $this->db->query("
+			SELECT country_id, name, iso_code_2, phone_code, phone_digits
+			FROM `" . DB_PREFIX . "country`
+			WHERE status = '1'
+			  AND country_id IN (1, 2, 3)
+			ORDER BY FIELD(country_id, 1, 2, 3)
+		");
+
+		return $query->rows;
+	}
+
+	private function getTelephoneCountryById(int $country_id): array {
+		$countries = $this->getAvailableTelephoneCountries();
+
+		foreach ($countries as $country) {
+			if ((int)$country['country_id'] === $country_id) {
+				return $country;
+			}
+		}
+
+		return array();
+	}
+
+	private function splitTelephoneByCountry(string $telephone, array $country): array {
+		$phone_code = isset($country['phone_code']) ? trim($country['phone_code']) : '';
+		$telephone_digits = preg_replace('/\D/', '', $telephone);
+
+		if ($phone_code) {
+			$phone_code_digits = preg_replace('/\D/', '', $phone_code);
+
+			if ($phone_code_digits && strpos($telephone_digits, $phone_code_digits) === 0) {
+				$telephone_digits = substr($telephone_digits, strlen($phone_code_digits));
+			}
+		}
+
+		return array(
+			'phone_code' => $phone_code,
+			'telephone_number' => $telephone_digits
+		);
+	}
+
 	protected function validate() {
 		if ((utf8_strlen(trim($this->request->post['firstname'])) < 1) || (utf8_strlen(trim($this->request->post['firstname'])) > 32)) {
 			$this->error['firstname'] = $this->language->get('error_firstname');
@@ -179,31 +236,33 @@ class ControllerAccountEdit extends Controller {
 			$this->error['lastname'] = $this->language->get('error_lastname');
 		}
 
-		if ((utf8_strlen($this->request->post['email']) > 96) || !filter_var($this->request->post['email'], FILTER_VALIDATE_EMAIL)) {
-			$this->error['email'] = $this->language->get('error_email');
-		}
+		$country_id = isset($this->request->post['country_id']) ? (int)$this->request->post['country_id'] : 0;
+		$telephone_number = isset($this->request->post['telephone_number']) ? preg_replace('/\D/', '', $this->request->post['telephone_number']) : '';
 
-		if (($this->customer->getEmail() != $this->request->post['email']) && $this->model_account_customer->getTotalCustomersByEmail($this->request->post['email'])) {
-			$this->error['warning'] = $this->language->get('error_exists');
-		}
+		$telephone_country = $this->getTelephoneCountryById($country_id);
 
-		if ((utf8_strlen($this->request->post['telephone']) < 3) || (utf8_strlen($this->request->post['telephone']) > 32)) {
-			$this->error['telephone'] = $this->language->get('error_telephone');
-		}
+		if (!$telephone_country) {
+			$this->error['telephone'] = $this->language->get('error_country');
+		} else {
+			$phone_digits = isset($telephone_country['phone_digits']) ? (int)$telephone_country['phone_digits'] : 0;
+			$phone_code = isset($telephone_country['phone_code']) ? trim($telephone_country['phone_code']) : '';
 
-		// Custom field validation
-		$this->load->model('account/custom_field');
-
-		$custom_fields = $this->model_account_custom_field->getCustomFields($this->config->get('config_customer_group_id'));
-
-		foreach ($custom_fields as $custom_field) {
-			if ($custom_field['location'] == 'account') {
-				if ($custom_field['required'] && empty($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']])) {
-					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
-				} elseif (($custom_field['type'] == 'text') && !empty($custom_field['validation']) && !filter_var($this->request->post['custom_field'][$custom_field['location']][$custom_field['custom_field_id']], FILTER_VALIDATE_REGEXP, array('options' => array('regexp' => $custom_field['validation'])))) {
-					$this->error['custom_field'][$custom_field['custom_field_id']] = sprintf($this->language->get('error_custom_field'), $custom_field['name']);
+			if ($phone_digits > 0) {
+				if (utf8_strlen($telephone_number) != $phone_digits) {
+					$this->error['telephone'] = sprintf($this->language->get('error_telephone_length'), $phone_digits);
 				}
+			} elseif ($telephone_number === '') {
+				$this->error['telephone'] = $this->language->get('error_telephone');
 			}
+
+			if (!$phone_code) {
+				$this->error['telephone'] = $this->language->get('error_telephone_code');
+			}
+		}
+
+		if (!$this->error && $telephone_country) {
+			$this->request->post['telephone'] = $telephone_country['phone_code'] . $telephone_number;
+			$this->request->post['country_id'] = $country_id;
 		}
 
 		return !$this->error;
