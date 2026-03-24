@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function () {
   var cdekSelectionAddress = document.getElementById('pickup-point-cdek-selection-address');
   var cdekSelectionCode = document.getElementById('pickup-point-cdek-selection-code');
   var cdekSaveButton = document.getElementById('pickup-point-cdek-save-button');
+  var cdekWidgetHint = document.getElementById('pickup-point-cdek-widget-hint');
+  var cdekSelectionType = document.getElementById('pickup-point-cdek-selection-type');
+  var cdekSelectionComment = document.getElementById('pickup-point-cdek-selection-comment');
 
   var yandexWidgetWrap = document.getElementById('pickup-point-yandex-widget-wrap');
   var yandexWidgetContainer = document.getElementById('pickup-point-yandex-widget-container');
@@ -139,6 +142,10 @@ document.addEventListener('DOMContentLoaded', function () {
       );
     }
 
+    if (cdekWidgetHint) {
+      cdekWidgetHint.style.display = mode === 'widget' && widgetType === 'cdek' ? '' : 'none';
+    }
+
     if (yandexWidgetWrap) {
       yandexWidgetWrap.style.display = mode === 'widget' && widgetType === 'yandex' ? '' : 'none';
     }
@@ -174,6 +181,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (cdekSelectionBox) {
       cdekSelectionBox.style.display = 'none';
+    }
+
+    if (cdekSelectionType) {
+      cdekSelectionType.textContent = '';
+      cdekSelectionType.style.display = 'none';
+    }
+
+    if (cdekSelectionComment) {
+      cdekSelectionComment.textContent = '';
+      cdekSelectionComment.style.display = 'none';
     }
 
     setButtonDefaultState(cdekSaveButton);
@@ -223,20 +240,42 @@ document.addEventListener('DOMContentLoaded', function () {
       cdekSelectionAddress.textContent = addressParts.join(', ');
     }
 
-    if (cdekSelectionCode) {
-      var pointCodeLabel = getPointCodeLabel(cdekWidgetContainer);
-      var pointCode = selectedCdekPoint.code || '';
+    if (cdekSelectionType) {
+      var typeText = '';
 
-      cdekSelectionCode.textContent = pointCodeLabel
-        ? pointCodeLabel + ': ' + pointCode
-        : pointCode;
+      if ((selectedCdekPoint.type || '').toUpperCase() === 'POSTAMAT') {
+        typeText = 'Постамат';
+      } else if ((selectedCdekPoint.type || '').toUpperCase() === 'PVZ') {
+        typeText = 'Пункт выдачи';
+      } else if (selectedCdekPoint.type) {
+        typeText = selectedCdekPoint.type;
+      }
+
+      if (typeText) {
+        cdekSelectionType.textContent = typeText;
+        cdekSelectionType.style.display = '';
+      } else {
+        cdekSelectionType.textContent = '';
+        cdekSelectionType.style.display = 'none';
+      }
+    }
+
+    if (cdekSelectionComment) {
+      var comment = selectedCdekPoint.point_comment || '';
+
+      if (comment) {
+        cdekSelectionComment.textContent = 'Как добраться: ' + comment;
+        cdekSelectionComment.style.display = '';
+      } else {
+        cdekSelectionComment.textContent = '';
+        cdekSelectionComment.style.display = 'none';
+      }
     }
 
     if (cdekSelectionBox) {
       cdekSelectionBox.style.display = '';
     }
 
-    setButtonEnabledState(cdekSaveButton);
   }
 
   function buildYandexAddress(point) {
@@ -337,11 +376,19 @@ document.addEventListener('DOMContentLoaded', function () {
     body.append('point_type', selectedCdekPoint.type || '');
     body.append('point_name', selectedCdekPoint.name || '');
     body.append('point_address', selectedCdekPoint.address || '');
+    body.append('point_comment', selectedCdekPoint.point_comment || '');
     body.append('city', selectedCdekPoint.city || '');
     body.append('postal_code', selectedCdekPoint.postal_code || '');
     body.append('region', selectedCdekPoint.region || '');
     body.append('country', selectedCdekPoint.country_code || '');
-    body.append('raw_payload', JSON.stringify(selectedCdekPoint || {}));
+    body.append('location_json', JSON.stringify(Array.isArray(selectedCdekPoint.location) ? selectedCdekPoint.location : []));
+    body.append('work_time', selectedCdekPoint.work_time || '');
+    body.append(
+      'raw_payload',
+      JSON.stringify(
+        (selectedCdekPoint && selectedCdekPoint.raw_point) ? selectedCdekPoint.raw_point : (selectedCdekPoint || {})
+      )
+    );
     body.append('tariff_json', JSON.stringify(selectedCdekTariff || {}));
 
     fetch(cdekWidgetContainer.dataset.saveUrl, {
@@ -421,26 +468,66 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
+  function loadCdekOfficeDetails(pointCode, countryCode, servicePath) {
+    if (!pointCode || !servicePath) {
+      return Promise.resolve(null);
+    }
+
+    var detailsUrl = servicePath
+      + '&action=office_details'
+      + '&point_code=' + encodeURIComponent(pointCode)
+      + '&country_code=' + encodeURIComponent((countryCode || 'RU').toUpperCase());
+
+    return fetch(detailsUrl, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          return null;
+        }
+
+        return response.json();
+      })
+      .then(function (json) {
+        if (!json || !json.success || !json.office) {
+          return null;
+        }
+
+        return json.office;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   function initCdekWidget() {
+    
     if (!cdekWidgetContainer) {
       return Promise.reject(new Error('CDEK widget container not found'));
-    }
-
-    if (cdekWidgetInstance) {
-      return Promise.resolve(cdekWidgetInstance);
-    }
-
-    if (cdekWidgetInitPromise) {
-      return cdekWidgetInitPromise;
     }
 
     if (typeof window.CDEKWidget !== 'function') {
       return Promise.reject(new Error('CDEKWidget is not loaded'));
     }
 
+    cdekWidgetInitPromise = null;
+    cdekWidgetInstance = null;
+    cdekWidgetContainer.innerHTML = '';
+
     cdekWidgetInitPromise = new Promise(function (resolve, reject) {
       try {
         cdekWidgetContainer.innerHTML = '';
+
+        var widgetCountryCode = (cdekWidgetContainer.dataset.widgetCountryCode || '').toUpperCase();
+        var cdekServicePath = '/index.php?route=extension/module/cdek_widget/service';
+
+        if (widgetCountryCode) {
+          cdekServicePath += '&country_code=' + encodeURIComponent(widgetCountryCode);
+        }
 
         cdekWidgetInstance = new window.CDEKWidget({
           root: 'pickup-point-cdek-widget-container',
@@ -449,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function () {
             parseFloat(cdekWidgetContainer.dataset.widgetDefaultLng || '37.6176'),
             parseFloat(cdekWidgetContainer.dataset.widgetDefaultLat || '55.7558')
           ],
-          servicePath: '/index.php?route=extension/module/cdek_widget/service',
+          servicePath: cdekServicePath,
           lang: cdekWidgetContainer.dataset.widgetLang || 'rus',
 
           hideFilters: {
@@ -457,10 +544,6 @@ document.addEventListener('DOMContentLoaded', function () {
             have_cash: true,
             is_dressing_room: true,
             type: true
-          },
-
-          forceFilters: {
-            type: 'PVZ'
           },
 
           hideDeliveryOptions: {
@@ -496,10 +579,67 @@ document.addEventListener('DOMContentLoaded', function () {
               address: address.address || '',
               work_time: address.work_time || '',
               region: address.region || '',
-              location: Array.isArray(address.location) ? address.location : []
+              location: Array.isArray(address.location) ? address.location : [],
+              point_comment: '',
+              address_full: '',
+              raw_point: address
             } : null;
 
             updateSelectedCdekPointUi();
+            setButtonDefaultState(cdekSaveButton);
+
+            if (!selectedCdekPoint || !selectedCdekPoint.code) {
+              return;
+            }
+
+            loadCdekOfficeDetails(
+              selectedCdekPoint.code,
+              selectedCdekPoint.country_code || (cdekWidgetContainer ? cdekWidgetContainer.dataset.widgetCountryCode : 'RU'),
+              cdekServicePath
+            ).then(function (office) {
+              if (!office || !selectedCdekPoint || selectedCdekPoint.code !== (office.code || '')) {
+                updateSelectedCdekPointUi();
+                setButtonEnabledState(cdekSaveButton);
+                return;
+              }
+
+              selectedCdekPoint.point_comment = office.address_comment || office.note || '';
+              selectedCdekPoint.address_full = (office.location && office.location.address_full) ? office.location.address_full : '';
+              selectedCdekPoint.raw_point = office;
+
+              if ((!selectedCdekPoint.address || selectedCdekPoint.address === '') && office.location && office.location.address) {
+                selectedCdekPoint.address = office.location.address || '';
+              }
+
+              if ((!selectedCdekPoint.city || selectedCdekPoint.city === '') && office.location && office.location.city) {
+                selectedCdekPoint.city = office.location.city || '';
+              }
+
+              if ((!selectedCdekPoint.region || selectedCdekPoint.region === '') && office.location && office.location.region) {
+                selectedCdekPoint.region = office.location.region || '';
+              }
+
+              if ((!selectedCdekPoint.postal_code || selectedCdekPoint.postal_code === '') && office.location && office.location.postal_code) {
+                selectedCdekPoint.postal_code = office.location.postal_code || '';
+              }
+
+              if ((!selectedCdekPoint.country_code || selectedCdekPoint.country_code === '') && office.location && office.location.country_code) {
+                selectedCdekPoint.country_code = office.location.country_code || '';
+              }
+
+              if ((!selectedCdekPoint.location || !selectedCdekPoint.location.length) && office.location) {
+                selectedCdekPoint.location = [
+                  office.location.longitude || '',
+                  office.location.latitude || ''
+                ];
+              }
+
+              updateSelectedCdekPointUi();
+              setButtonEnabledState(cdekSaveButton);
+            }).catch(function () {
+              updateSelectedCdekPointUi();
+              setButtonEnabledState(cdekSaveButton);
+            });
           }
         });
 
@@ -683,8 +823,9 @@ document.addEventListener('DOMContentLoaded', function () {
       setModalMode('widget', 'cdek');
 
       if (selectedCdekPoint && selectedCdekDeliveryMode === 'office') {
-        updateSelectedCdekPointUi();
-      }
+      updateSelectedCdekPointUi();
+      setButtonEnabledState(cdekSaveButton);
+    }
 
       initCdekWidget().catch(function (error) {
         console.error('[CDEK] Widget init error', error);

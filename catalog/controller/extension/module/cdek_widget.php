@@ -11,6 +11,7 @@ class ControllerExtensionModuleCdekWidget extends Controller {
     private const OFFICES_CACHE_KEY_PREFIX = 'cdek_widget_offices_';
     private const OFFICES_TTL = 600;
 	private const ALLOWED_COUNTRIES = array('RU', 'BY', 'KZ');
+	private const OFFICE_DETAILS_CACHE_KEY_PREFIX = 'cdek_widget.office_details.';
 
 	public function service(): void {
 		$this->login = (string)$this->config->get('cdek_widget_account');
@@ -64,6 +65,10 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 				$this->sendResponse($this->getOffices(), $time);
 				break;
 
+			case 'office_details':
+				$this->sendResponse($this->getOfficeDetails(), $time);
+				break;
+
 			case 'calculate':
 				$this->sendResponse($this->calculate(), $time);
 				break;
@@ -109,26 +114,50 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 	private function getOffices(): array {
 		$time = $this->startMetrics();
 
-		$cacheData = $this->requestData;
-		unset($cacheData['action']);
+		$requested_country = strtoupper(trim((string)($this->requestData['country_code'] ?? '')));
+
+		if (!in_array($requested_country, self::ALLOWED_COUNTRIES, true)) {
+			$requested_country = '';
+		}
+
+		if ($requested_country !== '') {
+			$this->requestData['country_code'] = $requested_country;
+		} else {
+			unset($this->requestData['country_code']);
+		}
+
+		$apiRequestData = $this->requestData;
+		unset($apiRequestData['action']);
+
+		if ($requested_country !== '' && $requested_country !== 'RU') {
+			unset($apiRequestData['page'], $apiRequestData['size']);
+		}
+
+		$cacheData = $apiRequestData;
 
 		ksort($cacheData);
 
-		$cacheKey = self::OFFICES_CACHE_KEY_PREFIX . 'v3_' . md5(json_encode($cacheData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+		$cacheKey = self::OFFICES_CACHE_KEY_PREFIX . 'v6_' . md5(json_encode($cacheData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 		$cachedResult = $this->cache->get($cacheKey);
 
 		if (is_array($cachedResult) && isset($cachedResult['result'])) {
+			$cachedDecoded = json_decode((string)$cachedResult['result'], true);
+
+			if (is_array($cachedDecoded)) {
+				$this->cacheOfficeDetails($cachedDecoded);
+			}
+
 			$this->endMetrics('office_cache', 'Offices Cache Hit', $time);
 
 			return $cachedResult;
 		}
 
-		$result = $this->httpRequest('deliverypoints', $this->requestData);
+		$result = $this->httpRequest('deliverypoints', $apiRequestData);
 
 		$decoded = json_decode($result['result'], true);
 
 		if (is_array($decoded)) {
-			$decoded = array_values(array_filter($decoded, function ($office) {
+			$decoded = array_values(array_filter($decoded, function ($office) use ($requested_country) {
 				if (!is_array($office)) {
 					return false;
 				}
@@ -136,12 +165,22 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 				$type = strtoupper((string)($office['type'] ?? ''));
 				$country = strtoupper((string)($office['location']['country_code'] ?? ''));
 
-				if ($type !== 'PVZ') {
+				if (!in_array($type, array('PVZ', 'POSTAMAT'), true)) {
 					return false;
 				}
 
-				return in_array($country, self::ALLOWED_COUNTRIES, true);
+				if (!in_array($country, self::ALLOWED_COUNTRIES, true)) {
+					return false;
+				}
+
+				if ($requested_country !== '' && $country !== $requested_country) {
+					return false;
+				}
+
+				return true;
 			}));
+
+			$this->cacheOfficeDetails($decoded);
 
 			$result['result'] = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		}
@@ -153,9 +192,62 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 		return $result;
 	}
 
+	private function cacheOfficeDetails(array $offices): void {
+		foreach ($offices as $office) {
+			if (!is_array($office)) {
+				continue;
+			}
+
+			$point_code = strtoupper(trim((string)($office['code'] ?? '')));
+			$country_code = strtoupper(trim((string)($office['location']['country_code'] ?? '')));
+
+			if ($point_code === '' || $country_code === '') {
+				continue;
+			}
+
+			$cache_key = self::OFFICE_DETAILS_CACHE_KEY_PREFIX . $country_code . '.' . $point_code;
+
+			$this->cache->set($cache_key, $office, self::OFFICES_TTL);
+		}
+	}
+
+	private function getOfficeDetails(): array {
+		$point_code = strtoupper(trim((string)($this->requestData['point_code'] ?? '')));
+		$country_code = strtoupper(trim((string)($this->requestData['country_code'] ?? '')));
+
+		if ($point_code === '') {
+			$this->sendValidationError('Point code is required');
+		}
+
+		if (!in_array($country_code, self::ALLOWED_COUNTRIES, true)) {
+			$country_code = 'RU';
+		}
+
+		$cache_key = self::OFFICE_DETAILS_CACHE_KEY_PREFIX . $country_code . '.' . $point_code;
+		$office = $this->cache->get($cache_key);
+
+		if (!is_array($office)) {
+			return array(
+				'http_code' => 404,
+				'result' => json_encode(array(
+					'success' => false,
+					'error' => 'Office details not found in cache'
+				), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+			);
+		}
+
+		return array(
+			'http_code' => 200,
+			'result' => json_encode(array(
+				'success' => true,
+				'office' => $office
+			), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+		);
+	}
+
 	private function calculate(): array {
 		$time = $this->startMetrics();
-
+	
 		$result = $this->httpRequest('calculator/tarifflist', $this->requestData, false, true);
 
 		$this->endMetrics('calc', 'Calculate Request', $time);
@@ -226,6 +318,7 @@ class ControllerExtensionModuleCdekWidget extends Controller {
 
 		return array(
 			'result' => $result,
+			'http_code' => $httpCode,
 			'addedHeaders' => $this->getHeaderValue($responseHeaders)
 		);
 	}

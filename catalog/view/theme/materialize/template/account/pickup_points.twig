@@ -135,18 +135,30 @@
 										{{ text_modal_empty }}
 									</div>
 
+									<div
+										id="pickup-point-cdek-widget-hint"
+										class="pickup-point-modal__widget-hint"
+										style="display:none;"
+									>
+										{{ text_cdek_widget_hint }}
+									</div>
+
 									<div class="pickup-point-modal__widget-layout">
 										<div
 											id="pickup-point-cdek-widget-container"
 											class="pickup-point-modal__widget-container"
 											data-widget-version="{{ cdek_widget.version }}"
-											data-widget-default-lat="55.7558"
-											data-widget-default-lng="37.6176"
+											data-widget-default-lat="{{ cdek_start.lat }}"
+											data-widget-default-lng="{{ cdek_start.lng }}"
 											data-widget-lang="{{ cdek_widget.lang }}"
 											data-widget-account="{{ cdek_widget.account }}"
 											data-widget-api-key="84d59f66-4d4e-4b37-8e27-bf03d2764821"
 											data-save-url="{{ cdek_save_url }}"
 											data-point-code-label="{{ text_point_code_label }}"
+											data-widget-country-code="{{ cdek_start.country_code }}"
+											data-widget-default-city="{{ cdek_start.city }}"
+											data-widget-start-mode="{{ cdek_start.mode }}"
+											data-widget-saved-point-code="{{ cdek_start.saved_point_code }}"
 										></div>
 
 										<div class="pickup-point-modal__widget-sidebar">
@@ -164,6 +176,17 @@
 													class="pickup-point-modal__selection-address"
 												></div>
 
+												<div
+													id="pickup-point-cdek-selection-type"
+													class="pickup-point-modal__selection-type"
+													style="display:none;"
+												></div>
+
+												<div
+													id="pickup-point-cdek-selection-comment"
+													class="pickup-point-modal__selection-brand"
+													style="display:none;"
+												></div>
 												<div
 													id="pickup-point-cdek-selection-code"
 													class="pickup-point-modal__selection-code"

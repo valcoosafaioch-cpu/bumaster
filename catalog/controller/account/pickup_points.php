@@ -9,6 +9,7 @@ class ControllerAccountPickupPoints extends Controller {
 		$this->load->language('account/pickup_points');
 		$this->load->model('account/pickup_point');
 		$this->load->model('account/customer');
+		$this->load->model('localisation/country');
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -62,6 +63,7 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$data['cdek_widget_enabled'] = $cdek_widget_enabled;
 		
+		$data['yandex_widget_enabled'] = $yandex_widget_enabled;
 
 		$data['cdek_widget'] = array(
 			'version' => $cdek_widget_version,
@@ -81,17 +83,33 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$customer_id = (int)$this->customer->getId();
 		$customer_info = $this->model_account_customer->getCustomer($customer_id);
-		$customer_country_id = !empty($customer_info['country_id']) ? (int)$customer_info['country_id'] : 1;
-		$is_russia_customer = ($customer_country_id === 1);
+		$customer_country_id = !empty($customer_info['country_id']) ? (int)$customer_info['country_id'] : 0;
+
+		$customer_country_info = $customer_country_id > 0
+			? $this->model_localisation_country->getCountry($customer_country_id)
+			: array();
+
+		$customer_country_code = strtoupper((string)($customer_country_info['iso_code_2'] ?? ''));
+
+		if (!in_array($customer_country_code, array('RU', 'BY', 'KZ'), true)) {
+			$customer_country_code = 'RU';
+		}
+
+		$is_russia_customer = ($customer_country_code === 'RU');
 
 		$data['cdek_widget_enabled'] = $cdek_widget_enabled;
-		
+
 		$saved_points = $this->model_account_pickup_point->getPickupPointsByCustomerId($customer_id);
 		$saved_points_by_service = array();
 
 		foreach ($saved_points as $saved_point) {
 			$saved_points_by_service[$saved_point['service_code']] = $saved_point;
 		}
+		$saved_cdek_point = $saved_points_by_service['cdek'] ?? array();
+		$cdek_start = $this->buildCdekStartConfig($customer_country_code, $saved_cdek_point);
+
+		$data['cdek_start'] = $cdek_start;
+		$data['cdek_widget']['default_city'] = $cdek_start['city'];
 
 		$service_definitions = array(
 			array(
@@ -152,20 +170,16 @@ class ControllerAccountPickupPoints extends Controller {
 				$address_line = (string)$saved_point['display_line'];
 
 				if ($address_line === '') {
-					$address_parts = array();
-
-					if (!empty($saved_point['city'])) {
-						$address_parts[] = $saved_point['city'];
-					}
-
-					if (!empty($saved_point['address'])) {
-						$address_parts[] = $saved_point['address'];
-					}
-
-					$address_line = implode(', ', $address_parts);
+					$address_line = $this->buildDisplayLine(
+						(string)($saved_point['postal_code'] ?? ''),
+						(string)($saved_point['country'] ?? ''),
+						(string)($saved_point['region'] ?? ''),
+						(string)($saved_point['city'] ?? ''),
+						(string)($saved_point['address'] ?? '')
+					);
 
 					if ($address_line === '' && !empty($saved_point['address'])) {
-						$address_line = $saved_point['address'];
+						$address_line = (string)$saved_point['address'];
 					}
 				}
 
@@ -191,20 +205,26 @@ class ControllerAccountPickupPoints extends Controller {
 						$meta_parts[] = 'ПВЗ';
 					}
 
-					if ($point_comment !== '') {
-						$meta_parts[] = 'Как добраться: ' . $point_comment;
+					if (!empty($saved_point['point_comment'])) {
+						$meta_parts[] = 'Как добраться: ' . (string)$saved_point['point_comment'];
 					}
 
 					$meta_line = implode(' • ', $meta_parts);
 				} else {
 					$meta_parts = array();
 
-					if (!empty($saved_point['point_code'])) {
-						$meta_parts[] = $this->language->get('text_point_code_prefix') . $saved_point['point_code'];
+					if (!empty($saved_point['point_type'])) {
+						$point_type = strtoupper((string)$saved_point['point_type']);
+
+						if ($point_type === 'POSTAMAT') {
+							$meta_parts[] = 'Постамат';
+						} else {
+							$meta_parts[] = 'Пункт выдачи';
+						}
 					}
 
-					if (!empty($saved_point['point_type'])) {
-						$meta_parts[] = $this->language->get('text_point_type_label') . ': ' . $this->formatPointType((string)$saved_point['point_type']);
+					if (!empty($saved_point['point_comment'])) {
+						$meta_parts[] = 'Как добраться: ' . (string)$saved_point['point_comment'];
 					}
 
 					$meta_line = implode(' • ', $meta_parts);
@@ -267,10 +287,13 @@ class ControllerAccountPickupPoints extends Controller {
 		$point_type = trim((string)($this->request->post['point_type'] ?? ''));
 		$point_name = trim((string)($this->request->post['point_name'] ?? ''));
 		$point_address = trim((string)($this->request->post['point_address'] ?? ''));
+		$point_comment = trim((string)($this->request->post['point_comment'] ?? ''));
 		$city = trim((string)($this->request->post['city'] ?? ''));
 		$postal_code = trim((string)($this->request->post['postal_code'] ?? ''));
 		$region = trim((string)($this->request->post['region'] ?? ''));
 		$country = trim((string)($this->request->post['country'] ?? ''));
+		$location_json = (string)($this->request->post['location_json'] ?? '');
+		$work_time = trim((string)($this->request->post['work_time'] ?? ''));
 		$raw_payload = (string)($this->request->post['raw_payload'] ?? '');
 		$tariff_json = (string)($this->request->post['tariff_json'] ?? '');
 
@@ -307,12 +330,30 @@ class ControllerAccountPickupPoints extends Controller {
 			return;
 		}
 
-		$display_line = $this->buildDisplayLine($city, $point_address);
+		$display_line = $this->buildDisplayLine($postal_code, $country, $region, $city, $point_address);
 
-		$raw_payload_array = json_decode($raw_payload, true);
+		$location = json_decode($location_json, true);
 
-		if (!is_array($raw_payload_array)) {
-			$raw_payload_array = array();
+		if (!is_array($location)) {
+			$location = array();
+		}
+
+		$raw_point_payload = json_decode($raw_payload, true);
+
+		if (!is_array($raw_point_payload)) {
+			$raw_point_payload = array(
+				'code' => $point_code,
+				'type' => $point_type,
+				'name' => $point_name,
+				'address' => $point_address,
+				'address_comment' => $point_comment,
+				'city' => $city,
+				'postal_code' => $postal_code,
+				'country_code' => $country,
+				'region' => $region,
+				'work_time' => $work_time,
+				'location' => $location
+			);
 		}
 
 		$raw_payload = json_encode(
@@ -320,7 +361,7 @@ class ControllerAccountPickupPoints extends Controller {
 				'source' => 'cdek_widget',
 				'delivery_mode' => $delivery_mode,
 				'tariff' => is_array($tariff) ? $tariff : array(),
-				'address' => $raw_payload_array
+				'point' => $raw_point_payload
 			),
 			JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
 		);
@@ -334,6 +375,7 @@ class ControllerAccountPickupPoints extends Controller {
 				'point_type' => $point_type,
 				'point_name' => $point_name,
 				'address' => $point_address,
+				'point_comment' => $point_comment,
 				'city' => $city,
 				'postal_code' => $postal_code,
 				'region' => $region,
@@ -429,9 +471,13 @@ class ControllerAccountPickupPoints extends Controller {
 			}
 		}
 
-		$display_line = $point_address !== ''
-			? $point_address
-			: $this->buildDisplayLine($city, $point_name);
+		$display_line = $this->buildDisplayLine(
+			$postal_code,
+			$country,
+			$region,
+			$city,
+			$point_address !== '' ? $point_address : $point_name
+		);
 
 		$raw_payload_array = json_decode($raw_payload, true);
 
@@ -541,8 +587,36 @@ class ControllerAccountPickupPoints extends Controller {
 		}
 	}
 
-	private function buildDisplayLine(string $city, string $address): string {
+	private function buildDisplayLine(
+		string $postal_code,
+		string $country,
+		string $region,
+		string $city,
+		string $address
+	): string {
 		$parts = array();
+
+		$postal_code = trim($postal_code);
+		$country = trim($country);
+		$region = trim($region);
+		$city = trim($city);
+		$address = trim($address);
+
+		$address = $this->normalizeAddressForDisplay($city, $address);
+
+		if ($postal_code !== '') {
+			$parts[] = $postal_code;
+		}
+
+		$country = $this->normalizeDisplayCountry($country);
+
+		if ($country !== '') {
+			$parts[] = $country;
+		}
+
+		if ($region !== '') {
+			$parts[] = $region;
+		}
 
 		if ($city !== '') {
 			$parts[] = $city;
@@ -553,6 +627,49 @@ class ControllerAccountPickupPoints extends Controller {
 		}
 
 		return implode(', ', $parts);
+	}
+
+	private function normalizeDisplayCountry(string $country): string {
+		$country = trim($country);
+		$country_upper = strtoupper($country);
+
+		if ($country_upper === 'RU') {
+			return 'Россия';
+		}
+
+		if ($country_upper === 'BY') {
+			return 'Беларусь';
+		}
+
+		if ($country_upper === 'KZ') {
+			return 'Казахстан';
+		}
+
+		return $country;
+	}
+
+	private function normalizeAddressForDisplay(string $city, string $address): string {
+		$city = trim($city);
+		$address = trim($address);
+
+		if ($city === '' || $address === '') {
+			return $address;
+		}
+
+		$city_lc = function_exists('mb_strtolower')
+			? mb_strtolower($city, 'UTF-8')
+			: strtolower($city);
+
+		$address_lc = function_exists('mb_strtolower')
+			? mb_strtolower($address, 'UTF-8')
+			: strtolower($address);
+
+		if (strpos($address_lc, $city_lc) === 0) {
+			$address = trim(mb_substr($address, mb_strlen($city, 'UTF-8'), null, 'UTF-8'));
+			$address = ltrim($address, " ,");
+		}
+
+		return $address;
 	}
 
 	private function formatPointType(string $point_type): string {
@@ -567,6 +684,111 @@ class ControllerAccountPickupPoints extends Controller {
 		}
 
 		return $point_type;
+	}
+
+	private function buildCdekStartConfig(string $customer_country_code, array $saved_point): array {
+		$default_location = $this->getCdekDefaultLocationByCountry($customer_country_code);
+
+		$result = array(
+			'mode' => 'default_country_city',
+			'country_code' => $default_location['country_code'],
+			'city' => $default_location['city'],
+			'lat' => $default_location['lat'],
+			'lng' => $default_location['lng'],
+			'saved_point_code' => ''
+		);
+
+		if (!$saved_point) {
+			return $result;
+		}
+
+		$saved_point_country = strtoupper(trim((string)($saved_point['country'] ?? '')));
+
+		if ($saved_point_country === '') {
+			$raw_payload = json_decode((string)($saved_point['raw_payload'] ?? ''), true);
+
+			if (is_array($raw_payload)) {
+				$saved_point_country = strtoupper((string)($raw_payload['point']['country_code'] ?? ''));
+			}
+		}
+
+		if ($saved_point_country !== $customer_country_code) {
+			return $result;
+		}
+
+		$saved_location = $this->extractCdekSavedPointLocation($saved_point);
+
+		if ($saved_location['lat'] === null || $saved_location['lng'] === null) {
+			return $result;
+		}
+
+		$result['mode'] = 'saved_point';
+		$result['city'] = trim((string)($saved_point['city'] ?? '')) !== ''
+			? trim((string)$saved_point['city'])
+			: $default_location['city'];
+		$result['lat'] = $saved_location['lat'];
+		$result['lng'] = $saved_location['lng'];
+		$result['saved_point_code'] = (string)($saved_point['point_code'] ?? '');
+
+		return $result;
+	}
+
+	private function getCdekDefaultLocationByCountry(string $country_code): array {
+		$country_code = strtoupper($country_code);
+
+		$defaults = array(
+			'RU' => array(
+				'country_code' => 'RU',
+				'city' => 'Москва',
+				'lat' => 55.7558,
+				'lng' => 37.6176
+			),
+			'BY' => array(
+				'country_code' => 'BY',
+				'city' => 'Минск',
+				'lat' => 53.9006,
+				'lng' => 27.5590
+			),
+			'KZ' => array(
+				'country_code' => 'KZ',
+				'city' => 'Алматы',
+				'lat' => 43.238949,
+				'lng' => 76.889709
+			)
+		);
+
+		return $defaults[$country_code] ?? $defaults['RU'];
+	}
+
+	private function extractCdekSavedPointLocation(array $saved_point): array {
+		$result = array(
+			'lat' => null,
+			'lng' => null
+		);
+
+		$raw_payload = json_decode((string)($saved_point['raw_payload'] ?? ''), true);
+
+		if (!is_array($raw_payload)) {
+			return $result;
+		}
+
+		$location = $raw_payload['point']['location'] ?? array();
+
+		if (!is_array($location) || count($location) < 2) {
+			return $result;
+		}
+
+		$lng = is_numeric($location[0]) ? (float)$location[0] : null;
+		$lat = is_numeric($location[1]) ? (float)$location[1] : null;
+
+		if ($lat === null || $lng === null) {
+			return $result;
+		}
+
+		$result['lat'] = $lat;
+		$result['lng'] = $lng;
+
+		return $result;
 	}
 
 	private function sendJson(array $json): void {

@@ -58,3 +58,4 @@ $_['text_point_brand_label'] = 'Тип ПВЗ';
 $_['text_point_brand_yandex'] = 'Яндекс ПВЗ';
 $_['text_point_brand_partner'] = 'Партнёрский ПВЗ';
 $_['text_yandex_widget_hint'] = 'Выберите пункт → «Продолжить» → «Сохранить пункт выдачи».';
+$_['text_cdek_widget_hint'] = 'Выберите пункт → «Выбрать» → «Сохранить пункт выдачи».';
