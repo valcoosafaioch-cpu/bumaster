@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', function () {
   var yandexSelectionComment = document.getElementById('pickup-point-yandex-selection-comment');
   var yandexSaveButton = document.getElementById('pickup-point-yandex-save-button');
 
+  var russianPostWidgetWrap = document.getElementById('pickup-point-russian-post-widget-wrap');
+  var russianPostWidgetContainer = document.getElementById('pickup-point-russian-post-widget-container');
+  var russianPostSelectionBox = document.getElementById('pickup-point-russian-post-selection');
+  var russianPostSelectionAddress = document.getElementById('pickup-point-russian-post-selection-address');
+  var russianPostSelectionType = document.getElementById('pickup-point-russian-post-selection-type');
+  var russianPostSelectionComment = document.getElementById('pickup-point-russian-post-selection-comment');
+  var russianPostSelectionCode = document.getElementById('pickup-point-russian-post-selection-code');
+  var russianPostSaveButton = document.getElementById('pickup-point-russian-post-save-button');
+
   var cdekWidgetInstance = null;
   var cdekWidgetInitPromise = null;
   var selectedCdekPoint = null;
@@ -41,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var yandexWidgetObserver = null;
   var yandexWidgetHideTimer = null;
   var selectedYandexPoint = null;
+  var selectedRussianPostPoint = null;
 
   function getPointCodeLabel(container) {
     if (!container) {
@@ -150,10 +160,21 @@ document.addEventListener('DOMContentLoaded', function () {
       yandexWidgetWrap.style.display = mode === 'widget' && widgetType === 'yandex' ? '' : 'none';
     }
 
+    if (russianPostWidgetWrap) {
+      russianPostWidgetWrap.style.display = mode === 'widget' && widgetType === 'russian_post' ? '' : 'none';
+    }
+
     if (yandexWidgetContainer) {
       yandexWidgetContainer.setAttribute(
         'data-widget-active',
         mode === 'widget' && widgetType === 'yandex' ? '1' : '0'
+      );
+    }
+
+    if (russianPostWidgetContainer) {
+      russianPostWidgetContainer.setAttribute(
+        'data-widget-active',
+        mode === 'widget' && widgetType === 'russian_post' ? '1' : '0'
       );
     }
 
@@ -163,6 +184,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (yandexSelectionBox) {
       yandexSelectionBox.style.display = mode === 'widget' && widgetType === 'yandex' && selectedYandexPoint ? '' : 'none';
+    }
+
+    if (russianPostSelectionBox) {
+      russianPostSelectionBox.style.display =
+        mode === 'widget' && widgetType === 'russian_post' && selectedRussianPostPoint ? '' : 'none';
     }
   }
 
@@ -218,6 +244,35 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setButtonDefaultState(yandexSaveButton);
+  }
+
+  function resetSelectedRussianPostPoint() {
+    selectedRussianPostPoint = null;
+
+    if (russianPostSelectionAddress) {
+      russianPostSelectionAddress.textContent = '';
+    }
+
+    if (russianPostSelectionType) {
+      russianPostSelectionType.textContent = '';
+      russianPostSelectionType.style.display = 'none';
+    }
+
+    if (russianPostSelectionComment) {
+      russianPostSelectionComment.textContent = '';
+      russianPostSelectionComment.style.display = 'none';
+    }
+
+    if (russianPostSelectionCode) {
+      russianPostSelectionCode.textContent = '';
+      russianPostSelectionCode.style.display = 'none';
+    }
+
+    if (russianPostSelectionBox) {
+      russianPostSelectionBox.style.display = 'none';
+    }
+
+    setButtonDefaultState(russianPostSaveButton);
   }
 
   function updateSelectedCdekPointUi() {
@@ -314,6 +369,42 @@ document.addEventListener('DOMContentLoaded', function () {
     return parts.join(', ');
   }
 
+  function formatRussianPostPointType(pointType) {
+    if (!pointType) {
+      return '';
+    }
+
+    if (pointType === 'postamat') {
+      return 'Почтомат';
+    }
+
+    if (pointType === 'russian_post') {
+      return 'Почтовое отделение';
+    }
+
+    if (pointType === 'additional_pvz') {
+      return 'Партнёрский ПВЗ';
+    }
+
+    return '';
+  }
+
+  function buildRussianPostAddress(point) {
+    if (!point) {
+      return '';
+    }
+
+    var address = point.addressTo || '';
+    var postalCode = point.indexTo || '';
+    var pointType = point.pvzType || '';
+
+    if (pointType === 'russian_post' && postalCode) {
+      return postalCode + ', ' + address;
+    }
+
+    return address;
+  }
+
   function updateSelectedYandexPointUi() {
     if (!selectedYandexPoint || !selectedYandexPoint.id) {
       resetSelectedYandexPoint();
@@ -355,6 +446,52 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setButtonEnabledState(yandexSaveButton);
+  }
+
+  function updateSelectedRussianPostPointUi() {
+    if (!selectedRussianPostPoint || !selectedRussianPostPoint.id) {
+      resetSelectedRussianPostPoint();
+      return;
+    }
+
+    var comment = selectedRussianPostPoint.deliveryDescription
+      && selectedRussianPostPoint.deliveryDescription.description
+        ? selectedRussianPostPoint.deliveryDescription.description
+        : '';
+
+    var pointCodeLabel = getPointCodeLabel(russianPostWidgetContainer);
+    var pointCodeValue = selectedRussianPostPoint.indexTo || selectedRussianPostPoint.id || '';
+    var pointTypeText = formatRussianPostPointType(selectedRussianPostPoint.pvzType);
+
+    if (russianPostSelectionAddress) {
+      russianPostSelectionAddress.textContent = buildRussianPostAddress(selectedRussianPostPoint);
+    }
+
+    if (russianPostSelectionType) {
+      if (pointTypeText) {
+        russianPostSelectionType.textContent = pointTypeText;
+        russianPostSelectionType.style.display = '';
+      } else {
+        russianPostSelectionType.textContent = '';
+        russianPostSelectionType.style.display = 'none';
+      }
+    }
+
+    if (russianPostSelectionComment) {
+      russianPostSelectionComment.textContent = '';
+      russianPostSelectionComment.style.display = 'none';
+    }
+
+    if (russianPostSelectionCode) {
+      russianPostSelectionCode.textContent = '';
+      russianPostSelectionCode.style.display = 'none';
+    }
+
+    if (russianPostSelectionBox) {
+      russianPostSelectionBox.style.display = '';
+    }
+
+    setButtonEnabledState(russianPostSaveButton);
   }
 
   function saveSelectedCdekPoint() {
@@ -468,6 +605,58 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
+  function saveSelectedRussianPostPoint() {
+    if (!selectedRussianPostPoint || !selectedRussianPostPoint.id) {
+      return;
+    }
+
+    if (!russianPostWidgetContainer || !russianPostWidgetContainer.dataset.saveUrl) {
+      alert('Не найден URL сохранения пункта выдачи');
+      return;
+    }
+
+    setButtonLoadingState(russianPostSaveButton);
+
+    var pointTypeText = formatRussianPostPointType(selectedRussianPostPoint.pvzType);
+    var body = new URLSearchParams();
+
+    body.append('service_code', 'russian_post');
+    body.append('point_code', selectedRussianPostPoint.id || '');
+    body.append('point_type', selectedRussianPostPoint.pvzType || '');
+    body.append('point_name', '');
+    body.append('point_comment', '');
+    body.append('point_address', buildRussianPostAddress(selectedRussianPostPoint));
+    body.append('city', selectedRussianPostPoint.cityTo || '');
+    body.append('postal_code', selectedRussianPostPoint.indexTo || '');
+    body.append('region', selectedRussianPostPoint.regionTo || '');
+    body.append('country', 'RU');
+    body.append('raw_payload', JSON.stringify(selectedRussianPostPoint || {}));
+
+    fetch(russianPostWidgetContainer.dataset.saveUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: body.toString()
+    })
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (json) {
+        if (!json || !json.success) {
+          throw new Error((json && json.error) ? json.error : 'Не удалось сохранить пункт выдачи');
+        }
+
+        window.location.reload();
+      })
+      .catch(function (error) {
+        setButtonEnabledState(russianPostSaveButton);
+        alert(error.message || 'Не удалось сохранить пункт выдачи');
+      });
+  }
+
   function loadCdekOfficeDetails(pointCode, countryCode, servicePath) {
     if (!pointCode || !servicePath) {
       return Promise.resolve(null);
@@ -505,7 +694,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function initCdekWidget() {
-    
     if (!cdekWidgetContainer) {
       return Promise.reject(new Error('CDEK widget container not found'));
     }
@@ -514,20 +702,24 @@ document.addEventListener('DOMContentLoaded', function () {
       return Promise.reject(new Error('CDEKWidget is not loaded'));
     }
 
-    cdekWidgetInitPromise = null;
-    cdekWidgetInstance = null;
-    cdekWidgetContainer.innerHTML = '';
+    if (cdekWidgetInstance) {
+      return Promise.resolve(cdekWidgetInstance);
+    }
+
+    if (cdekWidgetInitPromise) {
+      return cdekWidgetInitPromise;
+    }
 
     cdekWidgetInitPromise = new Promise(function (resolve, reject) {
       try {
-        cdekWidgetContainer.innerHTML = '';
-
         var widgetCountryCode = (cdekWidgetContainer.dataset.widgetCountryCode || '').toUpperCase();
         var cdekServicePath = '/index.php?route=extension/module/cdek_widget/service';
 
         if (widgetCountryCode) {
           cdekServicePath += '&country_code=' + encodeURIComponent(widgetCountryCode);
         }
+
+        cdekWidgetContainer.innerHTML = '';
 
         cdekWidgetInstance = new window.CDEKWidget({
           root: 'pickup-point-cdek-widget-container',
@@ -553,97 +745,84 @@ document.addEventListener('DOMContentLoaded', function () {
 
           onChoose: function (deliveryMode, tariff, address) {
             selectedCdekDeliveryMode = deliveryMode || '';
+            selectedCdekTariff = tariff ? JSON.parse(JSON.stringify(tariff)) : null;
 
-            selectedCdekTariff = tariff ? {
-              tariff_code: tariff.tariff_code || '',
-              tariff_name: tariff.tariff_name || '',
-              tariff_description: tariff.tariff_description || '',
-              delivery_mode: tariff.delivery_mode || '',
-              period_min: tariff.period_min || '',
-              period_max: tariff.period_max || '',
-              delivery_sum: tariff.delivery_sum || ''
-            } : {};
-
-            selectedCdekPoint = address ? {
-              city_code: address.city_code || '',
-              city: address.city || '',
-              type: address.type || '',
-              postal_code: address.postal_code || '',
-              country_code: address.country_code || '',
-              have_cashless: !!address.have_cashless,
-              have_cash: !!address.have_cash,
-              allowed_cod: !!address.allowed_cod,
-              is_dressing_room: !!address.is_dressing_room,
-              code: address.code || '',
-              name: address.name || '',
-              address: address.address || '',
-              work_time: address.work_time || '',
-              region: address.region || '',
-              location: Array.isArray(address.location) ? address.location : [],
-              point_comment: '',
-              address_full: '',
-              raw_point: address
-            } : null;
-
-            updateSelectedCdekPointUi();
-            setButtonDefaultState(cdekSaveButton);
-
-            if (!selectedCdekPoint || !selectedCdekPoint.code) {
+            if (deliveryMode !== 'office' || !address) {
+              resetSelectedCdekPoint();
               return;
             }
 
-            loadCdekOfficeDetails(
-              selectedCdekPoint.code,
-              selectedCdekPoint.country_code || (cdekWidgetContainer ? cdekWidgetContainer.dataset.widgetCountryCode : 'RU'),
-              cdekServicePath
-            ).then(function (office) {
-              if (!office || !selectedCdekPoint || selectedCdekPoint.code !== (office.code || '')) {
+            var rawAddress = JSON.parse(JSON.stringify(address));
+            var selectedPoint = {
+              code: rawAddress.code || '',
+              type: rawAddress.type || '',
+              name: rawAddress.name || '',
+              address: rawAddress.address || '',
+              point_comment: rawAddress.address_comment || '',
+              city: rawAddress.city || '',
+              postal_code: rawAddress.postal_code || '',
+              region: rawAddress.region || '',
+              country_code: widgetCountryCode || rawAddress.country_code || 'RU',
+              location: Array.isArray(rawAddress.location) ? rawAddress.location.slice() : [],
+              work_time: rawAddress.work_time || '',
+              raw_point: rawAddress
+            };
+
+            loadCdekOfficeDetails(selectedPoint.code, selectedPoint.country_code, cdekServicePath)
+              .then(function (officeDetails) {
+                if (officeDetails && typeof officeDetails === 'object') {
+                  if (officeDetails.type) {
+                    selectedPoint.type = officeDetails.type;
+                  }
+
+                  if (officeDetails.name) {
+                    selectedPoint.name = officeDetails.name;
+                  }
+
+                  if (officeDetails.address) {
+                    selectedPoint.address = officeDetails.address;
+                  }
+
+                  if (officeDetails.address_comment) {
+                    selectedPoint.point_comment = officeDetails.address_comment;
+                  }
+
+                  if (officeDetails.city) {
+                    selectedPoint.city = officeDetails.city;
+                  }
+
+                  if (officeDetails.postal_code) {
+                    selectedPoint.postal_code = officeDetails.postal_code;
+                  }
+
+                  if (officeDetails.region) {
+                    selectedPoint.region = officeDetails.region;
+                  }
+
+                  if (officeDetails.country_code) {
+                    selectedPoint.country_code = officeDetails.country_code;
+                  }
+
+                  if (Array.isArray(officeDetails.location)) {
+                    selectedPoint.location = officeDetails.location.slice();
+                  }
+
+                  if (officeDetails.work_time) {
+                    selectedPoint.work_time = officeDetails.work_time;
+                  }
+
+                  if (officeDetails.raw_point && typeof officeDetails.raw_point === 'object') {
+                    selectedPoint.raw_point = officeDetails.raw_point;
+                  }
+                }
+
+                selectedCdekPoint = selectedPoint;
                 updateSelectedCdekPointUi();
                 setButtonEnabledState(cdekSaveButton);
-                return;
-              }
-
-              selectedCdekPoint.point_comment = office.address_comment || office.note || '';
-              selectedCdekPoint.address_full = (office.location && office.location.address_full) ? office.location.address_full : '';
-              selectedCdekPoint.raw_point = office;
-
-              if ((!selectedCdekPoint.address || selectedCdekPoint.address === '') && office.location && office.location.address) {
-                selectedCdekPoint.address = office.location.address || '';
-              }
-
-              if ((!selectedCdekPoint.city || selectedCdekPoint.city === '') && office.location && office.location.city) {
-                selectedCdekPoint.city = office.location.city || '';
-              }
-
-              if ((!selectedCdekPoint.region || selectedCdekPoint.region === '') && office.location && office.location.region) {
-                selectedCdekPoint.region = office.location.region || '';
-              }
-
-              if ((!selectedCdekPoint.postal_code || selectedCdekPoint.postal_code === '') && office.location && office.location.postal_code) {
-                selectedCdekPoint.postal_code = office.location.postal_code || '';
-              }
-
-              if ((!selectedCdekPoint.country_code || selectedCdekPoint.country_code === '') && office.location && office.location.country_code) {
-                selectedCdekPoint.country_code = office.location.country_code || '';
-              }
-
-              if ((!selectedCdekPoint.location || !selectedCdekPoint.location.length) && office.location) {
-                selectedCdekPoint.location = [
-                  office.location.longitude || '',
-                  office.location.latitude || ''
-                ];
-              }
-
-              updateSelectedCdekPointUi();
-              setButtonEnabledState(cdekSaveButton);
-            }).catch(function () {
-              updateSelectedCdekPointUi();
-              setButtonEnabledState(cdekSaveButton);
-            });
+              });
           }
         });
 
-        cdekWidgetContainer.dataset.widgetLoaded = '1';
         resolve(cdekWidgetInstance);
       } catch (error) {
         cdekWidgetInitPromise = null;
@@ -802,6 +981,60 @@ document.addEventListener('DOMContentLoaded', function () {
     return yandexWidgetInitPromise;
   }
 
+  window.onRussianPostPointSelected = function (point) {
+    if (!point || !point.id) {
+      return;
+    }
+
+    selectedRussianPostPoint = point;
+    updateSelectedRussianPostPointUi();
+  };
+
+  function initRussianPostWidget() {
+    if (!russianPostWidgetContainer) {
+      return Promise.reject(new Error('Russian Post widget container not found'));
+    }
+
+    if (typeof window.ecomStartWidget !== 'function') {
+      return Promise.reject(new Error('Russian Post widget is not loaded'));
+    }
+
+    russianPostWidgetContainer.innerHTML = '';
+
+    return new Promise(function (resolve, reject) {
+      try {
+        var widgetId = parseInt(russianPostWidgetContainer.dataset.widgetId || '0', 10);
+
+        if (!widgetId) {
+          throw new Error('Russian Post widget ID not found');
+        }
+
+        var widgetOptions = {
+          id: widgetId,
+          containerId: 'pickup-point-russian-post-widget-container',
+          callbackFunction: window.onRussianPostPointSelected
+        };
+
+        var startZip = (russianPostWidgetContainer.dataset.startZip || '').trim();
+        var startLocation = (russianPostWidgetContainer.dataset.startLocation || '').trim();
+
+        if (startZip) {
+          widgetOptions.startZip = startZip;
+        } else if (startLocation) {
+          widgetOptions.start_location = startLocation;
+        }
+
+        window.ecomStartWidget(widgetOptions);
+
+        russianPostWidgetContainer.dataset.widgetLoaded = '1';
+
+        resolve(true);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   function openModal(title, serviceName, labelType, pickerMode, widgetType) {
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
@@ -813,6 +1046,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (widgetType !== 'yandex') {
       resetSelectedYandexPoint();
+    }
+
+    if (widgetType !== 'russian_post') {
+      resetSelectedRussianPostPoint();
     }
 
     if (modalTitle) {
@@ -838,6 +1075,17 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('[YANDEX] Widget init error', error);
         hideYandexLoadingOverlay();
         alert(error.message || 'Не удалось загрузить виджет Яндекс Доставки');
+      });
+    } else if (pickerMode === 'widget' && widgetType === 'russian_post') {
+      setModalMode('widget', 'russian_post');
+
+      if (selectedRussianPostPoint && selectedRussianPostPoint.id) {
+        updateSelectedRussianPostPointUi();
+      }
+
+      initRussianPostWidget().catch(function (error) {
+        console.error('[RUSSIAN POST] Widget init error', error);
+        alert(error.message || 'Не удалось загрузить виджет Почты России');
       });
     } else {
       setModalMode('stub', '');
@@ -884,6 +1132,12 @@ document.addEventListener('DOMContentLoaded', function () {
   if (yandexSaveButton) {
     yandexSaveButton.addEventListener('click', function () {
       saveSelectedYandexPoint();
+    });
+  }
+
+  if (russianPostSaveButton) {
+    russianPostSaveButton.addEventListener('click', function () {
+      saveSelectedRussianPostPoint();
     });
   }
 

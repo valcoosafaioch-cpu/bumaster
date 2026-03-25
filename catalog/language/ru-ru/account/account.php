@@ -26,3 +26,10 @@ $_['text_currency_rub_short'] = 'руб.';
 $_['text_edit_profile'] = 'Редактировать';
 
 $_['text_country_label'] = 'Страна';
+
+$_['text_pickup_points_empty_global'] = 'Для оформления заказов выберите пункты выдачи по доступным службам доставки.';
+$_['text_pickup_points_not_selected'] = 'пункт выдачи не выбран';
+$_['text_pickup_points_not_selected_hint'] = 'Выберите пункт выдачи для оформления заказов.';
+$_['text_service_cdek'] = 'СДЭК';
+$_['text_service_yandex'] = 'Яндекс Доставка';
+$_['text_service_russian_post'] = 'Почта России';

@@ -159,7 +159,39 @@
 					<div class="account-dashboard-bottom">
 						<div class="account-pickup-block">
 							<h2>{{ text_pickup_points_title }}</h2>
-							<p>{{ text_pickup_points_stub }}</p>
+
+							<div class="account-pickup-summary">
+								{% if pickup_summary_intro %}
+									<p class="account-pickup-summary__intro">{{ pickup_summary_intro }}</p>
+								{% endif %}
+
+								{% if pickup_summary_services %}
+									<div class="account-pickup-summary__list">
+										{% for service in pickup_summary_services %}
+											<div class="account-pickup-summary__item">
+												{% if service.is_selected %}
+													<p class="account-pickup-summary__line">
+														<strong>{{ service.service_name }}:</strong>
+														{{ service.display_line }}
+														{% if service.type_text %} ({{ service.type_text }}){% endif %}
+													</p>
+												{% else %}
+													<p class="account-pickup-summary__line account-pickup-summary__line--empty">
+														<strong>{{ service.service_name }}:</strong>
+														{{ text_pickup_points_not_selected }}
+													</p>
+
+													<p class="account-pickup-summary__hint">
+														<a href="{{ pickup_points }}">
+															{{ text_pickup_points_not_selected_hint }}
+														</a>
+													</p>
+												{% endif %}
+											</div>
+										{% endfor %}
+									</div>
+								{% endif %}
+							</div>
 
 							<a href="{{ pickup_points }}" class="btn-flat waves-effect">
 								{{ text_go_to_pickup_points }}

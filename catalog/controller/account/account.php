@@ -58,6 +58,12 @@ class ControllerAccountAccount extends Controller {
 		$data['text_pickup_points_title'] = $this->language->get('text_pickup_points_title');
 		$data['text_pickup_points_stub'] = $this->language->get('text_pickup_points_stub');
 		$data['text_go_to_pickup_points'] = $this->language->get('text_go_to_pickup_points');
+		$data['text_pickup_points_empty_global'] = $this->language->get('text_pickup_points_empty_global');
+		$data['text_pickup_points_not_selected'] = $this->language->get('text_pickup_points_not_selected');
+		$data['text_pickup_points_not_selected_hint'] = $this->language->get('text_pickup_points_not_selected_hint');
+		$data['text_service_cdek'] = $this->language->get('text_service_cdek');
+		$data['text_service_yandex'] = $this->language->get('text_service_yandex');
+		$data['text_service_russian_post'] = $this->language->get('text_service_russian_post');
 
 		$data['text_yes_short'] = $this->language->get('text_yes_short');
 		$data['text_no_short'] = $this->language->get('text_no_short');
@@ -70,6 +76,7 @@ class ControllerAccountAccount extends Controller {
 		$data['telephone'] = !empty($customer_info['telephone']) ? $customer_info['telephone'] : $data['text_empty_value'];
 		$data['email'] = !empty($customer_info['email']) ? $customer_info['email'] : $data['text_empty_value'];
 		$data['country'] = $data['text_empty_value'];
+		$country_info = array();
 
 		if (!empty($customer_info['country_id'])) {
 			$country_info = $this->model_localisation_country->getCountry((int)$customer_info['country_id']);
@@ -94,6 +101,60 @@ class ControllerAccountAccount extends Controller {
 		$data['orders_completed_sum'] = $this->getOrdersSumByStatuses($customer_id, $completed_status_ids);
 
 		$data['cashback_level'] = $data['text_empty_value'];
+
+			$country_iso_code_2 = '';
+
+			if (!empty($country_info['iso_code_2'])) {
+				$country_iso_code_2 = strtoupper((string)$country_info['iso_code_2']);
+			}
+
+			$this->load->model('account/pickup_point');
+
+			$saved_pickup_points = $this->model_account_pickup_point->getPickupPointsByCustomerId($customer_id);
+			$saved_pickup_points_by_service = array();
+
+			foreach ($saved_pickup_points as $saved_pickup_point) {
+				if (!empty($saved_pickup_point['service_code'])) {
+					$saved_pickup_points_by_service[(string)$saved_pickup_point['service_code']] = $saved_pickup_point;
+				}
+			}
+
+			$pickup_summary_services_definitions = $this->getAccountPickupSummaryServices($country_iso_code_2);
+
+			$data['pickup_summary_services'] = array();
+			$data['pickup_summary_intro'] = '';
+
+			if ($pickup_summary_services_definitions) {
+				$has_selected_pickup_points = false;
+
+				foreach ($pickup_summary_services_definitions as $service_definition) {
+					$saved_pickup_point = $saved_pickup_points_by_service[$service_definition['code']] ?? array();
+					$display_line = trim((string)($saved_pickup_point['display_line'] ?? ''));
+					$is_selected = ($display_line !== '');
+
+					if ($is_selected) {
+						$has_selected_pickup_points = true;
+					}
+
+					$data['pickup_summary_services'][] = array(
+						'service_code' => $service_definition['code'],
+						'service_name' => $service_definition['name'],
+						'is_selected' => $is_selected,
+						'display_line' => $display_line,
+						'type_text' => $is_selected ? $this->formatAccountPickupPointType(
+							(string)$service_definition['code'],
+							(string)($saved_pickup_point['point_type'] ?? ''),
+							(string)($saved_pickup_point['point_partner'] ?? '')
+						) : ''
+					);
+				}
+
+				if (!$has_selected_pickup_points) {
+					$data['pickup_summary_intro'] = $this->language->get('text_pickup_points_empty_global');
+				}
+			} else {
+				$data['pickup_summary_intro'] = $this->language->get('text_pickup_points_empty_global');
+			}		
 
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['column_right'] = $this->load->controller('common/column_right');
@@ -147,6 +208,78 @@ class ControllerAccountAccount extends Controller {
 		");
 
 		return number_format((float)$query->row['total'], 0, '.', ' ');
+	}
+
+		protected function getAccountPickupSummaryServices(string $country_iso_code_2): array {
+		$country_iso_code_2 = strtoupper($country_iso_code_2);
+
+		if ($country_iso_code_2 === 'RU') {
+			return array(
+				array(
+					'code' => 'cdek',
+					'name' => $this->language->get('text_service_cdek')
+				),
+				array(
+					'code' => 'yandex',
+					'name' => $this->language->get('text_service_yandex')
+				),
+				array(
+					'code' => 'russian_post',
+					'name' => $this->language->get('text_service_russian_post')
+				)
+			);
+		}
+
+		if ($country_iso_code_2 === 'BY' || $country_iso_code_2 === 'KZ') {
+			return array(
+				array(
+					'code' => 'cdek',
+					'name' => $this->language->get('text_service_cdek')
+				)
+			);
+		}
+
+		return array();
+	}
+
+	protected function formatAccountPickupPointType(string $service_code, string $point_type, string $point_partner): string {
+		$service_code = strtolower($service_code);
+		$point_type = strtoupper($point_type);
+		$point_partner = strtoupper($point_partner);
+
+		if ($service_code === 'russian_post') {
+			if ($point_type === 'POSTAMAT') {
+				return 'Постамат';
+			}
+
+			if ($point_partner === 'ADDITIONAL_PVZ') {
+				return 'Партнерский ПВЗ';
+			}
+
+			return 'Почтовое отделение';
+		}
+
+		if ($service_code === 'yandex') {
+			if ($point_type === 'POSTAMAT') {
+				return 'Постамат';
+			}
+
+			if ($point_partner === '5POST') {
+				return 'ПВЗ 5post';
+			}
+
+			return 'ПВЗ';
+		}
+
+		if ($service_code === 'cdek') {
+			if ($point_type === 'POSTAMAT') {
+				return 'Постамат';
+			}
+
+			return 'ПВЗ';
+		}
+
+		return '';
 	}
 
 	public function country() {

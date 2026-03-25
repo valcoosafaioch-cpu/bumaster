@@ -80,6 +80,7 @@ class ControllerAccountPickupPoints extends Controller {
 		$data['cdek_save_url'] = $this->url->link('account/pickup_points/saveCdekPoint', '', true);
 		$data['yandex_save_url'] = $this->url->link('account/pickup_points/saveYandexPoint', '', true);
 		$data['yandex_widget_service_url'] = $this->url->link('extension/module/yandex_widget/service', '', true);
+		$data['russian_post_save_url'] = $this->url->link('account/pickup_points/saveRussianPostPoint', '', true);
 
 		$customer_id = (int)$this->customer->getId();
 		$customer_info = $this->model_account_customer->getCustomer($customer_id);
@@ -110,6 +111,11 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$data['cdek_start'] = $cdek_start;
 		$data['cdek_widget']['default_city'] = $cdek_start['city'];
+
+		$saved_russian_post_point = $saved_points_by_service['russian_post'] ?? array();
+		$russian_post_start = $this->buildRussianPostStartConfig($saved_russian_post_point);
+
+		$data['russian_post_start'] = $russian_post_start;
 
 		$service_definitions = array(
 			array(
@@ -152,8 +158,8 @@ class ControllerAccountPickupPoints extends Controller {
 					$this->language->get('text_modal_title_department'),
 					$this->language->get('text_service_russian_post')
 				),
-				'picker_mode' => 'stub',
-				'widget_type' => ''
+				'picker_mode' => 'widget',
+				'widget_type' => 'russian_post'
 			);
 		}
 
@@ -183,11 +189,16 @@ class ControllerAccountPickupPoints extends Controller {
 					}
 				}
 
-				if ($service['label_type'] === 'department') {
-					if (!empty($saved_point['postal_code'])) {
-						$meta_line = $this->language->get('text_postal_code_prefix') . $saved_point['postal_code'];
-					} elseif (!empty($saved_point['point_code'])) {
-						$meta_line = $this->language->get('text_postal_code_prefix') . $saved_point['point_code'];
+				if ($service['code'] === 'russian_post') {
+					$point_type = strtoupper((string)($saved_point['point_type'] ?? ''));
+					$point_partner = (string)($saved_point['point_partner'] ?? '');
+
+					if ($point_type === 'POSTAMAT') {
+						$meta_line = 'Почтомат';
+					} elseif ($point_partner === 'additional_pvz') {
+						$meta_line = 'Партнёрский ПВЗ';
+					} else {
+						$meta_line = 'Почтовое отделение';
 					}
 				} elseif ($service['code'] === 'yandex') {
 					$meta_parts = array();
@@ -235,9 +246,7 @@ class ControllerAccountPickupPoints extends Controller {
 				'code' => $service['code'],
 				'name' => $service['name'],
 				'label_type' => $service['label_type'],
-				'label_text' => $service['label_type'] === 'department'
-					? $this->language->get('text_department')
-					: $this->language->get('text_current_pickup_point'),
+				'label_text' => $this->language->get('text_current_pickup_point'),
 				'is_selected' => $is_selected,
 				'status_text' => $is_selected ? '' : $this->language->get('text_not_selected'),
 				'address_line' => $address_line,
@@ -458,8 +467,6 @@ class ControllerAccountPickupPoints extends Controller {
 		if ($comment_lc !== '') {
 			if (strpos($comment_lc, '5post') !== false || strpos($comment_lc, 'пятёрочк') !== false) {
 				$point_partner = '5POST';
-			} else {
-				$point_partner = 'YANDEX_MARKET';
 			}
 		}
 
@@ -498,6 +505,144 @@ class ControllerAccountPickupPoints extends Controller {
 			array(
 				'service_code' => 'yandex',
 				'service_name' => $this->language->get('text_service_yandex'),
+				'point_code' => $point_code,
+				'point_type' => $point_type,
+				'point_partner' => $point_partner,
+				'point_name' => $point_name,
+				'address' => $point_address,
+				'point_comment' => $point_comment,
+				'city' => $city,
+				'postal_code' => $postal_code,
+				'region' => $region,
+				'country' => $country,
+				'display_line' => $display_line,
+				'raw_payload' => $raw_payload
+			)
+		);
+
+		$this->sendJson(array(
+			'success' => true,
+			'message' => $this->language->get('text_pickup_point_saved')
+		));
+	}
+
+	public function saveRussianPostPoint(): void {
+		$this->load->language('account/pickup_points');
+		$this->response->addHeader('Content-Type: application/json; charset=utf-8');
+
+		if (!$this->customer->isLogged()) {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_auth_required')
+			));
+
+			return;
+		}
+
+		if (($this->request->server['REQUEST_METHOD'] ?? '') !== 'POST') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_invalid_method')
+			));
+
+			return;
+		}
+
+		$service_code = (string)($this->request->post['service_code'] ?? '');
+		$point_code = trim((string)($this->request->post['point_code'] ?? ''));
+		$point_type = trim((string)($this->request->post['point_type'] ?? ''));
+		$point_name = trim((string)($this->request->post['point_name'] ?? ''));
+		$point_address = trim((string)($this->request->post['point_address'] ?? ''));
+		$point_comment = trim((string)($this->request->post['point_comment'] ?? ''));
+		$city = trim((string)($this->request->post['city'] ?? ''));
+		$postal_code = trim((string)($this->request->post['postal_code'] ?? ''));
+		$region = trim((string)($this->request->post['region'] ?? ''));
+		$country = trim((string)($this->request->post['country'] ?? ''));
+		$raw_payload = (string)($this->request->post['raw_payload'] ?? '');
+
+		if ($service_code !== 'russian_post') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => 'Поддерживается только Почта России'
+			));
+
+			return;
+		}
+
+		if ($point_code === '' || $point_address === '') {
+			$this->sendJson(array(
+				'success' => false,
+				'error' => $this->language->get('error_pickup_point_data')
+			));
+
+			return;
+		}
+
+		$allowed_types = array('russian_post', 'postamat', 'additional_pvz');
+
+		if ($point_type !== '' && !in_array($point_type, $allowed_types, true)) {
+			$point_type = '';
+		}
+
+		$point_partner = '';
+
+		if ($point_type === 'postamat') {
+			$point_type = 'postamat';
+		} else {
+			if ($point_type === 'additional_pvz') {
+				$point_partner = 'additional_pvz';
+			}
+
+			$point_type = 'PVZ';
+		}
+
+		$point_name = '';
+		$point_comment = '';
+
+		if ($country === '') {
+			$country = 'RU';
+		}
+
+		$display_postal_code = '';
+
+		if (($this->request->post['point_type'] ?? '') === 'russian_post') {
+			$display_postal_code = $postal_code;
+		}
+
+		$raw_point_type = trim((string)($this->request->post['point_type'] ?? ''));
+		$display_postal_code = '';
+
+		if ($raw_point_type === 'russian_post') {
+			$display_postal_code = $postal_code;
+		}
+
+		$display_line = $this->buildDisplayLine(
+			$display_postal_code,
+			$country,
+			$region,
+			$city,
+			$point_address !== '' ? $point_address : $point_name
+		);
+
+		$raw_payload_array = json_decode($raw_payload, true);
+
+		if (!is_array($raw_payload_array)) {
+			$raw_payload_array = array();
+		}
+
+		$raw_payload = json_encode(
+			array(
+				'source' => 'russian_post_widget',
+				'point' => $raw_payload_array
+			),
+			JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+		);
+
+		$this->saveCustomerPickupPoint(
+			(int)$this->customer->getId(),
+			array(
+				'service_code' => 'russian_post',
+				'service_name' => $this->language->get('text_service_russian_post'),
 				'point_code' => $point_code,
 				'point_type' => $point_type,
 				'point_partner' => $point_partner,
@@ -652,7 +797,16 @@ class ControllerAccountPickupPoints extends Controller {
 		$city = trim($city);
 		$address = trim($address);
 
-		if ($city === '' || $address === '') {
+		if ($address === '') {
+			return $address;
+		}
+
+		if (preg_match('/^\d{6}\s*,\s*/u', $address)) {
+			$address = preg_replace('/^\d{6}\s*,\s*/u', '', $address);
+			$address = trim((string)$address);
+		}
+
+		if ($city === '') {
 			return $address;
 		}
 
@@ -787,6 +941,54 @@ class ControllerAccountPickupPoints extends Controller {
 
 		$result['lat'] = $lat;
 		$result['lng'] = $lng;
+
+		return $result;
+	}
+
+	private function buildRussianPostStartConfig(array $saved_point): array {
+		$result = array(
+			'zip' => '',
+			'location' => ''
+		);
+
+		if (!$saved_point) {
+			return $result;
+		}
+
+		$raw_payload = json_decode((string)($saved_point['raw_payload'] ?? ''), true);
+		$raw_point = is_array($raw_payload) ? ($raw_payload['point'] ?? array()) : array();
+
+		$raw_point_type = trim((string)($raw_point['pvzType'] ?? ''));
+		$postal_code = trim((string)($saved_point['postal_code'] ?? ''));
+		$address = trim((string)($saved_point['address'] ?? ''));
+
+		if ($raw_point_type === 'russian_post' && $postal_code !== '') {
+			$result['zip'] = $postal_code;
+		}
+
+		if ($address !== '') {
+			$city = trim((string)($saved_point['city'] ?? ''));
+			$region = trim((string)($saved_point['region'] ?? ''));
+			$country = $this->normalizeDisplayCountry((string)($saved_point['country'] ?? ''));
+
+			$location_parts = array();
+
+			if ($country !== '') {
+				$location_parts[] = $country;
+			}
+
+			if ($region !== '') {
+				$location_parts[] = $region;
+			}
+
+			if ($city !== '') {
+				$location_parts[] = $city;
+			}
+
+			$location_parts[] = $address;
+
+			$result['location'] = implode(', ', $location_parts);
+		}
 
 		return $result;
 	}

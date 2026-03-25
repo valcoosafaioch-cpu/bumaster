@@ -579,6 +579,61 @@
   color:#f44336;
 }
 
+.account-pickup-summary{
+  margin:12px 0 18px;
+}
+
+.account-pickup-summary__intro{
+  margin:0 0 14px;
+  font-size:0.95rem;
+  color:#54616d;
+}
+
+.account-pickup-summary__list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.account-pickup-summary__item{
+  padding:12px 14px;
+  background:#f8f6f1;
+  border:1px solid #e7e1d5;
+  border-radius:8px;
+}
+
+.account-pickup-summary__line{
+  margin:0;
+  font-size:0.95rem;
+  line-height:1.5;
+  color:#33475b;
+}
+
+.account-pickup-summary__line strong{
+  font-weight:700;
+  color:#2f4156;
+}
+
+.account-pickup-summary__line--empty{
+  color:#8a5a44;
+}
+
+.account-pickup-summary__hint{
+  margin:6px 0 0;
+  font-size:0.88rem;
+  line-height:1.45;
+  color:#6c7a86;
+}
+
+.account-pickup-summary__hint a{
+  color:#2f4156;
+  text-decoration:underline;
+}
+
+.account-pickup-summary__hint a:hover{
+  color:#f44336;
+}
+
 /* адаптив */
 
 @media (max-width:992px){
@@ -794,8 +849,8 @@
 
   .pickup-point-modal__widget-container {
     width: 100%;
-    min-height: 500px;
-    height: 500px;
+    min-height: 460px;
+    height: 460px;
     border-radius: 12px;
     overflow: hidden;
     background: #f7f7f7;
@@ -900,10 +955,14 @@
       max-width: 1120px;
     }
 
-    .pickup-point-modal__widget-wrap,
-    .pickup-point-modal__widget-container {
+    .pickup-point-modal__widget-wrap{
       min-height: 460px;
       height: 460px;
+    }
+
+    .pickup-point-modal__widget-container {
+      min-height: 420px;
+      height: 420px;
     }
 
     .pickup-point-modal__widget-layout {
@@ -948,10 +1007,14 @@
       font-size: 1.25rem;
     }
 
-    .pickup-point-modal__widget-wrap,
-    .pickup-point-modal__widget-container {
+    .pickup-point-modal__widget-wrap{
       min-height: 420px;
       height: 420px;
+    }
+
+    .pickup-point-modal__widget-container {
+      min-height: 380px;
+      height: 380px;
     }
 
     .pickup-point-modal__selection {

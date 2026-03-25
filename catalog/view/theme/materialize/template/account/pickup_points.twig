@@ -161,6 +161,58 @@
 											data-widget-saved-point-code="{{ cdek_start.saved_point_code }}"
 										></div>
 
+										<div
+											id="pickup-point-yandex-widget-wrap"
+											class="pickup-point-modal__widget-wrap"
+											style="display:none;"
+										>
+											<div class="pickup-point-modal__widget-hint">
+												{{ text_yandex_widget_hint }}
+											</div>
+
+											<div
+												id="pickup-point-yandex-loading"
+												class="pickup-point-modal__widget-loading"
+												style="display:none;"
+											>
+												{{ text_map_updating }}
+											</div>
+
+											<div
+												id="pickup-point-yandex-widget-container"
+												class="pickup-point-modal__widget-container"
+												data-config-url="{{ yandex_widget_service_url }}"
+												data-save-url="{{ yandex_save_url }}"
+												data-point-code-label="{{ text_point_code_label }}"
+												data-point-kind-label="{{ text_point_kind_label }}"
+												data-point-kind-pickup-point="{{ text_point_kind_pickup_point }}"
+												data-point-kind-terminal="{{ text_point_kind_terminal }}"
+												data-point-brand-label="{{ text_point_brand_label }}"
+												data-point-brand-yandex="{{ text_point_brand_yandex }}"
+												data-point-brand-partner="{{ text_point_brand_partner }}"
+											></div>
+										</div>
+
+										<div
+											id="pickup-point-russian-post-widget-wrap"
+											class="pickup-point-modal__widget-wrap"
+											style="display:none;"
+										>
+											<div class="pickup-point-modal__widget-hint">
+												{{ text_russian_post_hint }}
+											</div>
+
+											<div
+												id="pickup-point-russian-post-widget-container"
+												class="pickup-point-modal__widget-container"
+												data-save-url="{{ russian_post_save_url }}"
+												data-widget-id="61370"
+												data-point-code-label="{{ text_point_code_label }}"
+												data-start-zip="{{ russian_post_start.zip }}"
+												data-start-location="{{ russian_post_start.location }}"
+											></div>
+										</div>
+
 										<div class="pickup-point-modal__widget-sidebar">
 											<div
 												id="pickup-point-cdek-selection"
@@ -205,80 +257,94 @@
 													</button>
 												</div>
 											</div>
-										</div>
-									</div>
 
-									<div
-										id="pickup-point-yandex-widget-wrap"
-										class="pickup-point-modal__widget-wrap"
-										style="display:none;"
-									>
-										<div class="pickup-point-modal__widget-hint">
-											{{ text_yandex_widget_hint }}
-										</div>
-
-										<div
-											id="pickup-point-yandex-loading"
-											class="pickup-point-modal__widget-loading"
-											style="display:none;"
-										>
-											{{ text_map_updating }}
-										</div>
-
-										<div
-											id="pickup-point-yandex-widget-container"
-											class="pickup-point-modal__widget-container"
-											data-config-url="{{ yandex_widget_service_url }}"
-											data-save-url="{{ yandex_save_url }}"
-											data-point-code-label="{{ text_point_code_label }}"
-											data-point-kind-label="{{ text_point_kind_label }}"
-											data-point-kind-pickup-point="{{ text_point_kind_pickup_point }}"
-											data-point-kind-terminal="{{ text_point_kind_terminal }}"
-											data-point-brand-label="{{ text_point_brand_label }}"
-											data-point-brand-yandex="{{ text_point_brand_yandex }}"
-											data-point-brand-partner="{{ text_point_brand_partner }}"
-										></div>
-									</div>
-
-									<div
-										id="pickup-point-yandex-selection"
-										class="pickup-point-modal__selection"
-										style="display:none;"
-									>
-										<div class="pickup-point-modal__section-title">
-											{{ text_selected_pickup_point }}
-										</div>
-
-										<div
-											id="pickup-point-yandex-selection-address"
-											class="pickup-point-modal__selection-address"
-										></div>
-
-										<div
-											id="pickup-point-yandex-selection-format"
-											class="pickup-point-modal__selection-type"
-											style="display:none;"
-										></div>
-
-										<div
-											id="pickup-point-yandex-selection-comment"
-											class="pickup-point-modal__selection-brand"
-											style="display:none;"
-										></div>
-
-										<div style="margin-top:16px;">
-											<button
-												type="button"
-												id="pickup-point-yandex-save-button"
-												class="btn waves-effect waves-light red"
-												disabled="disabled"
-												data-default-text="{{ button_save_pickup_point }}"
-												data-loading-text="{{ text_pickup_point_saving }}"
+											<div
+												id="pickup-point-yandex-selection"
+												class="pickup-point-modal__selection"
+												style="display:none;"
 											>
-												{{ button_save_pickup_point }}
-											</button>
+												<div class="pickup-point-modal__section-title">
+													{{ text_selected_pickup_point }}
+												</div>
+
+												<div
+													id="pickup-point-yandex-selection-address"
+													class="pickup-point-modal__selection-address"
+												></div>
+
+												<div
+													id="pickup-point-yandex-selection-format"
+													class="pickup-point-modal__selection-type"
+													style="display:none;"
+												></div>
+
+												<div
+													id="pickup-point-yandex-selection-comment"
+													class="pickup-point-modal__selection-brand"
+													style="display:none;"
+												></div>
+
+												<div style="margin-top:16px;">
+													<button
+														type="button"
+														id="pickup-point-yandex-save-button"
+														class="btn waves-effect waves-light red"
+														disabled="disabled"
+														data-default-text="{{ button_save_pickup_point }}"
+														data-loading-text="{{ text_pickup_point_saving }}"
+													>
+														{{ button_save_pickup_point }}
+													</button>
+												</div>
+											</div>
+
+											<div
+												id="pickup-point-russian-post-selection"
+												class="pickup-point-modal__selection"
+												style="display:none;"
+											>
+												<div class="pickup-point-modal__section-title">
+													{{ text_selected_pickup_point }}
+												</div>
+
+												<div
+													id="pickup-point-russian-post-selection-address"
+													class="pickup-point-modal__selection-address"
+												></div>
+
+												<div
+													id="pickup-point-russian-post-selection-type"
+													class="pickup-point-modal__selection-type"
+													style="display:none;"
+												></div>
+
+												<div
+													id="pickup-point-russian-post-selection-comment"
+													class="pickup-point-modal__selection-brand"
+													style="display:none;"
+												></div>
+
+												<div
+													id="pickup-point-russian-post-selection-code"
+													class="pickup-point-modal__selection-code"
+													style="display:none;"
+												></div>
+
+												<div style="margin-top:16px;">
+													<button
+														type="button"
+														id="pickup-point-russian-post-save-button"
+														class="btn waves-effect waves-light red"
+														disabled="disabled"
+														data-default-text="{{ button_save_pickup_point }}"
+														data-loading-text="{{ text_pickup_point_saving }}"
+													>
+														{{ button_save_pickup_point }}
+													</button>
+												</div>
+											</div>
 										</div>
-									</div>
+									</div>					
 								</div>
 							</div>
 						</div>
@@ -294,6 +360,8 @@
 				{% if yandex_widget_enabled %}
 					<script async src="https://ndd-widget.landpro.site/widget.js"></script>
 				{% endif %}
+
+				<script src="https://widget.pochta.ru/map/widget/widget.js"></script>
 			</div>
 
 			{{ column_right }}
