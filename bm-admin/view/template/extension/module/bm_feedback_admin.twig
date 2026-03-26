@@ -1,0 +1,476 @@
+{{ header }}{{ column_left }}
+
+<div id="content" class="bm-feedback-admin">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right"></div>
+      <h1>{{ heading_title }}</h1>
+
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+          <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    {% if error_warning %}
+      <div class="alert alert-danger alert-dismissible">
+        <i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endif %}
+
+    {% if success %}
+      <div class="alert alert-success alert-dismissible">
+        <i class="fa fa-check-circle"></i> {{ success }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endif %}
+
+    <div class="panel panel-default bmfa-panel">
+      <div class="panel-heading">
+        <h3 class="panel-title">
+          <i class="fa fa-comments-o"></i> {{ heading_title }}
+        </h3>
+      </div>
+
+      <div class="panel-body">
+        <div class="bmfa-top-tabs">
+          <a href="{{ tab_reviews_href }}" class="bmfa-top-tab {{ tab == 'reviews' ? 'is-active' : '' }}">
+            <span>{{ text_reviews }}</span>
+            {% if need_action_reviews_total > 0 %}
+              <span class="bmfa-badge">{{ need_action_reviews_total }}</span>
+            {% endif %}
+          </a>
+
+          <a href="{{ tab_questions_href }}" class="bmfa-top-tab {{ tab == 'questions' ? 'is-active' : '' }}">
+            <span>{{ text_questions }}</span>
+            {% if need_action_questions_total > 0 %}
+              <span class="bmfa-badge">{{ need_action_questions_total }}</span>
+            {% endif %}
+          </a>
+
+          <a href="{{ tab_orders_href }}" class="bmfa-top-tab {{ tab == 'orders' ? 'is-active' : '' }}">
+            <span>{{ text_order_questions }}</span>
+          </a>
+        </div>
+
+        {% if tab != 'orders' %}
+          <div class="bmfa-subtabs">
+            {% set count_need_action = tab == 'reviews' ? reviews_need_action_total : questions_need_action_total %}
+            {% set count_published = tab == 'reviews' ? reviews_published_total : questions_published_total %}
+            {% set count_rejected = tab == 'reviews' ? reviews_rejected_total : questions_rejected_total %}
+
+            <a href="{{ subtab_need_action_href }}" class="bmfa-subtab {{ subtab == 'need_action' ? 'is-active' : '' }}">
+              <span>{{ text_need_action }}</span>
+              {% if count_need_action > 0 %}
+                <span class="bmfa-badge">{{ count_need_action }}</span>
+              {% endif %}
+            </a>
+
+            <a href="{{ subtab_published_href }}" class="bmfa-subtab {{ subtab == 'published' ? 'is-active' : '' }}">
+              <span>{{ text_published }}</span>
+              {% if count_published > 0 %}
+                <span class="bmfa-badge bmfa-badge-light">{{ count_published }}</span>
+              {% endif %}
+            </a>
+
+            <a href="{{ subtab_rejected_href }}" class="bmfa-subtab {{ subtab == 'rejected' ? 'is-active' : '' }}">
+              <span>{{ text_rejected }}</span>
+              {% if count_rejected > 0 %}
+                <span class="bmfa-badge bmfa-badge-light">{{ count_rejected }}</span>
+              {% endif %}
+            </a>
+          </div>
+
+          {% if items %}
+            <div class="bmfa-list">
+              {% for item in items %}
+                <div class="bmfa-card
+                  {{ item.needs_moderation ? 'is-need-moderation' : '' }}
+                  {{ item.needs_reply ? 'is-need-reply' : '' }}
+                  {{ item.moderation_status == 'rejected' ? 'is-rejected' : '' }}
+                ">
+                  <div class="bmfa-card-head" data-toggle="collapse" data-target="#bmfa-card-{{ item.feedback_id }}" aria-expanded="false">
+                    <div class="bmfa-card-head-left">
+                      <div class="bmfa-card-title-row">
+                        <span class="bmfa-date">
+                          <i class="fa fa-calendar"></i>
+                          {{ item.date_added }}
+                        </span>
+
+                        <span class="bmfa-status bmfa-status-{{ item.moderation_status }}">
+                          {{ item.status_label }}
+                        </span>
+
+                        {% if item.needs_moderation %}
+                          <span class="bmfa-flag bmfa-flag-warning">{{ text_moderation_required }}</span>
+                        {% elseif item.needs_reply %}
+                          <span class="bmfa-flag bmfa-flag-info">{{ text_reply_required }}</span>
+                        {% endif %}
+
+                        {% if item.is_external %}
+                          <span class="bmfa-flag bmfa-flag-muted">{{ text_readonly_external }}</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="bmfa-product-row">
+                        <span class="bmfa-product-label">{{ entry_product }}:</span>
+
+                        {% if item.product_href %}
+                          <a href="{{ item.product_href }}" target="_blank" class="bmfa-product-link">
+                            {{ item.product_name ?: text_no_product }}
+                          </a>
+                        {% else %}
+                          <span>{{ item.product_name ?: text_no_product }}</span>
+                        {% endif %}
+
+                        {% if item.sku %}
+                          <span class="bmfa-sku">[{{ item.sku }}]</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="bmfa-meta-row">
+                        <span><strong>{{ entry_author }}:</strong> {{ item.customer_name ?: text_no_author }}</span>
+
+                        {% if tab == 'reviews' %}
+                          <span>
+                            <strong>{{ entry_source }}:</strong>
+                            {% if item.is_external %}
+                              <span class="bmfa-source-inline">
+                                {% if item.source_icon %}
+                                  <img src="{{ item.source_icon }}" alt="{{ item.source_label }}" class="bmfa-source-icon">
+                                {% endif %}
+
+                                <span>{{ item.source_label }}</span>
+
+                                {% if item.source_has_link %}
+                                  <a href="{{ item.source_url }}" target="_blank" class="bmfa-source-link" title="{{ item.source_label }}">
+                                    <i class="fa fa-external-link"></i>
+                                  </a>
+                                {% endif %}
+                              </span>
+                            {% else %}
+                              {{ item.source_label }}
+                            {% endif %}
+                          </span>
+                        {% endif %}
+
+                        <span>
+                          <strong>{{ entry_order_id }}:</strong>
+                          {% if item.order_id %}
+                            {% if item.order_href %}
+                              <a href="{{ item.order_href }}" target="_blank">#{{ item.order_id }}</a>
+                            {% else %}
+                              #{{ item.order_id }}
+                            {% endif %}
+                          {% else %}
+                            {{ text_no_order }}
+                          {% endif %}
+                        </span>
+
+                        {% if tab == 'reviews' and item.rating is not null %}
+                          <span><strong>{{ entry_rating }}:</strong> {{ item.rating }}/5</span>
+                        {% endif %}
+                      </div>
+
+                      {% if item.variant_title %}
+                        <div class="bmfa-meta-row">
+                          <span><strong>{{ entry_variant }}:</strong> {{ item.variant_title }}</span>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <div class="bmfa-card-head-right">
+                      <button type="button" class="btn btn-default btn-sm bmfa-toggle-btn">
+                        <i class="fa fa-chevron-down"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="bmfa-card-{{ item.feedback_id }}" class="collapse bmfa-card-body">
+                    <div class="bmfa-section">
+                      <div class="bmfa-section-title">{{ entry_text }}</div>
+                      <div class="bmfa-text">{{ item.text|nl2br }}</div>
+                    </div>
+
+                    {% if tab == 'reviews' %}
+                      <div class="bmfa-section">
+                        <div class="bmfa-section-title">{{ entry_images }}</div>
+
+                        {% if item.images %}
+                          <div class="bmfa-images">
+                            {% for image in item.images %}
+                              <a href="../image/{{ image.image }}" class="bmfa-image-link" data-image="../image/{{ image.image }}">
+                                <img src="../image/{{ image.image }}" alt="" class="bmfa-image-thumb">
+                              </a>
+                            {% endfor %}
+                          </div>
+                        {% else %}
+                          <div class="bmfa-muted">{{ text_no_photos }}</div>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+
+                    <div class="bmfa-grid">
+                      <div class="bmfa-grid-item">
+                        <div class="bmfa-section-title">{{ entry_status }}</div>
+                        <div>{{ item.status_label }}</div>
+                      </div>
+
+                      <div class="bmfa-grid-item">
+                        <div class="bmfa-section-title">{{ entry_status_date }}</div>
+                        <div>{{ item.status_date ?: '-' }}</div>
+                      </div>
+
+                      <div class="bmfa-grid-item">
+                        <div class="bmfa-section-title">{{ entry_reply_date }}</div>
+                        <div>{{ item.admin_reply_date_modified ?: item.admin_reply_date_added ?: '-' }}</div>
+                      </div>
+
+                      {% if item.email %}
+                        <div class="bmfa-grid-item">
+                          <div class="bmfa-section-title">{{ entry_email }}</div>
+                          <div>{{ item.email }}</div>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    {% if subtab == 'rejected' %}
+                        <div class="bmfa-section">
+                            <div class="bmfa-section-title">{{ entry_moderation_comment }}</div>
+
+                            {% if item.moderation_comment %}
+                            <div class="bmfa-text">{{ item.moderation_comment|nl2br }}</div>
+                            {% else %}
+                            <div class="bmfa-muted">{{ text_no_moderation_comment }}</div>
+                            {% endif %}
+                        </div>
+                    {% elseif subtab == 'published' %}
+                        <div class="bmfa-section">
+                            <div class="bmfa-section-title">{{ entry_reply }}</div>
+
+                            {% if item.admin_reply %}
+                            <div class="bmfa-text">{{ item.admin_reply|nl2br }}</div>
+                            {% else %}
+                            <div class="bmfa-muted">{{ text_no_reply }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if subtab == 'need_action' %}
+                      {% if item.needs_moderation %}
+                        <div class="bmfa-actions-wrap">
+                          <form action="{{ action }}" method="post" class="bmfa-action-form bmfa-action-form-inline">
+                            <input type="hidden" name="feedback_id" value="{{ item.feedback_id }}">
+                            <input type="hidden" name="bm_feedback_action" value="approve">
+
+                            <button type="submit" class="btn btn-success bmfa-icon-btn" title="{{ button_approve }}">
+                              <i class="fa fa-check"></i>
+                            </button>
+                          </form>
+
+                          <form action="{{ action }}" method="post" class="bmfa-action-form bmfa-reject-form">
+                            <input type="hidden" name="feedback_id" value="{{ item.feedback_id }}">
+                            <input type="hidden" name="bm_feedback_action" value="reject">
+
+                            <div class="form-group">
+                              <label class="control-label">{{ entry_moderation_comment }}</label>
+                              <textarea name="moderation_comment" rows="3" class="form-control" placeholder="{{ entry_moderation_comment }}"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-danger bmfa-icon-btn" title="{{ button_reject }}">
+                              <i class="fa fa-times"></i>
+                            </button>
+                          </form>
+                        </div>
+                      {% elseif item.needs_reply and not item.is_readonly %}
+                        <div class="bmfa-actions-wrap">
+                          <form action="{{ action }}" method="post" class="bmfa-action-form">
+                            <input type="hidden" name="feedback_id" value="{{ item.feedback_id }}">
+                            <input type="hidden" name="bm_feedback_action" value="reply">
+
+                            <div class="form-group">
+                              <label class="control-label">
+                                {{ item.admin_reply ? button_edit_reply : button_reply }}
+                              </label>
+                              <textarea name="admin_reply" rows="4" class="form-control" placeholder="{{ entry_reply }}">{{ item.admin_reply }}</textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                              {{ button_save_reply }}
+                            </button>
+                          </form>
+                        </div>
+                      {% endif %}
+                    {% elseif subtab == 'published' %}
+                        {% if not item.is_readonly %}
+                            <div class="bmfa-actions-wrap">
+                            <button
+                                type="button"
+                                class="btn btn-default bmfa-edit-reply-toggle"
+                                data-target="#bmfa-edit-reply-{{ item.feedback_id }}"
+                            >
+                                {{ button_edit_reply }}
+                            </button>
+
+                            <div id="bmfa-edit-reply-{{ item.feedback_id }}" class="bmfa-edit-reply-box" style="display:none;">
+                                <form action="{{ action }}" method="post" class="bmfa-action-form">
+                                <input type="hidden" name="feedback_id" value="{{ item.feedback_id }}">
+                                <input type="hidden" name="bm_feedback_action" value="reply">
+
+                                <div class="form-group">
+                                    <label class="control-label">{{ button_edit_reply }}</label>
+                                    <textarea name="admin_reply" rows="4" class="form-control" placeholder="{{ entry_reply }}">{{ item.admin_reply }}</textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    {{ button_save_reply }}
+                                </button>
+                                </form>
+                            </div>
+                            </div>
+                        {% endif %}
+                        {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <div class="row">
+              <div class="col-sm-6 text-left">{{ pagination }}</div>
+              <div class="col-sm-6 text-right">{{ results }}</div>
+            </div>
+          {% else %}
+            <div class="bmfa-empty">
+              {{ text_no_results }}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="bmfa-orders-stub">
+            <div class="bmfa-orders-stub-title">{{ text_orders_stub_title }}</div>
+            <div class="bmfa-orders-stub-text">{{ text_orders_stub_description }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="bmfa-lightbox" class="bmfa-lightbox" style="display:none;">
+  <div class="bmfa-lightbox-overlay"></div>
+
+  <div class="bmfa-lightbox-content">
+    <img src="" alt="" id="bmfa-lightbox-img">
+    <button type="button" class="bmfa-lightbox-close">&times;</button>
+  </div>
+</div>
+
+
+<script>
+(function() {
+  var heads = document.querySelectorAll('.bmfa-card-head');
+
+  heads.forEach(function(head) {
+    head.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, textarea, input, label')) {
+        return;
+      }
+
+      var targetSelector = head.getAttribute('data-target');
+      if (!targetSelector) {
+        return;
+      }
+
+      var body = document.querySelector(targetSelector);
+      if (!body) {
+        return;
+      }
+
+      if (typeof jQuery !== 'undefined') {
+        jQuery(body).collapse('toggle');
+      }
+    });
+  });
+
+  var editButtons = document.querySelectorAll('.bmfa-edit-reply-toggle');
+
+  editButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+      var targetSelector = button.getAttribute('data-target');
+      if (!targetSelector) {
+        return;
+      }
+
+      var box = document.querySelector(targetSelector);
+      if (!box) {
+        return;
+      }
+
+      if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    });
+  });
+
+  if (typeof jQuery !== 'undefined') {
+    jQuery('.bmfa-card-body').on('shown.bs.collapse', function() {
+      var btn = this.parentNode.querySelector('.bmfa-toggle-btn i');
+      if (btn) {
+        btn.classList.remove('fa-chevron-down');
+        btn.classList.add('fa-chevron-up');
+      }
+    });
+
+    jQuery('.bmfa-card-body').on('hidden.bs.collapse', function() {
+      var btn = this.parentNode.querySelector('.bmfa-toggle-btn i');
+      if (btn) {
+        btn.classList.remove('fa-chevron-up');
+        btn.classList.add('fa-chevron-down');
+      }
+    });
+  }
+
+    var lightbox = document.getElementById('bmfa-lightbox');
+    var lightboxImg = document.getElementById('bmfa-lightbox-img');
+
+    var imageLinks = document.querySelectorAll('.bmfa-image-link');
+
+    imageLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        var src = link.getAttribute('data-image');
+        if (!src) return;
+
+        lightboxImg.setAttribute('src', src);
+        lightbox.style.display = 'flex';
+    });
+    });
+
+    var closeBtn = document.querySelector('.bmfa-lightbox-close');
+    var overlay = document.querySelector('.bmfa-lightbox-overlay');
+
+    function closeLightbox() {
+    lightbox.style.display = 'none';
+    lightboxImg.setAttribute('src', '');
+    }
+
+    if (closeBtn) {
+    closeBtn.addEventListener('click', closeLightbox);
+    }
+
+    if (overlay) {
+    overlay.addEventListener('click', closeLightbox);
+    }
+
+})();
+</script>
+
+
+
+{{ footer }}

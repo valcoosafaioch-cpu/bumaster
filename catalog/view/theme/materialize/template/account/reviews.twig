@@ -1,40 +1,95 @@
 {{ header }}
-<div id="account-account" class="container">
-	<nav class="breadcrumb-wrapper">
-		<div class="nav-wrapper">
-			{% for breadcrumb in breadcrumbs %}
-				{% if loop.last %}
-					<span class="breadcrumb">{{ breadcrumb.text }}</span>
-				{% else %}
-					<a href="{{ breadcrumb.href }}" class="breadcrumb">{{ breadcrumb.text }}</a>
-				{% endif %}
-			{% endfor %}
-		</div>
-	</nav>
-
-	<div class="row">
-		{{ column_left }}
-
-		{% if column_left and column_right %}
-			{% set class = 's12 m6 l6' %}
-		{% elseif column_left or column_right %}
-			{% set class = 's12 m9 l9' %}
+{% apply spaceless %}
+<script type="application/ld+json">
+{
+	"@context": "http://schema.org",
+	"@type": "BreadcrumbList",
+	"itemListElement": [
+	{% for key, breadcrumb in breadcrumbs %}
+		{% if key < breadcrumbs|length - 1 %}
+			{% if key == 0 %}
+			{% else %}
+			{
+				"@type": "ListItem",
+				"position": {{ key }},
+				"item": {
+					"@id": "{{ breadcrumb.href }}",
+					"name": "{{ breadcrumb.text }}"
+				}
+			},
+			{% endif %}
 		{% else %}
-			{% set class = 's12' %}
+			{
+				"@type": "ListItem",
+				"position": {{ key }},
+				"item": {
+					"@id": "{{ breadcrumb.href }}",
+					"name": "{{ breadcrumb.text }}"
+				}
+			}
 		{% endif %}
+	{% endfor %}
+	]
+}
+</script>
 
-		<div id="content" class="{{ class }}">
-			{{ content_top }}
-			<h1>{{ heading_title }}</h1>
+{% if column_left and column_right %}
+	{% set main = 's12 l6' %}
+{% elseif column_left or column_right %}
+	{% set main = 's12 l9' %}
+{% else %}
+	{% set main = 's12' %}
+{% endif %}
 
-			<div class="card-panel">
-				<p>{{ text_empty }}</p>
+<main>
+	<div class="container">
+		<h1>{{ heading_title }}</h1>
+
+		<div class="row">
+			{{ column_left }}
+
+			<div class="col {{ main }} section href-underline">
+				{{ content_top }}
+
+				<div class="card-panel account-dashboard-card">
+					<div class="account-dashboard-top">
+						<div class="account-profile-block">
+							<div class="account-profile-header">
+								<h2>Мои отзывы и вопросы</h2>
+							</div>
+
+							<div class="card-panel">
+								<p>{{ text_empty }}</p>
+							</div>
+						</div>
+
+						<div class="account-summary-block">
+							<h3>Информация</h3>
+
+							<div class="account-summary-item">
+								<div class="account-summary-label">Отзывы</div>
+								<div class="account-summary-value">Скоро здесь появятся ваши отзывы о товарах.</div>
+							</div>
+
+							<div class="account-summary-item">
+								<div class="account-summary-label">Вопросы по товарам</div>
+								<div class="account-summary-value">Здесь будут отображаться вопросы по товарам и ответы магазина.</div>
+							</div>
+
+							<div class="account-summary-item">
+								<div class="account-summary-label">Вопросы по заказам</div>
+								<div class="account-summary-value">Этот раздел будет добавлен позже, вместе с логикой заказов.</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{{ content_bottom }}
 			</div>
 
-			{{ content_bottom }}
+			{{ column_right }}
 		</div>
-
-		{{ column_right }}
 	</div>
-</div>
+</main>
+{% endapply %}
 {{ footer }}

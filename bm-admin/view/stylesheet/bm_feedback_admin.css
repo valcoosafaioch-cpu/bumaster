@@ -1,0 +1,394 @@
+/* ======================
+   Общая область
+====================== */
+.bm-feedback-admin {
+  font-size: 14px;
+}
+
+/* ======================
+   Верхние вкладки
+====================== */
+.bmfa-top-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.bmfa-top-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #f4f6f8;
+  border-radius: 6px;
+  color: #333;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.bmfa-top-tab.is-active {
+  background: #1e88e5;
+  color: #fff;
+}
+
+.bmfa-badge {
+  background: #e53935;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.bmfa-badge-light {
+  background: #ccc;
+  color: #222;
+}
+
+/* ======================
+   Подвкладки
+====================== */
+.bmfa-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.bmfa-subtab {
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #eef1f4;
+  text-decoration: none;
+  color: #333;
+}
+
+.bmfa-subtab.is-active {
+  background: #2e7d32;
+  color: #fff;
+}
+
+/* ======================
+   Карточка
+====================== */
+.bmfa-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* состояния */
+.bmfa-card.is-need-moderation {
+  border-left: 4px solid #ff9800;
+}
+
+.bmfa-card.is-need-reply {
+  border-left: 4px solid #2196f3;
+}
+
+.bmfa-card.is-rejected {
+  border-left: 4px solid #e53935;
+}
+
+/* ======================
+   Шапка карточки
+====================== */
+.bmfa-card-head {
+  padding: 12px 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fafafa;
+}
+
+.bmfa-card-head:hover {
+  background: #f0f0f0;
+}
+
+.bmfa-card-head-left {
+  flex: 1;
+}
+
+.bmfa-card-head-right {
+  display: flex;
+  align-items: center;
+}
+
+/* строки */
+.bmfa-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.bmfa-product-row {
+  margin-bottom: 5px;
+}
+
+.bmfa-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+}
+
+/* ======================
+   Статусы и флаги
+====================== */
+.bmfa-status {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.bmfa-status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.bmfa-status-approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.bmfa-status-rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.bmfa-flag {
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.bmfa-flag-warning {
+  background: #ff9800;
+  color: #fff;
+}
+
+.bmfa-flag-info {
+  background: #2196f3;
+  color: #fff;
+}
+
+.bmfa-flag-muted {
+  background: #ccc;
+  color: #333;
+}
+
+/* ======================
+   Товар и SKU
+====================== */
+.bmfa-product-link {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bmfa-sku {
+  color: #888;
+  margin-left: 5px;
+}
+
+/* ======================
+   Источник
+====================== */
+.bmfa-source-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bmfa-source-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.bmfa-source-link {
+  color: #1e88e5;
+}
+
+/* ======================
+   Тело карточки
+====================== */
+.bmfa-card-body {
+  padding: 15px;
+  border-top: 1px solid #eee;
+  background: #fcfcfd;
+}
+
+/* ======================
+   Секции
+====================== */
+.bmfa-section {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #e3e8ee;
+}
+
+.bmfa-section-title {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.bmfa-text {
+  white-space: normal;
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: 6px;
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+/* ======================
+   Фото
+====================== */
+.bmfa-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.bmfa-image-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* ======================
+   Grid
+====================== */
+.bmfa-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.bmfa-grid-item {
+  min-width: 180px;
+}
+
+/* ======================
+   Actions
+====================== */
+.bmfa-actions-wrap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #ddd;
+}
+
+.bmfa-edit-reply-box {
+  margin-top: 12px;
+}
+
+.bmfa-action-form {
+  margin-bottom: 10px;
+}
+
+.bmfa-action-form-inline {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.bmfa-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ======================
+   Пустое состояние
+====================== */
+.bmfa-muted {
+  background: #f7f9fb;
+  border: 1px solid #e3e8ee;
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: #667085;
+  line-height: 1.5;
+}
+
+.bmfa-empty {
+  padding: 20px;
+  text-align: center;
+  color: #777;
+}
+
+/* ======================
+   Заглушка заказов
+====================== */
+.bmfa-orders-stub {
+  padding: 30px;
+  text-align: center;
+}
+
+.bmfa-orders-stub-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.bmfa-orders-stub-text {
+  color: #666;
+}
+
+/* ======================
+   Lightbox
+====================== */
+
+.bmfa-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.bmfa-lightbox-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+}
+
+.bmfa-lightbox-content {
+  position: relative;
+  z-index: 2;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.bmfa-lightbox-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 6px;
+}
+
+.bmfa-lightbox-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #fff;
+  border: none;
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+}

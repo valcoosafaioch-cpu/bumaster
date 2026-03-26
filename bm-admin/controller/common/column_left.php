@@ -3,6 +3,14 @@ class ControllerCommonColumnLeft extends Controller {
 	public function index() {
 		if (isset($this->request->get['user_token']) && isset($this->session->data['user_token']) && ($this->request->get['user_token'] == $this->session->data['user_token'])) {
 			$this->load->language('common/column_left');
+			$this->load->language('extension/module/bm_feedback_admin');
+			$this->load->model('extension/module/bm_feedback_admin');
+
+			$bm_feedback_need_action_total = 0;
+
+			if ($this->user->hasPermission('access', 'extension/module/bm_feedback_admin')) {
+				$bm_feedback_need_action_total = (int)$this->model_extension_module_bm_feedback_admin->getNeedActionTotal();
+			}
 
 			// Create a 3 level menu array
 			// Level 2 can not have children
@@ -200,11 +208,31 @@ class ControllerCommonColumnLeft extends Controller {
 				);
 			}
 
+			if ($this->user->hasPermission('access', 'extension/module/bm_feedback_admin')) {
+				$feedback_name = $this->language->get('heading_title');
+
+				if ($bm_feedback_need_action_total > 0) {
+					$feedback_name .= ' <span class="label label-danger">' . $bm_feedback_need_action_total . '</span>';
+				}
+
+				$bm_master[] = array(
+					'name'	   => $feedback_name,
+					'href'     => $this->url->link('extension/module/bm_feedback_admin', 'user_token=' . $this->session->data['user_token'], true),
+					'children' => array()
+				);
+			}
+
 			if ($bm_master) {
+				$bm_master_name = $this->language->get('text_bm_master');
+
+				if ($bm_feedback_need_action_total > 0) {
+					$bm_master_name .= ' <span class="label label-danger">' . $bm_feedback_need_action_total . '</span>';
+				}
+
 				$data['menus'][] = array(
 					'id'       => 'menu-bm-master',
 					'icon'	   => 'fa-bookmark',
-					'name'	   => $this->language->get('text_bm_master'),
+					'name'	   => $bm_master_name,
 					'href'     => '',
 					'children' => $bm_master
 				);
