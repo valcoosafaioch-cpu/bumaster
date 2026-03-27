@@ -1,34 +1,49 @@
 <?php
-$_['heading_title'] = 'Импорт отзывов (CSV)';
+// Heading
+$_['heading_title']                 = 'Импорт внешних отзывов';
 
-$_['text_extension'] = 'Расширения';
-$_['text_home'] = 'Главная';
-$_['text_import'] = 'Импорт';
-$_['text_result'] = 'Результат импорта';
+// Text
+$_['text_extension']                = 'Расширения';
+$_['text_success']                  = 'Импорт завершён: %s';
+$_['text_import']                   = 'Загрузка файла импорта';
+$_['text_result']                   = 'Результат импорта';
+$_['text_total_rows']               = 'Обработано строк';
+$_['text_errors']                   = 'Ошибки';
+$_['text_warnings']                 = 'Предупреждения';
+$_['text_errors_count']             = 'Количество ошибок';
+$_['text_inserted_reviews']         = 'Добавлено новых отзывов';
+$_['text_updated_reviews']          = 'Обновлено дублей';
+$_['text_skipped_duplicates']       = 'Пропущено дублей';
+$_['text_total_images']             = 'Всего изображений';
+$_['text_inserted_images']          = 'Загружено изображений';
+$_['text_deleted_images']           = 'Удалено старых изображений';
+$_['text_skipped_images']           = 'Пропущено изображений';
+$_['text_import_with_errors']       = 'Импорт выполнен с ошибками. Проверьте отчёт ниже.';
 
-$_['text_success'] = 'Импорт выполнен: %s';
+// Entry
+$_['entry_file']                    = 'CSV-файл';
+$_['entry_images']                  = 'Фотографии отзывов';
+$_['entry_options']                 = 'Параметры';
+$_['entry_update_duplicates']       = 'Обновить дублирующие записи';
 
-$_['entry_file'] = 'CSV-файл';
-$_['entry_options'] = 'Опции';
-$_['entry_create_admin_reply'] = 'Создавать ответ магазина из колонки admin_reply_text';
-$_['entry_skip_duplicates'] = 'Пропускать дубли по source_url';
+// Help
+$_['help_csv']                      = 'CSV-файл одной площадки. Обязательные колонки: key_id, source_code, author_name, rating, text, date_added.';
+$_['help_images']                   = 'Необязательно. Имена файлов: key_id_1.jpg, key_id_2.jpg и т.д. За одну загрузку — только одна площадка и только её изображения.';
+$_['help_update_duplicates']        = 'Если включено — существующие отзывы по связке source_code + key_id будут полностью обновлены. Старые фотографии таких отзывов удаляются всегда, даже если новые не загружены.';
 
-$_['help_format'] = 'CSV UTF-8. Заголовок обязателен: sku;variant_title;source_code;source_url;author_name;rating;text;date_added;admin_reply_text';
+// Column
+$_['column_row']                    = 'Строка';
+$_['column_message']                = 'Сообщение';
 
-$_['button_import'] = 'Импортировать';
-$_['button_cancel'] = 'Назад';
+// Button
+$_['button_import']                 = 'Импортировать';
+$_['button_cancel']                 = 'Назад';
 
-$_['text_total_rows'] = 'Обработано строк:';
-$_['text_inserted_reviews'] = 'Добавлено отзывов:';
-$_['text_inserted_replies'] = 'Создано ответов:';
-$_['text_skipped_duplicates'] = 'Пропущено дублей:';
-$_['text_errors_count'] = 'Ошибок:';
-
-$_['text_errors'] = 'Ошибки';
-$_['text_warnings'] = 'Предупреждения';
-
-$_['column_row'] = 'Строка CSV';
-$_['column_message'] = 'Сообщение';
-
-$_['error_permission'] = 'У вас нет прав для изменения этого модуля!';
-$_['error_file'] = 'Не выбран файл CSV!';
+// Error
+$_['error_permission']              = 'У вас нет прав для изменения модуля импорта отзывов!';
+$_['error_csv_required']            = 'Не выбран CSV-файл для импорта.';
+$_['error_csv_upload']              = 'Ошибка загрузки CSV-файла.';
+$_['error_csv_tmp']                 = 'Временный CSV-файл недоступен.';
+$_['error_csv_extension']           = 'Допустим только CSV-файл.';
+$_['error_image_upload']            = 'Одна из картинок отзыва загружена с ошибкой.';
+$_['error_image_extension']         = 'Допустимые форматы изображений: jpg, jpeg, png, webp.';

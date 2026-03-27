@@ -1,347 +1,781 @@
 <?php
 class ModelExtensionModuleBmReviewsImport extends Model {
   private $required_headers = [
-    'sku',
-    'variant_title',
+    'key_id',
     'source_code',
-    'source_url',
     'author_name',
     'rating',
     'text',
-    'date_added',
-    'admin_reply_text',
+    'date_added'
   ];
 
-  public function importCsv($tmp_file, array $options = []) {
-    $create_admin_reply = !empty($options['create_admin_reply']);
-    $skip_duplicates = !empty($options['skip_duplicates']);
+  private $optional_headers = [
+    'sku',
+    'variant_title',
+    'source_url',
+    'admin_reply_text',
+    'external_order_ref'
+  ];
 
-    $report = [
-      'total_rows'        => 0,
-      'inserted_reviews'  => 0,
-      'inserted_replies'  => 0,
-      'skipped_duplicates'=> 0,
-      'errors'            => [],
-      'warnings'          => [],
-    ];
+  private $allowed_sources = [
+    'ozon',
+    'wb',
+    'ym',
+    'avito'
+  ];
 
-    if (!is_readable($tmp_file)) {
-      $report['errors'][] = ['row' => 0, 'message' => 'Файл недоступен для чтения'];
+  private $image_subdir = 'catalog/reviews_photos/';
+
+  private $column_exists = [];
+
+  public function importCsv($csv_path, array $images = [], array $options = []) {
+    $update_duplicates = !empty($options['update_duplicates']);
+    $report = $this->buildEmptyReport();
+
+    if (!is_readable($csv_path)) {
+      $report['errors'][] = [
+        'row'     => 0,
+        'message' => 'CSV-файл недоступен для чтения'
+      ];
+
       return $report;
     }
 
-    $handle = fopen($tmp_file, 'rb');
+    $grouped_images = $this->groupUploadedImages($images, $report);
+    $import_targets = [];
+    $seen_keys = [];
+    $current_source_code = null;
+
+    $handle = fopen($csv_path, 'rb');
+
     if (!$handle) {
-      $report['errors'][] = ['row' => 0, 'message' => 'Не удалось открыть файл'];
+      $report['errors'][] = [
+        'row'     => 0,
+        'message' => 'Не удалось открыть CSV-файл'
+      ];
+
       return $report;
     }
 
-    // Read first line to detect delimiter and headers
     $first_line = fgets($handle);
+
     if ($first_line === false) {
       fclose($handle);
-      $report['errors'][] = ['row' => 0, 'message' => 'Пустой файл'];
+
+      $report['errors'][] = [
+        'row'     => 0,
+        'message' => 'CSV-файл пустой'
+      ];
+
       return $report;
     }
 
     $delimiter = $this->detectDelimiter($first_line);
 
-    // Parse headers
     $headers = str_getcsv($first_line, $delimiter);
     $headers = array_map([$this, 'normalizeHeader'], $headers);
 
-    // BOM fix (first header)
     if (!empty($headers[0])) {
       $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
     }
 
-    $missing = array_diff($this->required_headers, $headers);
-    if ($missing) {
+    $header_validation = $this->validateHeaders($headers);
+
+    if (!$header_validation['ok']) {
       fclose($handle);
+
       $report['errors'][] = [
-        'row' => 1,
-        'message' => 'Не хватает колонок: ' . implode(', ', $missing)
+        'row'     => 1,
+        'message' => $header_validation['message']
       ];
+
       return $report;
     }
 
     $header_map = [];
-    foreach ($headers as $idx => $h) {
-      $header_map[$h] = $idx;
+    foreach ($headers as $index => $header) {
+      $header_map[$header] = $index;
     }
 
-    // Now parse remaining rows with fgetcsv
-    $row_num = 1; // header = 1
+    $row_num = 1;
+
     while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
       $row_num++;
-      // skip fully empty rows
+
       if ($this->isEmptyRow($row)) {
         continue;
       }
 
       $report['total_rows']++;
 
-      $data = $this->rowToAssoc($row, $header_map);
+      $assoc = $this->rowToAssoc($row, $header_map);
+      $validated = $this->validateRow($assoc);
 
-      $validated = $this->validateRow($data);
       if ($validated['error']) {
-        $report['errors'][] = ['row' => $row_num, 'message' => $validated['error']];
+        $report['errors'][] = [
+          'row'     => $row_num,
+          'message' => $validated['error']
+        ];
         continue;
       }
 
-      $sku           = $validated['sku'];
-      $variant_title = $validated['variant_title'];
-      $source_code   = $validated['source_code'];
-      $source_url    = $validated['source_url'];
-      $author_name   = $validated['author_name'];
-      $rating        = $validated['rating'];
-      $text          = $validated['text'];
-      $date_added    = $validated['date_added'];
-      $reply_text    = $validated['admin_reply_text'];
-
-      // Duplicate check (by source_url) for external reviews
-      if ($skip_duplicates && $source_url !== '') {
-        if ($this->existsBySourceUrl($source_url)) {
-          $report['skipped_duplicates']++;
-          continue;
-        }
+      if ($current_source_code === null) {
+        $current_source_code = $validated['source_code'];
+      } elseif ($current_source_code !== $validated['source_code']) {
+        $report['errors'][] = [
+          'row'     => $row_num,
+          'message' => 'В одном CSV обнаружены разные source_code. Одна загрузка должна содержать только одну площадку.'
+        ];
+        continue;
       }
 
-      // Insert buyer review (external): customer_id = NULL, date_modified not set
-      $feedback_id = $this->insertBuyerReview([
-        'sku'           => $sku,
-        'variant_title' => $variant_title,
-        'source_code'   => ($source_code !== '' ? $source_code : null),
-        'source_url'    => ($source_url !== '' ? $source_url : null),
-        'author_name'   => $author_name,
-        'rating'        => $rating,
-        'text'          => $text,
-        'date_added'    => $date_added,
-      ]);
+      $composite_key = $validated['source_code'] . '|' . $validated['external_key'];
 
-      if ($feedback_id) {
-        $report['inserted_reviews']++;
+      if (isset($seen_keys[$composite_key])) {
+        $report['errors'][] = [
+          'row'     => $row_num,
+          'message' => 'Повторная строка в текущем CSV по связке source_code + key_id'
+        ];
+        continue;
+      }
 
-        // Insert admin reply if present
-        if ($create_admin_reply && $reply_text !== '') {
-          $ok = $this->insertAdminReply([
-            'parent_id'     => $feedback_id,
-            'sku'           => $sku,
-            'variant_title' => $variant_title,
-            'text'          => $reply_text,
-            'date_added'    => $date_added,
-          ]);
+      $seen_keys[$composite_key] = true;
 
-          if ($ok) {
-            $report['inserted_replies']++;
-          } else {
-            $report['errors'][] = ['row' => $row_num, 'message' => 'Не удалось вставить ответ магазина (DB)'];
+      $existing = $this->findExistingReview($validated['source_code'], $validated['external_key']);
+
+      if ($existing) {
+        if ($update_duplicates) {
+          $updated = $this->updateReview((int)$existing['feedback_id'], $validated);
+
+          if (!$updated) {
+            $report['errors'][] = [
+              'row'     => $row_num,
+              'message' => 'Не удалось обновить существующий отзыв'
+            ];
+            continue;
           }
+
+          $deleted_images = $this->deleteReviewImages((int)$existing['feedback_id']);
+          $report['deleted_images'] += $deleted_images;
+          $report['updated_reviews']++;
+
+          $import_targets[$validated['external_key']] = [
+            'feedback_id' => (int)$existing['feedback_id'],
+            'sku'         => $validated['sku'],
+            'source_code' => $validated['source_code'],
+            'mode'        => 'updated',
+            'row'         => $row_num
+          ];
+        } else {
+          $report['skipped_duplicates']++;
         }
-      } else {
-        $report['errors'][] = ['row' => $row_num, 'message' => 'Не удалось вставить отзыв (DB)'];
+
+        continue;
       }
+
+      $feedback_id = $this->insertReview($validated);
+
+      if (!$feedback_id) {
+        $report['errors'][] = [
+          'row'     => $row_num,
+          'message' => 'Не удалось вставить новый отзыв'
+        ];
+        continue;
+      }
+
+      $report['inserted_reviews']++;
+
+      $import_targets[$validated['external_key']] = [
+      'feedback_id' => (int)$feedback_id,
+      'sku'         => $validated['sku'],
+      'source_code' => $validated['source_code'],
+      'mode'        => 'inserted',
+      'row'         => $row_num
+    ];
     }
 
     fclose($handle);
+
+    foreach ($grouped_images as $external_key => $image_items) {
+      if (!isset($import_targets[$external_key])) {
+        $report['skipped_images'] += count($image_items);
+        $report['warnings'][] = 'Изображения для key_id "' . $external_key . '" пропущены: соответствующий отзыв не был импортирован или был пропущен как дубль.';
+        continue;
+      }
+
+      $target = $import_targets[$external_key];
+
+      $saved_count = $this->saveReviewImages(
+      (int)$target['feedback_id'],
+      $target['sku'],
+      $target['source_code'],
+      $image_items,
+      $report
+    );
+
+      $report['inserted_images'] += $saved_count;
+    }
+
     return $report;
   }
 
-  private function detectDelimiter($line) {
-    $sc = substr_count($line, ';');
-    $cm = substr_count($line, ',');
-    return ($sc >= $cm) ? ';' : ',';
+  private function buildEmptyReport() {
+    return [
+      'total_rows'         => 0,
+      'inserted_reviews'   => 0,
+      'updated_reviews'    => 0,
+      'skipped_duplicates' => 0,
+      'total_images'       => 0,
+      'inserted_images'    => 0,
+      'deleted_images'     => 0,
+      'skipped_images'     => 0,
+      'errors'             => [],
+      'warnings'           => []
+    ];
   }
 
-  private function normalizeHeader($h) {
-    $h = trim((string)$h);
-    $h = strtolower($h);
-    return $h;
-  }
+  private function validateHeaders(array $headers) {
+    $missing = array_diff($this->required_headers, $headers);
 
-  private function isEmptyRow(array $row) {
-    foreach ($row as $v) {
-      if (trim((string)$v) !== '') return false;
+    if ($missing) {
+      return [
+        'ok'      => false,
+        'message' => 'Не хватает обязательных колонок: ' . implode(', ', $missing)
+      ];
     }
-    return true;
+
+    return [
+      'ok'      => true,
+      'message' => ''
+    ];
   }
 
   private function rowToAssoc(array $row, array $header_map) {
-    $out = [];
-    foreach ($this->required_headers as $key) {
-      $idx = $header_map[$key];
-      $out[$key] = isset($row[$idx]) ? trim((string)$row[$idx]) : '';
+    $fields = array_merge($this->required_headers, $this->optional_headers);
+    $result = [];
+
+    foreach ($fields as $field) {
+      if (!isset($header_map[$field])) {
+        $result[$field] = '';
+        continue;
+      }
+
+      $index = $header_map[$field];
+      $result[$field] = isset($row[$index]) ? trim((string)$row[$index]) : '';
     }
-    return $out;
+
+    return $result;
   }
 
-  private function validateRow(array $r) {
-    // sku/variant optional
-    $sku = trim($r['sku']);
-    $variant_title = trim($r['variant_title']);
+  private function validateRow(array $row) {
+    $external_key = trim((string)$row['key_id']);
+    $sku = trim((string)$row['sku']);
+    $variant_title = trim((string)$row['variant_title']);
+    $source_code = strtolower(trim((string)$row['source_code']));
+    $source_url = trim((string)$row['source_url']);
+    $author_name = trim((string)$row['author_name']);
+    $rating_raw = trim((string)$row['rating']);
+    $text = trim((string)$row['text']);
+    $date_raw = trim((string)$row['date_added']);
+    $admin_reply_text = trim((string)$row['admin_reply_text']);
+    $external_order_ref = trim((string)$row['external_order_ref']);
 
-    $source_code = strtolower(trim($r['source_code']));
-    $source_url  = trim($r['source_url']);
-    $author_name = trim($r['author_name']);
+    if ($external_key === '') {
+      return ['error' => 'Пустой key_id'];
+    }
 
-    $rating_raw = trim($r['rating']);
-    $text = trim($r['text']);
-    $date_raw = trim($r['date_added']);
+    if ($source_code === '') {
+      return ['error' => 'Пустой source_code'];
+    }
 
-    $admin_reply_text = trim($r['admin_reply_text']);
-
-    if ($text === '') {
-      return ['error' => 'Пустой текст отзыва'];
+    if (!in_array($source_code, $this->allowed_sources, true)) {
+      return ['error' => 'source_code неизвестен (ожидались: ozon / wb / ym / avito)'];
     }
 
     if ($author_name === '') {
       return ['error' => 'Пустое author_name'];
     }
 
-    // rating
+    if ($text === '') {
+      return ['error' => 'Пустой текст отзыва'];
+    }
+
     if ($rating_raw === '' || !is_numeric($rating_raw)) {
       return ['error' => 'Некорректный rating'];
     }
+
     $rating = (int)$rating_raw;
+
     if ($rating < 1 || $rating > 5) {
-      return ['error' => 'rating должен быть 1–5'];
+      return ['error' => 'rating должен быть в диапазоне 1–5'];
     }
 
-    // source validation (MVP)
-    $allowed = ['ozon','wb','ym','avito',''];
-    if (!in_array($source_code, $allowed, true)) {
-      return ['error' => 'source_code неизвестен (ожидались: ozon/wb/ym/avito)'];
-    }
-
-    if ($source_code !== '' && $source_url === '') {
-      return ['error' => 'source_url пустой при заполненном source_code'];
-    }
-
-    // date parsing
     $date_added = $this->normalizeDate($date_raw);
+
     if ($date_added === null) {
       return ['error' => 'Некорректная date_added'];
     }
 
+    $entity_type = ($sku !== '') ? 'product' : 'store';
+
+    if ($entity_type === 'store') {
+      $variant_title = '';
+    }
+
     return [
-      'error'            => null,
-      'sku'              => $sku,
-      'variant_title'    => $variant_title,
-      'source_code'      => $source_code,
-      'source_url'       => $source_url,
-      'author_name'      => $author_name,
-      'rating'           => $rating,
-      'text'             => $text,
-      'date_added'       => $date_added,
-      'admin_reply_text' => $admin_reply_text,
+      'error'              => null,
+      'external_key'       => $external_key,
+      'sku'                => $sku,
+      'variant_title'      => $variant_title,
+      'entity_type'        => $entity_type,
+      'source_code'        => $source_code,
+      'source_url'         => $source_url,
+      'author_name'        => $author_name,
+      'rating'             => $rating,
+      'text'               => $text,
+      'date_added'         => $date_added,
+      'admin_reply_text'   => $admin_reply_text,
+      'external_order_ref' => $external_order_ref,
+      'imported_at'        => date('Y-m-d H:i:s')
     ];
   }
 
-  private function normalizeDate($value) {
-    $v = trim((string)$value);
-    if ($v === '') return null;
+  private function findExistingReview($source_code, $external_key) {
+    $sql = "
+      SELECT feedback_id
+      FROM " . DB_PREFIX . "bm_feedback
+      WHERE source_code = '" . $this->db->escape($source_code) . "'
+        AND external_key = '" . $this->db->escape($external_key) . "'
+        AND type = 'review'
+    ";
 
-    // YYYY-MM-DD HH:MM:SS
-    if (preg_match('/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/', $v)) {
-      return $v;
+    if ($this->hasColumn('bm_feedback', 'is_admin_reply')) {
+      $sql .= " AND is_admin_reply = 0";
     }
 
-    // YYYY-MM-DD
-    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
-      return $v . ' 00:00:00';
-    }
+    $sql .= " LIMIT 1";
 
-    // DD.MM.YYYY
-    if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $v)) {
-      $parts = explode('.', $v);
-      return $parts[2] . '-' . $parts[1] . '-' . $parts[0] . ' 00:00:00';
-    }
+    $query = $this->db->query($sql);
 
-    // try strtotime fallback
-    $ts = strtotime($v);
-    if ($ts !== false) {
-      return date('Y-m-d H:i:s', $ts);
-    }
-
-    return null;
+    return $query->num_rows ? $query->row : null;
   }
 
-  private function existsBySourceUrl($source_url) {
-    $source_url = $this->db->escape($source_url);
+  private function insertReview(array $data) {
+    $fields = [];
 
-    $q = $this->db->query(
-      "SELECT feedback_id
-       FROM " . DB_PREFIX . "bm_feedback
-       WHERE source_url = '" . $source_url . "'
-         AND type = 'review'
-         AND is_admin_reply = 0
-       LIMIT 1"
-    );
-
-    return $q->num_rows > 0;
-  }
-
-  private function insertBuyerReview(array $d) {
-    $sku = $this->db->escape((string)$d['sku']);
-    $variant_title = $this->db->escape((string)$d['variant_title']);
-    $author_name = $this->db->escape((string)$d['author_name']);
-    $text = $this->db->escape((string)$d['text']);
-    $date_added = $this->db->escape((string)$d['date_added']);
-    $rating = (int)$d['rating'];
-
-    $source_code_sql = 'NULL';
-    if (!empty($d['source_code'])) {
-      $source_code_sql = "'" . $this->db->escape((string)$d['source_code']) . "'";
+    if ($this->hasColumn('bm_feedback', 'parent_id')) {
+      $fields[] = "parent_id = 0";
     }
 
-    $source_url_sql = 'NULL';
-    if (!empty($d['source_url'])) {
-      $source_url_sql = "'" . $this->db->escape((string)$d['source_url']) . "'";
+    if ($this->hasColumn('bm_feedback', 'admin_reply')) {
+      $fields[] = "admin_reply = " . $this->toSqlValue($data['admin_reply_text']);
     }
 
-    // customer_id = NULL, date_modified not set
-    $this->db->query(
-      "INSERT INTO " . DB_PREFIX . "bm_feedback
-       SET parent_id = 0,
-           is_admin_reply = 0,
-           type = 'review',
-           sku = '" . $sku . "',
-           variant_title = '" . $variant_title . "',
-           source_code = " . $source_code_sql . ",
-           source_url = " . $source_url_sql . ",
-           customer_id = NULL,
-           author_name = '" . $author_name . "',
-           rating = '" . $rating . "',
-           text = '" . $text . "',
-           date_added = '" . $date_added . "'"
-    );
+    if ($this->hasColumn('bm_feedback', 'customer_id')) {
+      $fields[] = "customer_id = NULL";
+    }
+
+    $fields[] = "type = 'review'";
+    $fields[] = "sku = " . $this->toSqlValue($data['sku']);
+    $fields[] = "variant_title = " . $this->toSqlValue($data['variant_title']);
+    $fields[] = "source_code = " . $this->toSqlValue($data['source_code']);
+    $fields[] = "source_url = " . $this->toSqlValue($data['source_url']);
+    $fields[] = "author_name = " . $this->toSqlValue($data['author_name']);
+    $fields[] = "rating = " . (int)$data['rating'];
+    $fields[] = "text = " . $this->toSqlValue($data['text']);
+    $fields[] = "date_added = " . $this->toSqlValue($data['date_added']);
+
+    if ($this->hasColumn('bm_feedback', 'moderation_status')) {
+      $fields[] = "moderation_status = 'approved'";
+    }
+
+    if ($this->hasColumn('bm_feedback', 'moderated_at')) {
+      $fields[] = "moderated_at = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'date_modified')) {
+      $fields[] = "date_modified = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'entity_type')) {
+      $fields[] = "entity_type = " . $this->toSqlValue($data['entity_type']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'external_key')) {
+      $fields[] = "external_key = " . $this->toSqlValue($data['external_key']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'external_order_ref')) {
+      $fields[] = "external_order_ref = " . $this->toSqlValue($data['external_order_ref']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'imported_at')) {
+      $fields[] = "imported_at = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    $sql = "
+      INSERT INTO " . DB_PREFIX . "bm_feedback
+      SET " . implode(",\n          ", $fields);
+
+    $this->db->query($sql);
 
     return (int)$this->db->getLastId();
   }
 
-  private function insertAdminReply(array $d) {
-    $parent_id = (int)$d['parent_id'];
-    $sku = $this->db->escape((string)$d['sku']);
-    $variant_title = $this->db->escape((string)$d['variant_title']);
-    $text = $this->db->escape((string)$d['text']);
-    $date_added = $this->db->escape((string)$d['date_added']);
+  private function updateReview($feedback_id, array $data) {
+    $feedback_id = (int)$feedback_id;
+    $fields = [];
 
-    $this->db->query(
-      "INSERT INTO " . DB_PREFIX . "bm_feedback
-       SET parent_id = '" . $parent_id . "',
-           is_admin_reply = 1,
-           type = 'review',
-           sku = '" . $sku . "',
-           variant_title = '" . $variant_title . "',
-           source_code = NULL,
-           source_url = NULL,
-           customer_id = 1,
-           author_name = NULL,
-           rating = NULL,
-           text = '" . $text . "',
-           date_added = '" . $date_added . "'"
-    );
+    $fields[] = "sku = " . $this->toSqlValue($data['sku']);
+    $fields[] = "variant_title = " . $this->toSqlValue($data['variant_title']);
+    $fields[] = "source_url = " . $this->toSqlValue($data['source_url']);
+    $fields[] = "author_name = " . $this->toSqlValue($data['author_name']);
+    $fields[] = "rating = " . (int)$data['rating'];
+    $fields[] = "text = " . $this->toSqlValue($data['text']);
+    $fields[] = "date_added = " . $this->toSqlValue($data['date_added']);
+
+    if ($this->hasColumn('bm_feedback', 'moderation_status')) {
+      $fields[] = "moderation_status = 'approved'";
+    }
+
+    if ($this->hasColumn('bm_feedback', 'moderated_at')) {
+      $fields[] = "moderated_at = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'date_modified')) {
+      $fields[] = "date_modified = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'entity_type')) {
+      $fields[] = "entity_type = " . $this->toSqlValue($data['entity_type']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'admin_reply')) {
+      $fields[] = "admin_reply = " . $this->toSqlValue($data['admin_reply_text']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'external_order_ref')) {
+      $fields[] = "external_order_ref = " . $this->toSqlValue($data['external_order_ref']);
+    }
+
+    if ($this->hasColumn('bm_feedback', 'imported_at')) {
+      $fields[] = "imported_at = " . $this->toSqlValue($data['imported_at']);
+    }
+
+    if (!$fields) {
+      return false;
+    }
+
+    $sql = "
+      UPDATE " . DB_PREFIX . "bm_feedback
+      SET " . implode(",\n          ", $fields) . "
+      WHERE feedback_id = " . $feedback_id . "
+      LIMIT 1";
+
+    $this->db->query($sql);
 
     return true;
+  }
+
+  private function groupUploadedImages(array $images, array &$report) {
+    $grouped = [];
+    $files = $this->normalizeUploadedFiles($images);
+
+    foreach ($files as $file) {
+      if (empty($file['name'])) {
+        continue;
+      }
+
+      $report['total_images']++;
+
+      if (!isset($file['error']) || (int)$file['error'] !== UPLOAD_ERR_OK) {
+        $report['skipped_images']++;
+        $report['warnings'][] = 'Файл "' . $file['name'] . '" пропущен: ошибка загрузки.';
+        continue;
+      }
+
+      if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        $report['skipped_images']++;
+        $report['warnings'][] = 'Файл "' . $file['name'] . '" пропущен: временный файл недоступен.';
+        continue;
+      }
+
+      $parsed = $this->parseImageName($file['name']);
+
+      if (!$parsed) {
+        $report['skipped_images']++;
+        $report['warnings'][] = 'Файл "' . $file['name'] . '" пропущен: имя должно быть в формате key_id_номер.ext';
+        continue;
+      }
+
+      $grouped[$parsed['external_key']][] = [
+        'name'         => $file['name'],
+        'tmp_name'     => $file['tmp_name'],
+        'sort_order'   => $parsed['sort_order'],
+        'extension'    => $parsed['extension']
+      ];
+    }
+
+    foreach ($grouped as &$items) {
+      usort($items, function($a, $b) {
+        if ($a['sort_order'] === $b['sort_order']) {
+          return strcmp($a['name'], $b['name']);
+        }
+
+        return ($a['sort_order'] < $b['sort_order']) ? -1 : 1;
+      });
+    }
+    unset($items);
+
+    return $grouped;
+  }
+
+  private function normalizeUploadedFiles(array $images) {
+    if (!$images) {
+      return [];
+    }
+
+    if (isset($images['name']) && is_array($images['name'])) {
+      $normalized = [];
+      $count = count($images['name']);
+
+      for ($i = 0; $i < $count; $i++) {
+        $normalized[] = [
+          'name'     => isset($images['name'][$i]) ? $images['name'][$i] : '',
+          'type'     => isset($images['type'][$i]) ? $images['type'][$i] : '',
+          'tmp_name' => isset($images['tmp_name'][$i]) ? $images['tmp_name'][$i] : '',
+          'error'    => isset($images['error'][$i]) ? $images['error'][$i] : UPLOAD_ERR_NO_FILE,
+          'size'     => isset($images['size'][$i]) ? $images['size'][$i] : 0
+        ];
+      }
+
+      return $normalized;
+    }
+
+    if (isset($images[0]) && is_array($images[0])) {
+      return $images;
+    }
+
+    if (isset($images['name'])) {
+      return [$images];
+    }
+
+    return [];
+  }
+
+  private function parseImageName($filename) {
+    $filename = trim((string)$filename);
+
+    if (!preg_match('~^(.+?)_(\d+)\.(jpg|jpeg|png|webp)$~iu', $filename, $matches)) {
+      return null;
+    }
+
+    return [
+      'external_key' => trim($matches[1]),
+      'sort_order'   => (int)$matches[2],
+      'extension'    => strtolower($matches[3])
+    ];
+  }
+
+  private function saveReviewImages($feedback_id, $sku, $source_code, array $images, array &$report) {
+    $feedback_id = (int)$feedback_id;
+    $saved = 0;
+
+    if ($feedback_id <= 0 || !$images) {
+      return 0;
+    }
+
+    $source_code = trim((string)$source_code);
+    $source_code = $this->sanitizeFilePart($source_code);
+
+    $directory = rtrim(DIR_IMAGE, "/\\") . '/' . trim($this->image_subdir, "/\\") . '/' . $source_code . '/';
+
+    if (!is_dir($directory)) {
+      if (!@mkdir($directory, 0777, true) && !is_dir($directory)) {
+        $report['warnings'][] = 'Не удалось создать папку для изображений отзывов: ' . $directory;
+        $report['skipped_images'] += count($images);
+        return 0;
+      }
+    }
+
+    $base_name = $this->buildImageBaseName($sku, $feedback_id);
+
+    foreach ($images as $index => $image) {
+      $extension = strtolower($image['extension']);
+      $sort_order = (int)$image['sort_order'];
+
+      if (!$sort_order) {
+        $sort_order = $index + 1;
+      }
+
+      $file_name = $base_name . '_' . $sort_order . '.' . $extension;
+      $relative_path = trim($this->image_subdir, "/\\") . '/' . $source_code . '/' . $file_name;
+      $absolute_path = $directory . $file_name;
+
+      if (!@move_uploaded_file($image['tmp_name'], $absolute_path)) {
+        if (!@copy($image['tmp_name'], $absolute_path)) {
+          $report['skipped_images']++;
+          $report['warnings'][] = 'Не удалось сохранить изображение "' . $image['name'] . '" для feedback_id=' . $feedback_id;
+          continue;
+        }
+      }
+
+      $this->db->query("
+        INSERT INTO " . DB_PREFIX . "bm_feedback_image
+        SET feedback_id = " . $feedback_id . ",
+            image = '" . $this->db->escape($relative_path) . "',
+            sort_order = " . $sort_order
+      );
+
+      $saved++;
+    }
+
+    return $saved;
+  }
+
+  private function deleteReviewImages($feedback_id) {
+    $feedback_id = (int)$feedback_id;
+    $deleted = 0;
+
+    if ($feedback_id <= 0) {
+      return 0;
+    }
+
+    $query = $this->db->query("
+      SELECT feedback_image_id, image
+      FROM " . DB_PREFIX . "bm_feedback_image
+      WHERE feedback_id = " . $feedback_id
+    );
+
+    foreach ($query->rows as $row) {
+      if (!empty($row['image'])) {
+        $full_path = rtrim(DIR_IMAGE, "/\\") . '/' . ltrim($row['image'], "/\\");
+
+        if (is_file($full_path)) {
+          @unlink($full_path);
+        }
+      }
+
+      $deleted++;
+    }
+
+    $this->db->query("
+      DELETE FROM " . DB_PREFIX . "bm_feedback_image
+      WHERE feedback_id = " . $feedback_id
+    );
+
+    return $deleted;
+  }
+
+  private function buildImageBaseName($sku, $feedback_id) {
+    $prefix = ($sku !== '') ? $sku : 'store';
+    $prefix = $this->sanitizeFilePart($prefix);
+
+    return $prefix . '-' . str_pad((int)$feedback_id, 6, '0', STR_PAD_LEFT);
+  }
+
+  private function sanitizeFilePart($value) {
+    $value = trim((string)$value);
+    $value = preg_replace('~[^\pL\pN\-_]+~u', '-', $value);
+    $value = preg_replace('~-{2,}~', '-', $value);
+    $value = trim($value, '-_');
+
+    if ($value === '') {
+      return 'store';
+    }
+
+    return $value;
+  }
+
+  private function toSqlValue($value) {
+    if ($value === null) {
+      return 'NULL';
+    }
+
+    $value = trim((string)$value);
+
+    if ($value === '') {
+      return 'NULL';
+    }
+
+    return "'" . $this->db->escape($value) . "'";
+  }
+
+  private function hasColumn($table, $column) {
+    $key = $table . '.' . $column;
+
+    if (array_key_exists($key, $this->column_exists)) {
+      return $this->column_exists[$key];
+    }
+
+    $query = $this->db->query("
+      SHOW COLUMNS FROM " . DB_PREFIX . $table . " LIKE '" . $this->db->escape($column) . "'
+    ");
+
+    $this->column_exists[$key] = $query->num_rows > 0;
+
+    return $this->column_exists[$key];
+  }
+
+  private function detectDelimiter($line) {
+    $semicolon = substr_count($line, ';');
+    $comma = substr_count($line, ',');
+
+    return ($semicolon >= $comma) ? ';' : ',';
+  }
+
+  private function normalizeHeader($header) {
+    return strtolower(trim((string)$header));
+  }
+
+  private function isEmptyRow(array $row) {
+    foreach ($row as $value) {
+      if (trim((string)$value) !== '') {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private function normalizeDate($value) {
+    $value = trim((string)$value);
+
+    if ($value === '') {
+      return null;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/', $value)) {
+      return $value;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+      return $value . ' 00:00:00';
+    }
+
+    if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $value)) {
+      $parts = explode('.', $value);
+      return $parts[2] . '-' . $parts[1] . '-' . $parts[0] . ' 00:00:00';
+    }
+
+    if (preg_match('/^\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}(:\d{2})?$/', $value)) {
+      $parts = preg_split('/\s+/', $value);
+      $date = explode('.', $parts[0]);
+      $time = $parts[1];
+
+      if (substr_count($time, ':') === 1) {
+        $time .= ':00';
+      }
+
+      return $date[2] . '-' . $date[1] . '-' . $date[0] . ' ' . $time;
+    }
+
+    $timestamp = strtotime($value);
+
+    if ($timestamp !== false) {
+      return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    return null;
   }
 }

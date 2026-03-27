@@ -17,13 +17,15 @@
 
   <div class="container-fluid">
     {% if error_warning %}
-      <div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+      <div class="alert alert-danger">
+        <i class="fa fa-exclamation-circle"></i> {{ error_warning }}
         <button type="button" class="close" data-dismiss="alert">&times;</button>
       </div>
     {% endif %}
 
     {% if success %}
-      <div class="alert alert-success"><i class="fa fa-check-circle"></i> {{ success }}
+      <div class="alert alert-success">
+        <i class="fa fa-check-circle"></i> {{ success }}
         <button type="button" class="close" data-dismiss="alert">&times;</button>
       </div>
     {% endif %}
@@ -39,7 +41,19 @@
             <label class="col-sm-2 control-label">{{ entry_file }}</label>
             <div class="col-sm-10">
               <input type="file" name="csv" accept=".csv,text/csv" class="form-control" />
-              <p class="help-block">{{ help_format }}</p>
+              <p class="help-block">
+                {{ help_csv }}
+              </p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_images }}</label>
+            <div class="col-sm-10">
+              <input type="file" name="images[]" multiple="multiple" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control" />
+              <p class="help-block">
+                {{ help_images }}
+              </p>
             </div>
           </div>
 
@@ -48,16 +62,13 @@
             <div class="col-sm-10">
               <div class="checkbox">
                 <label>
-                  <input type="checkbox" name="create_admin_reply" value="1" {% if create_admin_reply %}checked="checked"{% endif %}>
-                  {{ entry_create_admin_reply }}
+                  <input type="checkbox" name="update_duplicates" value="1" {% if update_duplicates %}checked="checked"{% endif %} />
+                  {{ entry_update_duplicates }}
                 </label>
               </div>
-              <div class="checkbox">
-                <label>
-                  <input type="checkbox" name="skip_duplicates" value="1" {% if skip_duplicates %}checked="checked"{% endif %}>
-                  {{ entry_skip_duplicates }}
-                </label>
-              </div>
+              <p class="help-block">
+                {{ help_update_duplicates }}
+              </p>
             </div>
           </div>
 
@@ -84,8 +95,12 @@
               <ul class="list-group">
                 <li class="list-group-item">{{ text_total_rows }} <span class="badge">{{ result.total_rows }}</span></li>
                 <li class="list-group-item">{{ text_inserted_reviews }} <span class="badge">{{ result.inserted_reviews }}</span></li>
-                <li class="list-group-item">{{ text_inserted_replies }} <span class="badge">{{ result.inserted_replies }}</span></li>
+                <li class="list-group-item">{{ text_updated_reviews }} <span class="badge">{{ result.updated_reviews }}</span></li>
                 <li class="list-group-item">{{ text_skipped_duplicates }} <span class="badge">{{ result.skipped_duplicates }}</span></li>
+                <li class="list-group-item">{{ text_total_images }} <span class="badge">{{ result.total_images }}</span></li>
+                <li class="list-group-item">{{ text_inserted_images }} <span class="badge">{{ result.inserted_images }}</span></li>
+                <li class="list-group-item">{{ text_deleted_images }} <span class="badge">{{ result.deleted_images }}</span></li>
+                <li class="list-group-item">{{ text_skipped_images }} <span class="badge">{{ result.skipped_images }}</span></li>
                 <li class="list-group-item">{{ text_errors_count }} <span class="badge">{{ result.errors|length }}</span></li>
               </ul>
             </div>
