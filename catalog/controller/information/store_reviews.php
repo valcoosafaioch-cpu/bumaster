@@ -96,6 +96,41 @@ class ControllerInformationStoreReviews extends Controller {
 				}
 			}
 
+			// Фото отзыва
+			$images = [];
+
+			if (!empty($row['images']) && is_array($row['images'])) {
+				foreach ($row['images'] as $image_row) {
+					$image_file = '';
+
+					if (!empty($image_row['image'])) {
+						$image_file = (string)$image_row['image'];
+					} elseif (!empty($image_row['image_path'])) {
+						$image_file = (string)$image_row['image_path'];
+					} elseif (!empty($image_row['path'])) {
+						$image_file = (string)$image_row['path'];
+					} elseif (!empty($image_row['filename'])) {
+						$image_file = (string)$image_row['filename'];
+					} elseif (!empty($image_row['file'])) {
+						$image_file = (string)$image_row['file'];
+					}
+
+					$image_file = trim($image_file);
+
+					if ($image_file === '') {
+						continue;
+					}
+
+					$images[] = [
+						'thumb' => $this->model_tool_image->resize($image_file, 120, 120),
+						'popup' => 'image/' . ltrim($image_file, '/')
+					];
+				}
+			}
+
+			// Ответ магазина
+			$admin_reply = trim((string)($row['admin_reply'] ?? ''));
+
 			$reviews[] = [
                 'feedback_id'   => (int)$row['feedback_id'],
                 'name'          => $display_name,
@@ -104,6 +139,8 @@ class ControllerInformationStoreReviews extends Controller {
                 'text'          => (string)$row['text'],
                 'variant_title' => trim((string)($row['variant_title'] ?? '')),
                 'product'       => $product,
+                'images'        => $images,
+                'admin_reply'   => $admin_reply,
                 'source_icon'   => $source_icon,
                 'source_title'  => $source_title,
                 'source_url'    => $source_url,

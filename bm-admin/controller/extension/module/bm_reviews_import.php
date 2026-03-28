@@ -5,9 +5,7 @@ class ControllerExtensionModuleBmReviewsImport extends Controller {
   public function index() {
     $this->load->language('extension/module/bm_reviews_import');
 
-
     $this->document->setTitle($this->language->get('heading_title'));
-
 
     $this->load->model('setting/setting');
     $this->load->model('extension/module/bm_reviews_import');
@@ -17,11 +15,16 @@ class ControllerExtensionModuleBmReviewsImport extends Controller {
       $image_files = isset($this->request->files['images']) ? $this->request->files['images'] : [];
 
       $options = [
-        'update_duplicates' => !empty($this->request->post['update_duplicates']) ? 1 : 0
+        'update_duplicates' => !empty($this->request->post['update_duplicates']) ? 1 : 0,
+        'images_on_server'  => !empty($this->request->post['images_on_server']) ? 1 : 0
       ];
 
       $csv_validation_error = $this->validateCsvFile($csv_file);
-      $images_validation_error = $this->validateImageFiles($image_files);
+      $images_validation_error = '';
+
+      if (empty($options['images_on_server'])) {
+        $images_validation_error = $this->validateImageFiles($image_files);
+      }
 
       if ($csv_validation_error) {
         $this->error['warning'] = $csv_validation_error;
@@ -92,10 +95,12 @@ class ControllerExtensionModuleBmReviewsImport extends Controller {
     $data['entry_images'] = $this->language->get('entry_images');
     $data['entry_options'] = $this->language->get('entry_options');
     $data['entry_update_duplicates'] = $this->language->get('entry_update_duplicates');
+    $data['entry_images_on_server'] = $this->language->get('entry_images_on_server');
 
     $data['help_csv'] = $this->language->get('help_csv');
     $data['help_images'] = $this->language->get('help_images');
     $data['help_update_duplicates'] = $this->language->get('help_update_duplicates');
+    $data['help_images_on_server'] = $this->language->get('help_images_on_server');
 
     $data['column_row'] = $this->language->get('column_row');
     $data['column_message'] = $this->language->get('column_message');
@@ -111,6 +116,10 @@ class ControllerExtensionModuleBmReviewsImport extends Controller {
 
     $data['update_duplicates'] = isset($this->request->post['update_duplicates'])
       ? (int)$this->request->post['update_duplicates']
+      : 0;
+
+    $data['images_on_server'] = isset($this->request->post['images_on_server'])
+      ? (int)$this->request->post['images_on_server']
       : 0;
 
     if (!empty($this->error['warning'])) {
@@ -143,7 +152,6 @@ class ControllerExtensionModuleBmReviewsImport extends Controller {
     $data['footer'] = $this->load->controller('common/footer');
 
     $this->response->setOutput($this->load->view('extension/module/bm_reviews_import', $data));
-
   }
 
   public function install() {

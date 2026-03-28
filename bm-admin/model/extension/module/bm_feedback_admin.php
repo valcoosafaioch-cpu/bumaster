@@ -118,7 +118,12 @@ class ModelExtensionModuleBmFeedbackAdmin extends Model {
 					c.email,
 					p.product_id,
 					p.image AS product_image,
-					pd.name AS product_name
+					pd.name AS product_name,
+					(
+						SELECT COUNT(*)
+						FROM `" . DB_PREFIX . "bm_feedback_image` fi
+						WHERE fi.feedback_id = f.feedback_id
+					) AS image_count
 				FROM `" . DB_PREFIX . "bm_feedback` f
 				LEFT JOIN `" . DB_PREFIX . "customer` c
 					ON (c.customer_id = f.customer_id)
@@ -331,7 +336,12 @@ class ModelExtensionModuleBmFeedbackAdmin extends Model {
 					c.email,
 					p.product_id,
 					p.image AS product_image,
-					pd.name AS product_name
+					pd.name AS product_name,
+					(
+						SELECT COUNT(*)
+						FROM `" . DB_PREFIX . "bm_feedback_image` fi
+						WHERE fi.feedback_id = f.feedback_id
+					) AS image_count
 				FROM `" . DB_PREFIX . "bm_feedback` f
 				LEFT JOIN `" . DB_PREFIX . "customer` c
 					ON (c.customer_id = f.customer_id)
@@ -426,9 +436,11 @@ class ModelExtensionModuleBmFeedbackAdmin extends Model {
 			'type'                      => $type,
 			'entity_type'               => isset($row['entity_type']) ? (string)$row['entity_type'] : 'product',
 			'order_id'                  => isset($row['order_id']) ? (int)$row['order_id'] : 0,
+			'external_order_ref'        => isset($row['external_order_ref']) ? (string)$row['external_order_ref'] : '',
 			'source_code'               => $source_code,
 			'source_url'                => isset($row['source_url']) ? (string)$row['source_url'] : '',
 			'is_external'               => $is_external,
+			'has_images'                => !empty($row['image_count']),
 			'is_readonly'               => $is_readonly,
 			'rating'                    => isset($row['rating']) && $row['rating'] !== null ? (int)$row['rating'] : null,
 			'text'                      => isset($row['text']) ? (string)$row['text'] : '',

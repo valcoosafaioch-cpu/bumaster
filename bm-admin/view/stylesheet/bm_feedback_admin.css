@@ -90,6 +90,12 @@
   border-left: 4px solid #e53935;
 }
 
+.bmfa-badge-has-images {
+  background: #d9ecff;
+  color: #2f5f8a;
+  border: 1px solid #bfdcf8;
+}
+
 /* ======================
    Шапка карточки
 ====================== */
@@ -130,8 +136,25 @@
 .bmfa-meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  align-items: center;
+  gap: 10px 18px;
   font-size: 13px;
+  line-height: 1.4;
+}
+
+.bmfa-meta-row-secondary {
+  margin-top: 4px;
+}
+
+.bmfa-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bmfa-meta-item-variant {
+  white-space: normal;
 }
 
 /* ======================
@@ -199,6 +222,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
 }
 
 .bmfa-source-icon {

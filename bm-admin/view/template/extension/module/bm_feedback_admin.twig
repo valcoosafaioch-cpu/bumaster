@@ -104,6 +104,9 @@
                         <span class="bmfa-status bmfa-status-{{ item.moderation_status }}">
                           {{ item.status_label }}
                         </span>
+                        {% if item.has_images %}
+                          <span class="bmfa-badge bmfa-badge-has-images">Отзыв с фото</span>
+                        {% endif %}
 
                         {% if item.needs_moderation %}
                           <span class="bmfa-flag bmfa-flag-warning">{{ text_moderation_required }}</span>
@@ -133,10 +136,12 @@
                       </div>
 
                       <div class="bmfa-meta-row">
-                        <span><strong>{{ entry_author }}:</strong> {{ item.customer_name ?: text_no_author }}</span>
+                        <div class="bmfa-meta-item">
+                          <strong>{{ entry_author }}:</strong> {{ item.customer_name ?: text_no_author }}
+                        </div>
 
                         {% if tab == 'reviews' %}
-                          <span>
+                          <div class="bmfa-meta-item">
                             <strong>{{ entry_source }}:</strong>
                             {% if item.is_external %}
                               <span class="bmfa-source-inline">
@@ -155,30 +160,43 @@
                             {% else %}
                               {{ item.source_label }}
                             {% endif %}
-                          </span>
+                          </div>
                         {% endif %}
 
-                        <span>
+                        <div class="bmfa-meta-item">
                           <strong>{{ entry_order_id }}:</strong>
-                          {% if item.order_id %}
-                            {% if item.order_href %}
-                              <a href="{{ item.order_href }}" target="_blank">#{{ item.order_id }}</a>
+
+                          {% if item.is_external %}
+                            {% if item.external_order_ref %}
+                              {{ item.external_order_ref }}
                             {% else %}
-                              #{{ item.order_id }}
+                              {{ text_no_order }}
                             {% endif %}
                           {% else %}
-                            {{ text_no_order }}
+                            {% if item.order_id %}
+                              {% if item.order_href %}
+                                <a href="{{ item.order_href }}" target="_blank">#{{ item.order_id }}</a>
+                              {% else %}
+                                #{{ item.order_id }}
+                              {% endif %}
+                            {% else %}
+                              {{ text_no_order }}
+                            {% endif %}
                           {% endif %}
-                        </span>
+                        </div>
 
                         {% if tab == 'reviews' and item.rating is not null %}
-                          <span><strong>{{ entry_rating }}:</strong> {{ item.rating }}/5</span>
+                          <div class="bmfa-meta-item">
+                            <strong>{{ entry_rating }}:</strong> {{ item.rating }}/5
+                          </div>
                         {% endif %}
                       </div>
 
                       {% if item.variant_title %}
-                        <div class="bmfa-meta-row">
-                          <span><strong>{{ entry_variant }}:</strong> {{ item.variant_title }}</span>
+                        <div class="bmfa-meta-row bmfa-meta-row-secondary">
+                          <div class="bmfa-meta-item bmfa-meta-item-variant">
+                            <strong>{{ entry_variant_title }}:</strong> {{ item.variant_title }}
+                          </div>
                         </div>
                       {% endif %}
                     </div>

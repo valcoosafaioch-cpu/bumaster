@@ -37,6 +37,21 @@
           <div class="sr-card__body">
             <div class="sr-text">{{ r.text }}</div>
 
+            {% if r.images %}
+              <div class="sr-gallery">
+                {% for image in r.images %}
+                  <button
+                    type="button"
+                    class="sr-gallery__item"
+                    data-sr-open-gallery
+                    data-gallery-index="{{ loop.index0 }}"
+                    data-gallery-images='[{% for gallery_image in r.images %}{"src":"{{ gallery_image.popup|e('js') }}","alt":"{{ r.name|e('js') }}"}{% if not loop.last %},{% endif %}{% endfor %}]'>
+                    <img src="{{ image.thumb }}" alt="{{ r.name }}">
+                  </button>
+                {% endfor %}
+              </div>
+            {% endif %}
+
             {% if r.product %}
               <div class="sr-product">
                 {% if r.product.thumb %}
@@ -48,6 +63,18 @@
                     {{ r.product.name }}{% if r.variant_title %} <span class="sr-variant">({{ r.variant_title }})</span>{% endif %}
                 </a>
               </div>
+            {% endif %}
+
+            {% if r.admin_reply %}
+              <details class="sr-reply">
+                <summary class="sr-reply__summary">
+                  <span class="sr-reply__label">Ответ магазина</span>
+                </summary>
+
+                <div class="sr-reply__body">
+                  <div class="sr-reply__text">{{ r.admin_reply }}</div>
+                </div>
+              </details>
             {% endif %}
           </div>
         </div>
@@ -62,5 +89,155 @@
     <p class="sr-empty">Отзывов пока нет.</p>
   {% endif %}
 </div>
+
+<div class="sr-lightbox" id="sr-lightbox" hidden>
+  <div class="sr-lightbox__backdrop" data-sr-close-gallery></div>
+
+  <div class="sr-lightbox__dialog" role="dialog" aria-modal="true" aria-label="Просмотр фото отзыва">
+    <div class="sr-lightbox__content">
+      <button type="button" class="sr-lightbox__close" data-sr-close-gallery aria-label="Закрыть">×</button>
+
+      <button type="button" class="sr-lightbox__nav sr-lightbox__nav--prev" data-sr-prev-gallery aria-label="Предыдущее фото">‹</button>
+
+      <img class="sr-lightbox__image" id="sr-lightbox-image" src="" alt="">
+
+      <button type="button" class="sr-lightbox__nav sr-lightbox__nav--next" data-sr-next-gallery aria-label="Следующее фото">›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var lightbox = document.getElementById('sr-lightbox');
+  var lightboxDialog = lightbox ? lightbox.querySelector('.sr-lightbox__dialog') : null;
+  var lightboxContent = lightbox ? lightbox.querySelector('.sr-lightbox__content') : null;
+  var lightboxImage = document.getElementById('sr-lightbox-image');
+  var openButtons = document.querySelectorAll('[data-sr-open-gallery]');
+  var closeButtons = document.querySelectorAll('[data-sr-close-gallery]');
+  var prevButton = document.querySelector('[data-sr-prev-gallery]');
+  var nextButton = document.querySelector('[data-sr-next-gallery]');
+
+  var galleryImages = [];
+  var currentIndex = 0;
+
+  function renderImage() {
+    if (!galleryImages.length || !lightboxImage) {
+      return;
+    }
+
+    lightboxImage.src = galleryImages[currentIndex].src;
+    lightboxImage.alt = galleryImages[currentIndex].alt || '';
+  }
+
+  function openGallery(images, startIndex) {
+    galleryImages = images || [];
+    currentIndex = startIndex || 0;
+
+    if (!galleryImages.length || !lightbox) {
+      return;
+    }
+
+    renderImage();
+    lightbox.hidden = false;
+    document.body.classList.add('sr-lightbox-open');
+  }
+
+  function closeGallery() {
+    if (!lightbox) {
+      return;
+    }
+
+    lightbox.hidden = true;
+    lightboxImage.src = '';
+    lightboxImage.alt = '';
+    document.body.classList.remove('sr-lightbox-open');
+    galleryImages = [];
+    currentIndex = 0;
+  }
+
+  function showPrev() {
+    if (!galleryImages.length) {
+      return;
+    }
+
+    currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
+    renderImage();
+  }
+
+  function showNext() {
+    if (!galleryImages.length) {
+      return;
+    }
+
+    currentIndex = (currentIndex + 1) % galleryImages.length;
+    renderImage();
+  }
+
+  openButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      var images = [];
+      var rawImages = button.getAttribute('data-gallery-images');
+      var startIndex = parseInt(button.getAttribute('data-gallery-index'), 10) || 0;
+
+      if (rawImages) {
+        try {
+          images = JSON.parse(rawImages);
+        } catch (e) {
+          images = [];
+        }
+      }
+
+      openGallery(images, startIndex);
+    });
+  });
+
+  closeButtons.forEach(function (button) {
+    button.addEventListener('click', function (event) {
+      event.stopPropagation();
+      closeGallery();
+    });
+  });
+
+  if (prevButton) {
+    prevButton.addEventListener('click', function (event) {
+      event.stopPropagation();
+      showPrev();
+    });
+  }
+
+  if (nextButton) {
+    nextButton.addEventListener('click', function (event) {
+      event.stopPropagation();
+      showNext();
+    });
+  }
+
+  if (lightboxDialog && lightboxContent) {
+    lightboxDialog.addEventListener('click', function (event) {
+      if (!lightboxContent.contains(event.target)) {
+        closeGallery();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (!lightbox || lightbox.hidden) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      closeGallery();
+    }
+
+    if (event.key === 'ArrowLeft') {
+      showPrev();
+    }
+
+    if (event.key === 'ArrowRight') {
+      showNext();
+    }
+  });
+});
+</script>
 
 {{ footer }}

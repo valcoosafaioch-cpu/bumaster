@@ -61,7 +61,7 @@ $_['entry_status_date']               = 'Дата статуса';
 $_['entry_moderation_comment']        = 'Комментарий по модерации';
 $_['entry_reply']                     = 'Ответ магазина';
 $_['entry_reply_date']                = 'Дата ответа';
-$_['entry_variant']                   = 'Вариант';
+$_['entry_variant_title']                   = 'Вариант';
 $_['entry_email']                     = 'Email';
 
 // Button

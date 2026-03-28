@@ -954,3 +954,87 @@ a, button, .btn, [role="button"], input, select, textarea {
    (price, old/new, bm-cart-ctrl, bm-inbtn, - х +)
    ---------------------------------------------------- */
 
+/* =========================
+   ЕДИНЫЙ СТИЛЬ КНОПОК
+   ========================= */
+
+/* Убираем ripple */
+.waves-effect .waves-ripple {
+  display: none !important;
+}
+
+/* База для всех кнопок */
+button,
+.btn,
+.btn-large,
+.btn-small,
+.btn-flat,
+.btn-floating,
+input[type="button"],
+input[type="reset"],
+input[type="submit"],
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  box-shadow: none;
+  transition: background-color .12s ease, color .12s ease, transform .08s ease;
+}
+
+/* === НЕЙТРАЛЬНЫЕ КНОПКИ (включая lightbox) === */
+.btn-flat,
+.sr-gallery__item,
+.sr-lightbox__close,
+.sr-lightbox__nav {
+  background-color: #f1f1f1;
+  color: var(--brand-dark);
+}
+
+/* hover */
+.btn-flat:hover,
+.sr-gallery__item:hover,
+.sr-lightbox__close:hover,
+.sr-lightbox__nav:hover {
+  background-color: #e3e3e3;
+}
+
+/* active / focus */
+.btn-flat:active,
+.btn-flat:focus,
+.sr-gallery__item:active,
+.sr-gallery__item:focus,
+.sr-lightbox__close:active,
+.sr-lightbox__close:focus,
+.sr-lightbox__nav:active,
+.sr-lightbox__nav:focus {
+  background-color: #d5d5d5;
+}
+
+/* === СТРЕЛКИ И КРЕСТИК (иконки) === */
+.sr-lightbox__nav,
+.sr-lightbox__close {
+  color: var(--brand-dark);
+}
+
+.sr-lightbox__nav:hover,
+.sr-lightbox__close:hover {
+  color: var(--brand-accent);
+}
+
+/* лёгкий эффект нажатия */
+button:active,
+.btn:active,
+.btn-flat:active,
+.sr-lightbox__nav:active,
+.sr-lightbox__close:active {
+  transform: scale(0.96);
+}
+
+/* ВОССТАНАВЛИВАЕМ БЕЛЫЙ ТЕКСТ ДЛЯ ОСНОВНЫХ КНОПОК */
+
+.btn-primary,
+.btn.btn-primary,
+.button,
+.bm-add,
+.btn-cart {
+  color: #ffffff !important;
+}

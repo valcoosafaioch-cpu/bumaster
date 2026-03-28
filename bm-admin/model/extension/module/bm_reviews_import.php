@@ -25,11 +25,12 @@ class ModelExtensionModuleBmReviewsImport extends Model {
   ];
 
   private $image_subdir = 'catalog/reviews_photos/';
-
+  private $image_import_temp_subdir = 'catalog/reviews_photos/import_temp/';
   private $column_exists = [];
 
   public function importCsv($csv_path, array $images = [], array $options = []) {
     $update_duplicates = !empty($options['update_duplicates']);
+    $images_on_server = !empty($options['images_on_server']);
     $report = $this->buildEmptyReport();
 
     if (!is_readable($csv_path)) {
@@ -41,7 +42,11 @@ class ModelExtensionModuleBmReviewsImport extends Model {
       return $report;
     }
 
-    $grouped_images = $this->groupUploadedImages($images, $report);
+    $grouped_images = [];
+    if (!$images_on_server) {
+      $grouped_images = $this->groupUploadedImages($images, $report);
+    }
+
     $import_targets = [];
     $seen_keys = [];
     $current_source_code = null;
@@ -121,6 +126,10 @@ class ModelExtensionModuleBmReviewsImport extends Model {
 
       if ($current_source_code === null) {
         $current_source_code = $validated['source_code'];
+
+        if ($images_on_server) {
+          $grouped_images = $this->groupServerImages($current_source_code, $report);
+        }
       } elseif ($current_source_code !== $validated['source_code']) {
         $report['errors'][] = [
           'row'     => $row_num,
@@ -186,12 +195,12 @@ class ModelExtensionModuleBmReviewsImport extends Model {
       $report['inserted_reviews']++;
 
       $import_targets[$validated['external_key']] = [
-      'feedback_id' => (int)$feedback_id,
-      'sku'         => $validated['sku'],
-      'source_code' => $validated['source_code'],
-      'mode'        => 'inserted',
-      'row'         => $row_num
-    ];
+        'feedback_id' => (int)$feedback_id,
+        'sku'         => $validated['sku'],
+        'source_code' => $validated['source_code'],
+        'mode'        => 'inserted',
+        'row'         => $row_num
+      ];
     }
 
     fclose($handle);
@@ -206,14 +215,19 @@ class ModelExtensionModuleBmReviewsImport extends Model {
       $target = $import_targets[$external_key];
 
       $saved_count = $this->saveReviewImages(
-      (int)$target['feedback_id'],
-      $target['sku'],
-      $target['source_code'],
-      $image_items,
-      $report
-    );
+        (int)$target['feedback_id'],
+        $target['sku'],
+        $target['source_code'],
+        $image_items,
+        $report,
+        $images_on_server
+      );
 
       $report['inserted_images'] += $saved_count;
+    }
+
+    if ($images_on_server && $current_source_code !== null) {
+      $this->cleanupImportTempDirectory($current_source_code, $report);
     }
 
     return $report;
@@ -509,10 +523,69 @@ class ModelExtensionModuleBmReviewsImport extends Model {
       }
 
       $grouped[$parsed['external_key']][] = [
-        'name'         => $file['name'],
-        'tmp_name'     => $file['tmp_name'],
-        'sort_order'   => $parsed['sort_order'],
-        'extension'    => $parsed['extension']
+        'name'       => $file['name'],
+        'tmp_name'   => $file['tmp_name'],
+        'sort_order' => $parsed['sort_order'],
+        'extension'  => $parsed['extension']
+      ];
+    }
+
+    foreach ($grouped as &$items) {
+      usort($items, function($a, $b) {
+        if ($a['sort_order'] === $b['sort_order']) {
+          return strcmp($a['name'], $b['name']);
+        }
+
+        return ($a['sort_order'] < $b['sort_order']) ? -1 : 1;
+      });
+    }
+    unset($items);
+
+    return $grouped;
+  }
+
+  private function groupServerImages($source_code, array &$report) {
+    $grouped = [];
+    $source_code = $this->sanitizeFilePart($source_code);
+    $directory = rtrim(DIR_IMAGE, "/\\") . '/' . trim($this->image_import_temp_subdir, "/\\") . '/' . $source_code . '/';
+
+    if (!is_dir($directory)) {
+      $report['warnings'][] = 'Папка временного импорта не найдена: ' . $directory;
+      return [];
+    }
+
+    $files = scandir($directory);
+    if ($files === false) {
+      $report['warnings'][] = 'Не удалось прочитать папку временного импорта: ' . $directory;
+      return [];
+    }
+
+    foreach ($files as $file_name) {
+      if ($file_name === '.' || $file_name === '..') {
+        continue;
+      }
+
+      $absolute_path = $directory . $file_name;
+
+      if (!is_file($absolute_path)) {
+        continue;
+      }
+
+      $report['total_images']++;
+
+      $parsed = $this->parseImageName($file_name);
+
+      if (!$parsed) {
+        $report['skipped_images']++;
+        $report['warnings'][] = 'Файл "' . $file_name . '" в import_temp пропущен: имя должно быть в формате key_id_номер.ext';
+        continue;
+      }
+
+      $grouped[$parsed['external_key']][] = [
+        'name'       => $file_name,
+        'tmp_name'   => $absolute_path,
+        'sort_order' => $parsed['sort_order'],
+        'extension'  => $parsed['extension']
       ];
     }
 
@@ -577,7 +650,7 @@ class ModelExtensionModuleBmReviewsImport extends Model {
     ];
   }
 
-  private function saveReviewImages($feedback_id, $sku, $source_code, array $images, array &$report) {
+  private function saveReviewImages($feedback_id, $sku, $source_code, array $images, array &$report, $images_on_server = false) {
     $feedback_id = (int)$feedback_id;
     $saved = 0;
 
@@ -612,12 +685,24 @@ class ModelExtensionModuleBmReviewsImport extends Model {
       $relative_path = trim($this->image_subdir, "/\\") . '/' . $source_code . '/' . $file_name;
       $absolute_path = $directory . $file_name;
 
-      if (!@move_uploaded_file($image['tmp_name'], $absolute_path)) {
-        if (!@copy($image['tmp_name'], $absolute_path)) {
-          $report['skipped_images']++;
-          $report['warnings'][] = 'Не удалось сохранить изображение "' . $image['name'] . '" для feedback_id=' . $feedback_id;
-          continue;
+      $saved_ok = false;
+
+      if ($images_on_server) {
+        if (@copy($image['tmp_name'], $absolute_path)) {
+          $saved_ok = true;
         }
+      } else {
+        if (@move_uploaded_file($image['tmp_name'], $absolute_path)) {
+          $saved_ok = true;
+        } elseif (@copy($image['tmp_name'], $absolute_path)) {
+          $saved_ok = true;
+        }
+      }
+
+      if (!$saved_ok) {
+        $report['skipped_images']++;
+        $report['warnings'][] = 'Не удалось сохранить изображение "' . $image['name'] . '" для feedback_id=' . $feedback_id;
+        continue;
       }
 
       $this->db->query("
@@ -667,6 +752,33 @@ class ModelExtensionModuleBmReviewsImport extends Model {
     return $deleted;
   }
 
+  private function cleanupImportTempDirectory($source_code, array &$report) {
+    $source_code = $this->sanitizeFilePart($source_code);
+    $directory = rtrim(DIR_IMAGE, "/\\") . '/' . trim($this->image_import_temp_subdir, "/\\") . '/' . $source_code . '/';
+
+    if (!is_dir($directory)) {
+      return;
+    }
+
+    $files = scandir($directory);
+    if ($files === false) {
+      $report['warnings'][] = 'Не удалось очистить папку временного импорта: ' . $directory;
+      return;
+    }
+
+    foreach ($files as $file_name) {
+      if ($file_name === '.' || $file_name === '..') {
+        continue;
+      }
+
+      $absolute_path = $directory . $file_name;
+
+      if (is_file($absolute_path)) {
+        @unlink($absolute_path);
+      }
+    }
+  }
+
   private function buildImageBaseName($sku, $feedback_id) {
     $prefix = ($sku !== '') ? $sku : 'store';
     $prefix = $this->sanitizeFilePart($prefix);
@@ -676,7 +788,7 @@ class ModelExtensionModuleBmReviewsImport extends Model {
 
   private function sanitizeFilePart($value) {
     $value = trim((string)$value);
-    $value = preg_replace('~[^\pL\pN\-_]+~u', '-', $value);
+    $value = preg_replace('~[^\pL\pN\-\_\(\)]+~u', '-', $value);
     $value = preg_replace('~-{2,}~', '-', $value);
     $value = trim($value, '-_');
 

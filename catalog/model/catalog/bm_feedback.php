@@ -313,6 +313,7 @@ class ModelCatalogBmFeedback extends Model {
         'admin_reply_date_modified' => isset($row['admin_reply_date_modified']) ? $row['admin_reply_date_modified'] : null,
         'date_added'                => $row['date_added'],
         'date_modified'             => $row['date_modified'],
+        'images'                    => $this->getFeedbackImages($row['feedback_id'])
       ];
     }
 
