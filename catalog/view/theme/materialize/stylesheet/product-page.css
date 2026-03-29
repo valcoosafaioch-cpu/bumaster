@@ -1091,6 +1091,14 @@
     line-height: 1.5;
     color: #333333;
     margin-top: 0;
+
+    background: #f3f4f6;
+    padding: 12px 14px;
+    border-radius: 8px;
+  }
+
+  .pp-feedback-text + .pp-feedback-images {
+    margin-top: 0;
   }
 
   .pp-feedback-images {
@@ -1098,6 +1106,31 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+
+    padding: 0 14px 12px;
+    background: #f3f4f6;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .pp-feedback-image-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .pp-feedback-image-btn:focus,
+  .pp-feedback-image-btn:active {
+    outline: none;
+    box-shadow: none;
+    background: transparent;
   }
 
   .pp-feedback-thumb {
@@ -1106,14 +1139,15 @@
     object-fit: cover;
     border-radius: 6px;
     border: 1px solid #e0e0e0;
-    cursor: pointer;
+    display: block;
   }
 
   .pp-feedback-reply {
     margin-top: 10px;
     padding: 10px 12px;
-    background: #f8f2da;
+    /*background: #f3f4f6;
     border-radius: 8px;
+    border-left: 3px solid #d0d5dd;*/
   }
 
   .pp-feedback-reply-header {
@@ -1138,10 +1172,97 @@
   }
 
   .pp-feedback-empty,
-  .pp-feedback-note {
-    margin: 8px 0 0;
+  .pp-feedback-note,
+  .pp-feedback-help,
+  .pp-feedback-error,
+  .pp-feedback-success {
+    margin: 10px 0 0;
     font-size: 14px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .pp-feedback-empty {
     color: #777777;
+    background: #f8f8f8;
+  }
+
+  .pp-feedback-note {
+    color: #3c4854;
+    background: #f3f4f6;
+    border-left: 3px solid #c9ced6;
+  }
+
+  .pp-feedback-help {
+    color: #3c4854;
+    font-size: 13px;
+  }
+
+  .pp-feedback-help--minor {
+    background: transparent;
+    border-left: none;
+    padding: 0;
+    margin-top: 6px;
+    color: #6b7280;
+  }
+
+  .pp-feedback-error {
+    color: #842029;
+    background: #f8d7da;
+  }
+
+  .pp-feedback-success {
+    color: #0f5132;
+    background: #d1e7dd;
+    border-left: 3px solid #198754;
+  }
+
+  .pp-feedback-status {
+    margin: 0 0 10px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .pp-feedback-status--pending {
+    background: #fff3cd;
+    color: #8a6d3b;
+    border: 1px solid #f0d58c;
+  }
+
+  .pp-feedback-file {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .pp-feedback-upload-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .pp-feedback-upload-preview-item {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+  }
+
+  .pp-feedback-upload-preview-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .pp-feedback-form--review.is-collapsed {
@@ -1150,6 +1271,101 @@
 
   .pp-feedback-form--admin-reply.is-collapsed {
     display: none;
+  }
+
+  .pp-review-lightbox[hidden] {
+    display: none !important;
+  }
+
+  .pp-review-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-review-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(2px);
+  }
+
+  .pp-review-lightbox-dialog {
+    position: relative;
+    z-index: 1;
+    max-width: 92vw;
+    max-height: 92vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-review-lightbox-image {
+    display: block;
+    max-width: 92vw;
+    max-height: 92vh;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.35);
+  }
+
+  .pp-review-lightbox-close {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,.35);
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-review-lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 64px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0,0,0,.35);
+    color: #ffffff;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-review-lightbox-nav--prev {
+    left: -64px;
+  }
+
+  .pp-review-lightbox-nav--next {
+    right: -64px;
+  }
+
+  .pp-review-lightbox-close:hover,
+  .pp-review-lightbox-close:focus,
+  .pp-review-lightbox-close:active,
+  .pp-review-lightbox-nav:hover,
+  .pp-review-lightbox-nav:focus,
+  .pp-review-lightbox-nav:active {
+    outline: none;
+    box-shadow: none;
+    background: rgba(0,0,0,.5);
   }
 
   .pp-feedback-edit-btn {
@@ -1211,6 +1427,16 @@
     transform: none;
   }
 
+  .pp-feedback-form textarea {
+    width: 100%;
+    min-height: 60px;
+    max-height: 200px;
+
+    resize: none;
+    overflow-y: hidden;
+
+    box-sizing: border-box;
+  }
 /* ===========================
    Конец G. ОТЗЫВЫ / ВОПРОСЫ
    =========================== */
@@ -1349,6 +1575,29 @@
 
     .pp-feedback-tabs {
       max-width: 100%;
+    }
+
+    .pp-review-lightbox-dialog {
+      max-width: 96vw;
+      max-height: 96vh;
+    }
+
+    .pp-review-lightbox-image {
+      max-width: 96vw;
+      max-height: 96vh;
+    }
+
+    .pp-review-lightbox-nav--prev {
+      left: 8px;
+    }
+
+    .pp-review-lightbox-nav--next {
+      right: 8px;
+    }
+
+    .pp-review-lightbox-close {
+      top: 8px;
+      right: 8px;
     }
 
   }

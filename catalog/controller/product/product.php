@@ -38,6 +38,14 @@ class ControllerProductProduct extends Controller {
     // Устойчивый идентификатор для отзывов — sku
     $sku = isset($product_info['sku']) ? (string)$product_info['sku'] : '';
 
+    // === 2.0. Текущий пользователь: есть ли уже отзыв по этому sku ===
+    $customer_id = $this->customer->isLogged() ? (int)$this->customer->getId() : 0;
+    $user_review = null;
+
+    if ($customer_id > 0) {
+      $user_review = $this->model_catalog_bm_feedback->getReviewByProductAndCustomer($sku, $customer_id);
+    }
+
     // === 2.1. Инициализация состояний форм отзывов/вопросов ===
     $review_error     = '';
     $review_success   = '';
@@ -49,6 +57,7 @@ class ControllerProductProduct extends Controller {
     $review_form = [
       'text'   => '',
       'rating' => 0,
+      'images' => [],
     ];
 
     $question_form = [
@@ -63,8 +72,21 @@ class ControllerProductProduct extends Controller {
 
       // --- Отзыв ---
       if ($type === 'review') {
+        $is_ajax = !empty($this->request->post['is_ajax']);
         if (!$this->customer->isLogged()) {
           $review_error = 'Чтобы оставить отзыв, войдите в личный кабинет или зарегистрируйтесь.';
+          if ($is_ajax) {
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode(['error' => $review_error]));
+            return;
+          }
+        } elseif ($user_review) {
+          $review_error = 'Вы уже оставили отзыв на этот товар.';
+          if ($is_ajax) {
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode(['error' => $review_error]));
+            return;
+          }
         } else {
           $text   = isset($this->request->post['review_text']) ? trim((string)$this->request->post['review_text']) : '';
           $rating = isset($this->request->post['review_rating']) ? (int)$this->request->post['review_rating'] : 0;
@@ -76,10 +98,170 @@ class ControllerProductProduct extends Controller {
 
           if ($len < 5) {
             $review_error = 'Текст отзыва слишком короткий (минимум 5 символов).';
+            if ($is_ajax) {
+              $this->response->addHeader('Content-Type: application/json');
+              $this->response->setOutput(json_encode(['error' => $review_error]));
+              return;
+            }
           } elseif ($len > 3000) {
             $review_error = 'Текст отзыва слишком длинный (максимум 3000 символов).';
+            if ($is_ajax) {
+              $this->response->addHeader('Content-Type: application/json');
+              $this->response->setOutput(json_encode(['error' => $review_error]));
+              return;
+            }
           } elseif ($rating < 1 || $rating > 5) {
             $review_error = 'Пожалуйста, укажите оценку от 1 до 5.';
+            if ($is_ajax) {
+              $this->response->addHeader('Content-Type: application/json');
+              $this->response->setOutput(json_encode(['error' => $review_error]));
+              return;
+            }
+          }
+
+          $review_files = [];
+
+          if (
+            isset($this->request->files['review_images'])
+            && !empty($this->request->files['review_images']['name'])
+            && is_array($this->request->files['review_images']['name'])
+          ) {
+            $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $allowed_mimes = [
+              'image/jpeg',
+              'image/pjpeg',
+              'image/png',
+              'image/gif',
+              'image/webp'
+            ];
+
+            $max_files = 5;
+            $max_file_size = 5 * 1024 * 1024;   // 5 МБ
+            $max_total_size = 25 * 1024 * 1024; // общий лимит 25 МБ
+
+            $names     = $this->request->files['review_images']['name'];
+            $tmp_names = $this->request->files['review_images']['tmp_name'];
+            $errors    = $this->request->files['review_images']['error'];
+            $sizes     = $this->request->files['review_images']['size'];
+
+            $total_size = 0;
+            $valid_count = 0;
+
+            foreach ($names as $index => $original_name) {
+              $original_name = trim((string)$original_name);
+
+              if ($original_name === '') {
+                continue;
+              }
+
+              $error = isset($errors[$index]) ? (int)$errors[$index] : UPLOAD_ERR_NO_FILE;
+
+              if ($error === UPLOAD_ERR_NO_FILE) {
+                continue;
+              }
+
+              if ($error !== UPLOAD_ERR_OK) {
+                $review_error = 'Не удалось загрузить одно из фото отзыва.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $tmp_name = isset($tmp_names[$index]) ? (string)$tmp_names[$index] : '';
+              $size     = isset($sizes[$index]) ? (int)$sizes[$index] : 0;
+
+              if ($tmp_name === '' || !is_uploaded_file($tmp_name)) {
+                $review_error = 'Не удалось обработать одно из фото отзыва.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $valid_count++;
+
+              if ($valid_count > $max_files) {
+                $review_error = 'К отзыву можно прикрепить не более 5 фото.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              if ($size <= 0) {
+                $review_error = 'Одно из загруженных фото пустое.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              if ($size > $max_file_size) {
+                $review_error = 'Размер каждого фото не должен превышать 5 МБ.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $total_size += $size;
+
+              if ($total_size > $max_total_size) {
+                $review_error = 'Общий размер фото не должен превышать 25 МБ.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+
+              if (!in_array($extension, $allowed_extensions, true)) {
+                $review_error = 'Допустимые форматы фото: jpg, jpeg, png, gif, webp.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $mime = '';
+              if (function_exists('mime_content_type')) {
+                $mime = (string)@mime_content_type($tmp_name);
+              }
+
+              if ($mime !== '' && !in_array($mime, $allowed_mimes, true)) {
+                $review_error = 'Можно загружать только изображения.';
+                if ($is_ajax) {
+                  $this->response->addHeader('Content-Type: application/json');
+                  $this->response->setOutput(json_encode(['error' => $review_error]));
+                  return;
+                }
+                break;
+              }
+
+              $review_files[] = [
+                'name'     => $original_name,
+                'tmp_name' => $tmp_name,
+                'size'     => $size,
+                'type'     => $mime,
+                'error'    => $error,
+              ];
+            }
           }
 
           if ($review_error === '') {
@@ -88,9 +270,9 @@ class ControllerProductProduct extends Controller {
               ? trim((string)$this->request->post['variant_title'])
               : '';
 
-            $this->model_catalog_bm_feedback->saveReview(
+            $feedback_id = (int)$this->model_catalog_bm_feedback->saveReview(
               $sku,
-              (int)$this->customer->getId(),
+              $customer_id,
               [
                 'text'          => $text,
                 'rating'        => $rating,
@@ -98,9 +280,23 @@ class ControllerProductProduct extends Controller {
               ]
             );
 
+            if ($feedback_id > 0 && !empty($review_files)) {
+              $this->model_catalog_bm_feedback->addFeedbackImages($feedback_id, $sku, $review_files);
+            }
+
             $review_success = 'Спасибо! Ваш отзыв сохранён.';
 
-            $this->response->redirect($this->url->link('product/product', 'product_id=' . $product_id));
+            if ($is_ajax) {
+              $this->response->addHeader('Content-Type: application/json');
+              $this->response->setOutput(json_encode([
+                'success' => $review_success
+              ]));
+              return;
+            }
+
+            $this->response->redirect(
+              $this->url->link('product/product', 'product_id=' . $product_id . '&bm_scroll=feedback&bm_tab=reviews', true)
+            );
             return;
           }
         }
@@ -476,7 +672,7 @@ class ControllerProductProduct extends Controller {
           $current_title = $current_kit;
         }
       } else {
-        $current_title = $heading_title;
+        $current_title = $product_info['name'];
       }
 
       $variants_raw[] = [
@@ -552,7 +748,7 @@ class ControllerProductProduct extends Controller {
       }
     } else {
       // Если нет атрибутов комплектации — используем название товара
-      $data['current_variant_title'] = $heading_title;
+      $data['current_variant_title'] = $product_info['name'];
     }
 
     // === 11. Отзывы и вопросы (данные для шаблона) ===
@@ -634,8 +830,8 @@ class ControllerProductProduct extends Controller {
       }
 
       // --- Списки отзывов и вопросов по всей группе SKU ---
-      $reviews   = $this->model_catalog_bm_feedback->getReviewsBySkus($group_skus);
-      $questions = $this->model_catalog_bm_feedback->getQuestionsBySkus($group_skus);
+      $reviews   = $this->model_catalog_bm_feedback->getReviewsBySkus($group_skus, $customer_id);
+      $questions = $this->model_catalog_bm_feedback->getQuestionsBySkus($group_skus, $customer_id);
 
       // Карта источников (как на странице отзывов)
       $source_map = [
@@ -650,16 +846,16 @@ class ControllerProductProduct extends Controller {
 
       foreach ($reviews as $r) {
         // 2) Имя автора:
-        // - если есть customer_id и имя/фамилия заполнены → используем их
-        // - если customer_id нет → берём author_name
+        // - если есть review_customer_id и имя/фамилия заполнены → используем их
+        // - если review_customer_id нет → берём author_name
         // - если всё пусто → "Аноним"
-        $customer_id = (int)($r['customer_id'] ?? 0);
+        $review_customer_id = (int)($r['customer_id'] ?? 0);
 
         $firstname = trim((string)($r['firstname'] ?? ''));
         $lastname  = trim((string)($r['lastname'] ?? ''));
         $display_name = trim($firstname . ' ' . $lastname);
 
-        if ($customer_id === 0) {
+        if ($review_customer_id === 0) {
           $author_name = trim((string)($r['author_name'] ?? ''));
           if ($author_name !== '') {
             $display_name = $author_name;
@@ -712,24 +908,57 @@ class ControllerProductProduct extends Controller {
         $prepared_reviews[] = $r;
       }
 
-      $data['reviews']         = $prepared_reviews;
-      $data['questions']       = $questions;
-      $data['reviews_count']   = count($prepared_reviews);
-      $data['questions_count'] = count($questions);
-      // --- Текущий пользователь: есть ли уже отзыв по ЭТОМУ варианту (sku) ---
-      if ($this->customer->isLogged()) {
-        $customer_id = (int)$this->customer->getId();
+      $prepared_questions = [];
 
-        if ($customer_id > 0) {
-          $user_review = $this->model_catalog_bm_feedback
-            ->getReviewByProductAndCustomer($sku, $customer_id);
+      foreach ($questions as $q) {
+        $question_customer_id = (int)($q['customer_id'] ?? 0);
 
-          if ($user_review) {
-            $data['has_user_review'] = true;
-            $data['user_review']     = $user_review;
+        $firstname = trim((string)($q['firstname'] ?? ''));
+        $lastname  = trim((string)($q['lastname'] ?? ''));
+        $display_name = trim($firstname . ' ' . $lastname);
+
+        if ($question_customer_id === 0) {
+          $author_name = trim((string)($q['author_name'] ?? ''));
+          if ($author_name !== '') {
+            $display_name = $author_name;
           }
         }
+
+        if ($display_name === '') {
+          $display_name = 'Аноним';
+        }
+
+        $q['name'] = $display_name;
+
+        $raw_date = (string)($q['date_added'] ?? '');
+        $display_date = '';
+
+        if ($raw_date !== '') {
+          $ts = strtotime($raw_date);
+          if ($ts) {
+            $time_part = date('H:i:s', $ts);
+
+            if ($time_part === '00:00:00') {
+              $display_date = date('d.m.Y', $ts);
+            } else {
+              $display_date = date('d.m.Y H:i', $ts);
+            }
+          }
+        }
+
+        if ($display_date !== '') {
+          $q['date_added'] = $display_date;
+        }
+
+        $prepared_questions[] = $q;
       }
+
+      $data['reviews']         = $prepared_reviews;
+      $data['questions']       = $prepared_questions;
+      $data['reviews_count']   = count($prepared_reviews);
+      $data['questions_count'] = count($prepared_questions);
+      $data['has_user_review'] = !empty($user_review);
+      $data['user_review']     = $user_review;
     }
 
     // === 11. SEO и заголовки ===

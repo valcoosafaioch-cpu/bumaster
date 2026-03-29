@@ -101,6 +101,14 @@ class ControllerInformationStoreReviews extends Controller {
 
 			if (!empty($row['images']) && is_array($row['images'])) {
 				foreach ($row['images'] as $image_row) {
+					if (!empty($image_row['thumb']) && !empty($image_row['popup'])) {
+						$images[] = [
+							'thumb' => $image_row['thumb'],
+							'popup' => $image_row['popup']
+						];
+						continue;
+					}
+
 					$image_file = '';
 
 					if (!empty($image_row['image'])) {

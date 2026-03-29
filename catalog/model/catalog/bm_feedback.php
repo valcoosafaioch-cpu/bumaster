@@ -4,10 +4,11 @@ class ModelCatalogBmFeedback extends Model {
   /**
    * Получить все отзывы по товару (без ответов магазина)
    */
-  public function getReviewsByProductId($sku, $start = 0, $limit = 100) {
-    $sku   = $this->db->escape((string)$sku);
-    $start = (int)$start;
-    $limit = (int)$limit;
+  public function getReviewsByProductId($sku, $customer_id = 0, $start = 0, $limit = 100) {
+    $sku         = $this->db->escape((string)$sku);
+    $customer_id = (int)$customer_id;
+    $start       = (int)$start;
+    $limit       = (int)$limit;
 
     if ($start < 0) {
       $start = 0;
@@ -23,8 +24,21 @@ class ModelCatalogBmFeedback extends Model {
             WHERE f.sku = '" . $sku . "'
               AND f.type = 'review'
               AND f.entity_type = 'product'
-              AND f.moderation_status = 'approved'
-            ORDER BY f.rating DESC, f.date_added DESC
+              AND (
+                f.moderation_status = 'approved'";
+
+    if ($customer_id > 0) {
+      $sql .= " OR (f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "')";
+    }
+
+    $sql .= ")
+            ORDER BY
+              CASE
+                WHEN f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "' THEN 0
+                ELSE 1
+              END,
+              f.rating DESC,
+              f.date_added DESC
             LIMIT " . $start . ", " . $limit;
 
     $query  = $this->db->query($sql);
@@ -61,10 +75,11 @@ class ModelCatalogBmFeedback extends Model {
   /**
    * Получить все вопросы по товару (без ответов магазина)
    */
-  public function getQuestionsByProductId($sku, $start = 0, $limit = 100) {
-    $sku   = $this->db->escape((string)$sku);
-    $start = (int)$start;
-    $limit = (int)$limit;
+  public function getQuestionsByProductId($sku, $customer_id = 0, $start = 0, $limit = 100) {
+    $sku         = $this->db->escape((string)$sku);
+    $customer_id = (int)$customer_id;
+    $start       = (int)$start;
+    $limit       = (int)$limit;
 
     if ($start < 0) {
       $start = 0;
@@ -80,8 +95,20 @@ class ModelCatalogBmFeedback extends Model {
             WHERE f.sku = '" . $sku . "'
               AND f.type = 'question'
               AND f.entity_type = 'product'
-              AND f.moderation_status = 'approved'
-            ORDER BY f.date_added DESC
+              AND (
+                f.moderation_status = 'approved'";
+
+    if ($customer_id > 0) {
+      $sql .= " OR (f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "')";
+    }
+
+    $sql .= ")
+            ORDER BY
+              CASE
+                WHEN f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "' THEN 0
+                ELSE 1
+              END,
+              f.date_added DESC
             LIMIT " . $start . ", " . $limit;
 
     $query  = $this->db->query($sql);
@@ -118,9 +145,10 @@ class ModelCatalogBmFeedback extends Model {
   /**
    * Отзывы по группе вариантов (список SKU)
    */
-  public function getReviewsBySkus(array $skus, $start = 0, $limit = 100) {
-    $start = (int)$start;
-    $limit = (int)$limit;
+  public function getReviewsBySkus(array $skus, $customer_id = 0, $start = 0, $limit = 100) {
+    $customer_id = (int)$customer_id;
+    $start       = (int)$start;
+    $limit       = (int)$limit;
 
     if ($start < 0) {
       $start = 0;
@@ -152,9 +180,22 @@ class ModelCatalogBmFeedback extends Model {
             WHERE f.sku IN (" . implode(',', $sku_list) . ")
               AND f.type = 'review'
               AND f.entity_type = 'product'
-              AND f.moderation_status = 'approved'
-            ORDER BY f.rating DESC, f.date_added DESC
-            LIMIT " . $start . "," . $limit;
+              AND (
+                f.moderation_status = 'approved'";
+
+    if ($customer_id > 0) {
+      $sql .= " OR (f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "')";
+    }
+
+    $sql .= ")
+            ORDER BY
+              CASE
+                WHEN f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "' THEN 0
+                ELSE 1
+              END,
+              f.rating DESC,
+              f.date_added DESC
+            LIMIT " . $start . ", " . $limit;
 
     $query = $this->db->query($sql);
     $result = [];
@@ -190,9 +231,10 @@ class ModelCatalogBmFeedback extends Model {
   /**
    * Вопросы по группе вариантов (список SKU)
    */
-  public function getQuestionsBySkus(array $skus, $start = 0, $limit = 100) {
-    $start = (int)$start;
-    $limit = (int)$limit;
+  public function getQuestionsBySkus(array $skus, $customer_id = 0, $start = 0, $limit = 100) {
+    $customer_id = (int)$customer_id;
+    $start       = (int)$start;
+    $limit       = (int)$limit;
 
     if ($start < 0) {
       $start = 0;
@@ -224,8 +266,20 @@ class ModelCatalogBmFeedback extends Model {
             WHERE f.sku IN (" . implode(',', $sku_list) . ")
               AND f.type = 'question'
               AND f.entity_type = 'product'
-              AND f.moderation_status = 'approved'
-            ORDER BY f.date_added DESC
+              AND (
+                f.moderation_status = 'approved'";
+
+    if ($customer_id > 0) {
+      $sql .= " OR (f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "')";
+    }
+
+    $sql .= ")
+            ORDER BY
+              CASE
+                WHEN f.moderation_status = 'pending' AND f.customer_id = '" . $customer_id . "' THEN 0
+                ELSE 1
+              END,
+              f.date_added DESC
             LIMIT " . $start . "," . $limit;
 
     $query = $this->db->query($sql);
@@ -345,6 +399,13 @@ class ModelCatalogBmFeedback extends Model {
               AND customer_id = '" . $customer_id . "'
               AND type = 'review'
               AND entity_type = 'product'
+              AND moderation_status IN ('pending', 'approved')
+            ORDER BY
+              CASE
+                WHEN moderation_status = 'pending' THEN 0
+                ELSE 1
+              END,
+              feedback_id DESC
             LIMIT 1";
 
     $query = $this->db->query($sql);
@@ -369,6 +430,7 @@ class ModelCatalogBmFeedback extends Model {
         'admin_reply_date_modified' => isset($row['admin_reply_date_modified']) ? $row['admin_reply_date_modified'] : null,
         'date_added'                => $row['date_added'],
         'date_modified'             => $row['date_modified'],
+        'images'                    => $this->getFeedbackImages($row['feedback_id']),
       ];
     }
 
@@ -387,8 +449,13 @@ class ModelCatalogBmFeedback extends Model {
     $rating = isset($data['rating']) ? (int)$data['rating'] : null;
 
     if ($rating !== null) {
-      if ($rating < 1) $rating = 1;
-      if ($rating > 5) $rating = 5;
+      if ($rating < 1) {
+        $rating = 1;
+      }
+
+      if ($rating > 5) {
+        $rating = 5;
+      }
     }
 
     $variant_title = isset($data['variant_title'])
@@ -397,26 +464,9 @@ class ModelCatalogBmFeedback extends Model {
 
     $existing = $this->getReviewByProductAndCustomer($sku, $customer_id);
 
+    // Отзыв уже существует — больше не редактируем и не обновляем
     if ($existing) {
-      $new_rating = $rating;
-
-      if (!is_null($existing['rating']) && !is_null($rating) && $rating < $existing['rating']) {
-        $new_rating = $existing['rating'];
-      }
-
-      $this->db->query("UPDATE `" . DB_PREFIX . "bm_feedback`
-                        SET text = '" . $text . "',
-                            rating = " . (!is_null($new_rating) ? "'" . (int)$new_rating . "'" : "NULL") . ",
-                            variant_title = '" . $variant_title . "',
-                            source_code = 'site',
-                            entity_type = 'product',
-                            moderation_status = 'pending',
-                            moderation_comment = NULL,
-                            moderated_at = NULL,
-                            date_modified = NOW()
-                        WHERE feedback_id = '" . (int)$existing['feedback_id'] . "'");
-
-      return (int)$existing['feedback_id'];
+      return 0;
     }
 
     $this->db->query("INSERT INTO `" . DB_PREFIX . "bm_feedback`
@@ -545,11 +595,137 @@ class ModelCatalogBmFeedback extends Model {
     $feedback_id = (int)$feedback_id;
 
     $query = $this->db->query("SELECT *
-                               FROM `" . DB_PREFIX . "bm_feedback_image`
-                               WHERE feedback_id = '" . $feedback_id . "'
-                               ORDER BY sort_order ASC, feedback_image_id ASC");
+                              FROM `" . DB_PREFIX . "bm_feedback_image`
+                              WHERE feedback_id = '" . $feedback_id . "'
+                              ORDER BY sort_order ASC, feedback_image_id ASC");
 
-    return $query->rows;
+    if (!$query->num_rows) {
+      return [];
+    }
+
+    $this->load->model('tool/image');
+
+    $result = [];
+
+    foreach ($query->rows as $row) {
+      $image_file = '';
+
+      if (!empty($row['image'])) {
+        $image_file = (string)$row['image'];
+      } elseif (!empty($row['image_path'])) {
+        $image_file = (string)$row['image_path'];
+      } elseif (!empty($row['path'])) {
+        $image_file = (string)$row['path'];
+      } elseif (!empty($row['filename'])) {
+        $image_file = (string)$row['filename'];
+      } elseif (!empty($row['file'])) {
+        $image_file = (string)$row['file'];
+      }
+
+      $image_file = trim($image_file);
+
+      if ($image_file === '') {
+        continue;
+      }
+
+      $absolute_path = DIR_IMAGE . ltrim($image_file, '/');
+
+      if (!is_file($absolute_path)) {
+        continue;
+      }
+
+      $result[] = [
+        // сохраняем исходные поля для совместимости
+        'feedback_image_id' => isset($row['feedback_image_id']) ? (int)$row['feedback_image_id'] : 0,
+        'sort_order'        => isset($row['sort_order']) ? (int)$row['sort_order'] : 0,
+        'image'             => $image_file,
+        'image_path'        => $image_file,
+        'path'              => $image_file,
+        'filename'          => basename($image_file),
+        'file'              => $image_file,
+
+        // добавляем уже подготовленные поля для новых шаблонов
+        'thumb'             => $this->model_tool_image->resize($image_file, 120, 120),
+        'popup'             => 'image/' . ltrim($image_file, '/'),
+      ];
+    }
+
+    return $result;
+  }
+
+  public function addFeedbackImages($feedback_id, $sku, array $files) {
+    $feedback_id = (int)$feedback_id;
+    $sku         = trim((string)$sku);
+
+    if ($feedback_id <= 0 || empty($files)) {
+      return;
+    }
+
+    $directory = DIR_IMAGE . 'catalog/reviews_photos/site/';
+
+    if (!is_dir($directory)) {
+      mkdir($directory, 0775, true);
+    }
+
+    $sku_safe = preg_replace('/[^A-Za-z0-9\-_]+/u', '-', $sku);
+    $sku_safe = trim($sku_safe, '-_');
+
+    if ($sku_safe === '') {
+      $sku_safe = 'review';
+    }
+
+    $feedback_part = str_pad((string)$feedback_id, 6, '0', STR_PAD_LEFT);
+    $sort_order    = 0;
+
+    foreach ($files as $index => $file) {
+      if (empty($file['tmp_name']) || !is_file($file['tmp_name'])) {
+        continue;
+      }
+
+      $original_name = isset($file['name']) ? (string)$file['name'] : '';
+      $extension     = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+
+      if ($extension === '') {
+        $mime = '';
+        if (function_exists('mime_content_type')) {
+          $mime = (string)@mime_content_type($file['tmp_name']);
+        }
+
+        $mime_map = [
+          'image/jpeg' => 'jpg',
+          'image/pjpeg' => 'jpg',
+          'image/png'  => 'png',
+          'image/gif'  => 'gif',
+          'image/webp' => 'webp'
+        ];
+
+        if ($mime && isset($mime_map[$mime])) {
+          $extension = $mime_map[$mime];
+        } else {
+          $extension = 'jpg';
+        }
+      }
+
+      $file_number   = $index + 1;
+      $filename      = $sku_safe . '-' . $feedback_part . '_' . $file_number . '.' . $extension;
+      $relative_path = 'catalog/reviews_photos/site/' . $filename;
+      $absolute_path = DIR_IMAGE . $relative_path;
+
+      if (!@move_uploaded_file($file['tmp_name'], $absolute_path)) {
+        if (!@rename($file['tmp_name'], $absolute_path)) {
+          continue;
+        }
+      }
+
+      @chmod($absolute_path, 0644);
+
+      $this->db->query("INSERT INTO `" . DB_PREFIX . "bm_feedback_image`
+                        SET feedback_id = '" . $feedback_id . "',
+                            image = '" . $this->db->escape($relative_path) . "',
+                            sort_order = '" . (int)$sort_order . "'");
+
+      $sort_order++;
+    }
   }
 
   /**
